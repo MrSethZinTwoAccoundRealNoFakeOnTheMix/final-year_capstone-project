@@ -1,5 +1,5 @@
 /**
- * Luxe Jewelry - Admin Dashboard Logic (Mobile-First)
+ * Luxe Jewelry - Admin Dashboard Logic (Mobile-First + Bilingual EN/KM)
  */
 
 (function () {
@@ -7,6 +7,105 @@
 
   const EXCHANGE_RATE_KHR = 4100;
   const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80';
+
+  // Language & Translations
+  let currentLang = localStorage.getItem('luxe_lang') || 'en';
+
+  const translations = {
+    en: {
+      langLabel: 'KM',
+      langFlag: '🇰🇭',
+      portalTitle: 'Shop Owner Portal',
+      live: 'Live',
+      storefront: 'Storefront ↗',
+      signOut: 'Sign Out',
+      tabOrders: '📦 Orders',
+      tabInventory: '💎 Inventory',
+      tabOverview: '📊 Overview',
+      filterAll: 'All Orders',
+      filterPending: 'Pending Verification',
+      filterConfirmed: 'Ready to Ship',
+      filterShipped: 'In Transit',
+      filterArchive: 'Completed/Cancelled',
+      noOrdersFound: 'No orders found',
+      noOrdersSub: 'There are currently no orders in this status category.',
+      confirmAndPack: '✓ Confirm & Pack',
+      cancelOrder: '✕ Cancel',
+      markShipped: '🚚 Mark Shipped',
+      cancelRefund: '✕ Cancel (Refund)',
+      markReturned: '📦 Mark as Returned (Boom Failure)',
+      archivedState: 'Archived · No further actions needed',
+      orderTotal: 'Order Total:',
+      addJewelry: '+ Add Jewelry',
+      catalogTitle: 'Product Catalog',
+      catalogSub: 'Manage pricing, margin, and stock levels',
+      inStock: '{n} in stock',
+      edit: 'Edit',
+      del: 'Del',
+      totalSales: 'Total Sales',
+      confirmedShipped: 'Confirmed + Shipped',
+      pendingActions: 'Pending Actions',
+      awaitingReview: 'Awaiting KHQR review',
+      allOrders: 'All Orders',
+      lifetimeSubmissions: 'Lifetime submissions',
+      activeSkus: 'Active SKUs',
+      lowStock: '{n} low stock',
+      welcomeAdmin: 'Welcome back, Shop Owner!',
+      signedOut: 'You have been signed out.',
+      sessionExpired: 'Session expired. Please sign in again.',
+    },
+    km: {
+      langLabel: 'EN',
+      langFlag: '🇬🇧',
+      portalTitle: 'ផ្ទាំងគ្រប់គ្រងម្ចាស់ហាង',
+      live: 'ផ្សាយផ្ទាល់',
+      storefront: 'ទំព័រហាង ↗',
+      signOut: 'ចាកចេញ',
+      tabOrders: '📦 ការបញ្ជាទិញ',
+      tabInventory: '💎 ស្តុកទំនិញ',
+      tabOverview: '📊 ទិដ្ឋភាពទូទៅ',
+      filterAll: 'ការកុម្ម៉ង់ទាំងអស់',
+      filterPending: 'រង់ចាំការផ្ទៀងផ្ទាត់',
+      filterConfirmed: 'ត្រៀមដឹកជញ្ជូន',
+      filterShipped: 'កំពុងដឹកជញ្ជូន',
+      filterArchive: 'បានបញ្ចប់/បោះបង់',
+      noOrdersFound: 'មិនមានការបញ្ជាទិញទេ',
+      noOrdersSub: 'បច្ចុប្បន្នមិនទាន់មានការបញ្ជាទិញក្នុងផ្នែកនេះនៅឡើយទេ។',
+      confirmAndPack: '✓ បញ្ជាក់ & វេចខ្ចប់',
+      cancelOrder: '✕ បោះបង់',
+      markShipped: '🚚 ដឹកជញ្ជូន',
+      cancelRefund: '✕ បោះបង់ (សងប្រាក់)',
+      markReturned: '📦 បញ្ជូនចូលស្តុកវិញ (ដឹកមិនបាន)',
+      archivedState: 'បានបញ្ចប់ · មិនមានសកម្មភាពបន្ត',
+      orderTotal: 'សរុបការបញ្ជាទិញ:',
+      addJewelry: '+ បន្ថែមគ្រឿងអលង្ការ',
+      catalogTitle: 'បញ្ជីគ្រឿងអលង្ការ',
+      catalogSub: 'គ្រប់គ្រងតម្លៃ ផលចំណេញ និងចំនួនស្តុក',
+      inStock: 'សល់ {n} ក្នុងស្តុក',
+      edit: 'កែប្រែ',
+      del: 'លុប',
+      totalSales: 'ចំណូលសរុប',
+      confirmedShipped: 'បានបញ្ជាក់ + បានដឹកជញ្ជូន',
+      pendingActions: 'ការងាររង់ចាំពិនិត្យ',
+      awaitingReview: 'រង់ចាំពិនិត្យ KHQR',
+      allOrders: 'ការកុម្ម៉ង់ទាំងអស់',
+      lifetimeSubmissions: 'ការបញ្ជាទិញសរុប',
+      activeSkus: 'មុខទំនិញសកម្ម',
+      lowStock: 'សល់ស្តុកតិច {n} មុខ',
+      welcomeAdmin: 'សូមស្វាគមន៍មកកាន់ផ្ទាំងគ្រប់គ្រង!',
+      signedOut: 'លោកអ្នកបានចាកចេញដោយជោគជ័យ។',
+      sessionExpired: 'សម័យការផុតកំណត់។ សូមចូលម្តងទៀត។',
+    }
+  };
+
+  function t(key, vars = {}) {
+    const dict = translations[currentLang] || translations.en;
+    let text = dict[key] || translations.en[key] || key;
+    for (const [k, v] of Object.entries(vars)) {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    }
+    return text;
+  }
 
   // State
   let adminToken = localStorage.getItem('admin_token');
@@ -16,6 +115,12 @@
   let activeTab = 'orders';
 
   // DOM Elements
+  const adminLangFlag = document.getElementById('admin-lang-flag');
+  const adminLangLabel = document.getElementById('admin-lang-label');
+  const labelLive = document.getElementById('label-live');
+  const linkStorefront = document.getElementById('link-storefront');
+  const btnSignout = document.getElementById('btn-signout');
+
   const tabButtons = document.querySelectorAll('.nav-tab');
   const tabContentOrders = document.getElementById('tab-content-orders');
   const tabContentInventory = document.getElementById('tab-content-inventory');
@@ -58,7 +163,7 @@
   const adminPasswordInput = document.getElementById('admin-password-input');
   const toastContainer = document.getElementById('toast-container');
 
-  // --- Currency Helpers ---
+  // Currency Helpers
   function formatUSD(amount) {
     return '$' + Number(amount || 0).toFixed(2);
   }
@@ -68,7 +173,7 @@
     return '៛' + khr.toLocaleString();
   }
 
-  // --- Toast Notifications ---
+  // Toast Notifications
   function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const bgColors = {
@@ -94,7 +199,39 @@
     }, 2800);
   }
 
-  // --- Authenticated Fetch Wrapper ---
+  // Language Toggle Handler
+  window.toggleAdminLanguage = function () {
+    currentLang = currentLang === 'en' ? 'km' : 'en';
+    localStorage.setItem('luxe_lang', currentLang);
+    applyLanguage();
+    showToast(currentLang === 'km' ? 'បានប្តូរទៅជា ភាសាខ្មែរ 🇰🇭' : 'Switched to English 🇬🇧', 'info');
+  };
+
+  function applyLanguage() {
+    if (adminLangFlag) adminLangFlag.textContent = t('langFlag');
+    if (adminLangLabel) adminLangLabel.textContent = t('langLabel');
+    if (labelLive) labelLive.textContent = t('live');
+    if (linkStorefront) linkStorefront.textContent = t('storefront');
+    if (btnSignout) btnSignout.textContent = t('signOut');
+
+    // Tab buttons text
+    tabButtons.forEach((btn) => {
+      const tab = btn.dataset.tab;
+      if (tab === 'orders') {
+        btn.querySelector('span:first-child').textContent = t('tabOrders');
+      } else if (tab === 'inventory') {
+        btn.querySelector('span:first-child').textContent = t('tabInventory');
+      } else if (tab === 'overview') {
+        btn.querySelector('span:first-child').textContent = t('tabOverview');
+      }
+    });
+
+    renderOrders();
+    renderProducts();
+    updateOverviewStats();
+  }
+
+  // Authenticated Fetch Wrapper
   async function authFetch(url, options = {}) {
     options.headers = options.headers || {};
     if (adminToken) {
@@ -106,14 +243,14 @@
     if (res.status === 401) {
       localStorage.removeItem('admin_token');
       adminToken = null;
-      showLoginModal('Session expired. Please sign in again.');
+      showLoginModal(t('sessionExpired'));
       throw new Error('Unauthorized');
     }
 
     return res;
   }
 
-  // --- Login & Logout ---
+  // Login & Logout
   function showLoginModal(errMsg = '') {
     if (errMsg) {
       loginError.textContent = errMsg;
@@ -133,7 +270,7 @@
   window.adminLogout = function () {
     localStorage.removeItem('admin_token');
     adminToken = null;
-    showLoginModal('You have been signed out.');
+    showLoginModal(t('signedOut'));
   };
 
   loginForm.addEventListener('submit', async (e) => {
@@ -154,7 +291,7 @@
         localStorage.setItem('admin_token', adminToken);
         hideLoginModal();
         adminPasswordInput.value = '';
-        showToast('Welcome back, Shop Owner!', 'success');
+        showToast(t('welcomeAdmin'), 'success');
         refreshData();
       } else {
         showLoginModal(data.error || 'Incorrect admin password.');
@@ -164,7 +301,7 @@
     }
   });
 
-  // --- Tab Switching ---
+  // Tab Switching
   tabButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       tabButtons.forEach((b) => b.classList.remove('active'));
@@ -177,7 +314,7 @@
     });
   });
 
-  // --- Order Filter Switching ---
+  // Order Filter Switching
   orderFilterPills.forEach((pill) => {
     pill.addEventListener('click', () => {
       orderFilterPills.forEach((p) => p.classList.remove('active'));
@@ -187,7 +324,7 @@
     });
   });
 
-  // --- Orders Management ---
+  // Orders Management
   async function loadOrders(silent = false) {
     if (!adminToken) return;
 
@@ -268,11 +405,11 @@
           <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
             <button onclick="window.confirmOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
-              <span>✓ Confirm & Pack</span>
+              <span>${t('confirmAndPack')}</span>
             </button>
             <button onclick="window.cancelOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-rose-950/80 hover:text-rose-200 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
-              <span>✕ Cancel</span>
+              <span>${t('cancelOrder')}</span>
             </button>
           </div>
         `;
@@ -281,11 +418,11 @@
           <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
             <button onclick="window.shipOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
-              <span>🚚 Mark Shipped</span>
+              <span>${t('markShipped')}</span>
             </button>
             <button onclick="window.cancelOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-rose-950/80 hover:text-rose-200 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
-              <span>✕ Cancel (Refund)</span>
+              <span>${t('cancelRefund')}</span>
             </button>
           </div>
         `;
@@ -294,21 +431,20 @@
           <div class="mt-3 pt-3 border-t border-white/10">
             <button onclick="window.returnOrderAction('${order.id}')"
               class="w-full py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
-              <span>📦 Mark as Returned (Boom Failure)</span>
+              <span>${t('markReturned')}</span>
             </button>
           </div>
         `;
       } else {
         actionButtons = `
           <div class="mt-2 pt-2 border-t border-white/5 text-right">
-            <span class="text-[11px] text-slate-500 font-medium">Archived · No further actions needed</span>
+            <span class="text-[11px] text-slate-500 font-medium">${t('archivedState')}</span>
           </div>
         `;
       }
 
       return `
         <div class="admin-card p-4">
-          <!-- Top Row: ID, Time, Status -->
           <div class="flex items-center justify-between mb-2.5">
             <div class="flex items-center space-x-2">
               <span class="text-xs font-mono font-extrabold text-[#f3d489]">${order.id}</span>
@@ -319,7 +455,6 @@
             </span>
           </div>
 
-          <!-- Customer Info -->
           <div class="bg-black/25 rounded-xl p-2.5 border border-white/5 mb-3 text-xs space-y-1">
             <div class="flex items-center justify-between">
               <span class="font-bold text-white">${escapeHtml(order.customer_name || 'Guest Customer')}</span>
@@ -343,28 +478,25 @@
             }
           </div>
 
-          <!-- Order Items -->
           <div class="space-y-1 mb-2">
             ${itemsHtml}
           </div>
 
-          <!-- Total Due -->
           <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
-            <span class="text-slate-400 font-medium">Order Total:</span>
+            <span class="text-slate-400 font-medium">${t('orderTotal')}</span>
             <div class="text-right">
               <span class="text-sm font-extrabold text-white">${formatUSD(order.total_amount)}</span>
               <span class="text-[11px] font-semibold text-[#e5c36a] ml-1">(${formatKHR(order.total_amount)})</span>
             </div>
           </div>
 
-          <!-- Actions -->
           ${actionButtons}
         </div>
       `;
     }).join('');
   }
 
-  // --- Order Lifecycle Actions ---
+  // Order Lifecycle Actions
   window.confirmOrderAction = async function (orderId) {
     if (!confirm(`Confirm order ${orderId} and decrement stock atomically?`)) return;
 
@@ -433,7 +565,7 @@
     }
   };
 
-  // --- Inventory Management ---
+  // Inventory Management
   async function loadProducts(silent = false) {
     if (!adminToken) return;
 
@@ -484,23 +616,22 @@
             </div>
           </div>
 
-          <!-- Stock & Actions -->
           <div class="text-right flex flex-col items-end space-y-1.5 ml-2">
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
               isLowStock
                 ? 'bg-rose-950/80 text-rose-300 border border-rose-800/80'
                 : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/80'
             }">
-              ${product.stock} in stock
+              ${t('inStock', { n: product.stock })}
             </span>
             <div class="flex items-center space-x-1">
               <button onclick="window.editProduct('${product.id}')"
                 class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[10px] text-slate-300 font-bold transition">
-                Edit
+                ${t('edit')}
               </button>
               <button onclick="window.deleteProduct('${product.id}')"
                 class="px-2 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-[10px] text-rose-300 font-bold transition">
-                Del
+                ${t('del')}
               </button>
             </div>
           </div>
@@ -583,7 +714,6 @@
 
     try {
       let res;
-      // If a file is attached, send FormData
       if (prodFileInput.files && prodFileInput.files[0]) {
         const formData = new FormData();
         if (prodIdInput.value) formData.append('id', prodIdInput.value);
@@ -600,7 +730,6 @@
           body: formData,
         });
       } else {
-        // Send JSON
         const payload = {
           id: prodIdInput.value || undefined,
           category: prodCategoryInput.value,
@@ -635,7 +764,7 @@
     }
   });
 
-  // --- Overview Tab Stats ---
+  // Overview Tab Stats
   function updateOverviewStats() {
     let revenueUSD = 0;
     ordersList.forEach((o) => {
@@ -651,16 +780,15 @@
     statTotalSkus.textContent = productsList.length;
 
     const lowStockCount = productsList.filter((p) => p.stock <= 3).length;
-    statLowStock.textContent = `${lowStockCount} low stock`;
+    statLowStock.textContent = t('lowStock', { n: lowStockCount });
   }
 
-  // --- Refresh Pipeline ---
+  // Refresh Pipeline
   function refreshData(silent = false) {
     loadOrders(silent);
     loadProducts(silent);
   }
 
-  // Helper escape HTML
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -671,14 +799,14 @@
       .replace(/'/g, '&#039;');
   }
 
-  // --- Initial Boot ---
+  // Initial Boot
+  applyLanguage();
   if (!adminToken) {
     showLoginModal();
   } else {
     refreshData();
   }
 
-  // Polling every 6 seconds for live orders
   setInterval(() => {
     if (adminToken) {
       loadOrders(true);

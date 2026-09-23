@@ -1,5 +1,5 @@
 /**
- * Luxe Jewelry - Customer Webview Logic (Mobile-First)
+ * Luxe Jewelry - Customer Webview Logic (Mobile-First + Bilingual EN/KM)
  */
 
 (function () {
@@ -8,6 +8,169 @@
   // Constants & Config
   const EXCHANGE_RATE_KHR = 4100;
   const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80';
+
+  // Language & Translations
+  let currentLang = localStorage.getItem('luxe_lang') || 'en';
+
+  const translations = {
+    en: {
+      langLabel: 'KM',
+      langFlag: '🇰🇭',
+      boutiqueSub: 'Phnom Penh Boutique',
+      connecting: 'Connecting…',
+      connected: 'Connected',
+      guestMode: 'Guest Mode',
+      connectedBanner: 'Connected: {id} · Order receipts delivered to Messenger',
+      guestBanner: 'Guest Browsing (Link required to order)',
+      invalidBanner: 'Invalid or expired Messenger link',
+      connErrorBanner: 'Connection error',
+      promoTag: 'Authentic Collection',
+      promoTitle: 'Fine Cambodian Craftsmanship',
+      promoSub: 'Direct checkout via KHQR & verified Messenger delivery.',
+      catAll: 'All Pieces',
+      catRing: '💍 Rings',
+      catNecklace: '📿 Necklaces',
+      catBracelet: '✨ Bracelets',
+      catEarring: '💎 Earrings',
+      rateDisplay: '1 USD = ៛4,100',
+      piecesCount: '{n} piece{s} available',
+      inStock: 'In Stock',
+      onlyLeft: 'Only {n} left',
+      soldOut: 'Sold Out',
+      addToBag: '+ Add to Bag',
+      bagLabel: 'Bag:',
+      viewCart: 'View Cart',
+      bagTitle: 'Your Shopping Bag',
+      bagSub: 'Review items & complete delivery details',
+      selectedPieces: 'Selected Pieces',
+      clearAll: 'Clear all',
+      emptyBag: 'Your bag is empty',
+      emptyBagSub: 'Add fine jewelry pieces from the catalog to order.',
+      subtotal: 'Subtotal',
+      delivery: 'Delivery (Phnom Penh & Provinces)',
+      freeDelivery: 'Free / Standard',
+      totalAmount: 'Total Amount',
+      authAlertTitle: 'Messenger Verified Link Required',
+      authAlertText: 'To protect your order and receive instant receipts, please open this shop link directly from your chat with our Facebook Page.',
+      deliveryInfo: 'Delivery Information',
+      requiredNote: '* required for shipping',
+      fullName: 'Your Full Name *',
+      namePlaceholder: 'e.g. Sreysros Keo',
+      phone: 'Phone Number (Cell / Telegram) *',
+      phonePlaceholder: 'e.g. 012 345 678',
+      address: 'Delivery Address *',
+      addressPlaceholder: 'House #, Street, Sangkat/Khan or Province...',
+      notes: 'Order Notes (Optional)',
+      notesPlaceholder: 'Ring size (e.g. Size 7), gift wrapping, etc.',
+      scanToPay: 'Scan to Pay',
+      merchant: 'Merchant:',
+      totalDue: 'Total Due:',
+      khqrNote: '💡 Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!',
+      keepShopping: 'Keep Shopping',
+      confirmOrder: 'Confirm Order ✨',
+      submitting: 'Submitting Order…',
+      orderReceivedTag: 'Order Received',
+      thankYou: 'Thank You!',
+      thankYouSub: 'Your jewelry order has been submitted successfully.',
+      orderRef: 'Order Reference:',
+      orderTotal: 'Total Amount:',
+      orderStatus: 'Status:',
+      pendingVerification: 'PENDING VERIFICATION',
+      messengerNote: 'A receipt carousel has been sent to your Messenger chat! Our shop owner will verify payment and update shipping.',
+      continueShopping: 'Continue Shopping ✨',
+      clearBagConfirm: 'Clear all items from your shopping bag?',
+      bagCleared: 'Shopping bag cleared',
+      addedToBag: 'Added "{name}" to bag!',
+      removedItem: 'Removed "{name}"',
+      stockLimit: 'Stock limit reached ({n} max).',
+      fillRequired: 'Please fill in your Name, Phone, and Delivery Address.',
+      noProducts: 'No jewelry found',
+      noProductsSub: 'There are no items currently available in this category.',
+    },
+    km: {
+      langLabel: 'EN',
+      langFlag: '🇬🇧',
+      boutiqueSub: 'ហាងគ្រឿងអលង្ការ រាជធានីភ្នំពេញ',
+      connecting: 'កំពុងតភ្ជាប់…',
+      connected: 'បានភ្ជាប់',
+      guestMode: 'ទស្សនាជាភ្ញៀវ',
+      connectedBanner: 'បានភ្ជាប់: {id} · បង្កាន់ដៃបញ្ជាទិញផ្ញើចូល Messenger',
+      guestBanner: 'ទស្សនាជាភ្ញៀវ (តម្រូវឱ្យបើកតាមតំណភ្ជាប់ដើម្បីកុម្ម៉ង់)',
+      invalidBanner: 'តំណភ្ជាប់ Messenger មិនត្រឹមត្រូវ ឬផុតកំណត់',
+      connErrorBanner: 'បញ្ហាក្នុងការតភ្ជាប់',
+      promoTag: 'បណ្តុំគ្រឿងអលង្ការសុទ្ធ',
+      promoTitle: 'សិប្បកម្មគ្រឿងអលង្ការខ្មែរប្រណិត',
+      promoSub: 'ទូទាត់ផ្ទាល់តាម KHQR & ដឹកជញ្ជូនរហ័សប្រកបដោយទំនុកចិត្ត។',
+      catAll: 'គ្រឿងអលង្ការទាំងអស់',
+      catRing: '💍 ចិញ្ចៀន',
+      catNecklace: '📿 ខ្សែក',
+      catBracelet: '✨ ខ្សែដៃ',
+      catEarring: '💎 ក្រវិល',
+      rateDisplay: '១ ដុល្លារ = ៛៤,១០០',
+      piecesCount: 'មាន {n} មុខសម្រាប់ជ្រើសរើស',
+      inStock: 'មានក្នុងស្តុក',
+      onlyLeft: 'នៅសល់តែ {n}',
+      soldOut: 'អស់ពីស្តុក',
+      addToBag: '+ ដាក់ចូលកន្ត្រក',
+      bagLabel: 'កន្ត្រក:',
+      viewCart: 'មើលកន្ត្រក',
+      bagTitle: 'កន្ត្រកទិញទំនិញរបស់អ្នក',
+      bagSub: 'ពិនិត្យទំនិញ & បំពេញព័ត៌មានដឹកជញ្ជូន',
+      selectedPieces: 'ទំនិញដែលបានជ្រើសរើស',
+      clearAll: 'សម្អាតទាំងអស់',
+      emptyBag: 'កន្ត្រករបស់អ្នកទទេ',
+      emptyBagSub: 'សូមជ្រើសរើសគ្រឿងអលង្ការពីបញ្ជីទំនិញដើម្បីបញ្ជាទិញ។',
+      subtotal: 'តម្លៃទំនិញ',
+      delivery: 'សេវាដឹកជញ្ជូន (ភ្នំពេញ & ខេត្ត)',
+      freeDelivery: 'ឥតគិតថ្លៃ / ស្តង់ដារ',
+      totalAmount: 'ចំនួនទឹកប្រាក់សរុប',
+      authAlertTitle: 'តម្រូវឱ្យមានតំណភ្ជាប់ Messenger',
+      authAlertText: 'ដើម្បីការពារការបញ្ជាទិញ និងទទួលបានបង្កាន់ដៃភ្លាមៗ សូមបើកហាងនេះចេញពីប្រអប់សារ Messenger នៃទំព័រ Facebook របស់យើង។',
+      deliveryInfo: 'ព័ត៌មានដឹកជញ្ជូន',
+      requiredNote: '* តម្រូវឱ្យបំពេញសម្រាប់ដឹកជញ្ជូន',
+      fullName: 'ឈ្មោះពេញរបស់អ្នក *',
+      namePlaceholder: 'ឧទាហរណ៍៖ កែវ ស្រីស្រស់',
+      phone: 'លេខទូរស័ព្ទ (Cell / Telegram) *',
+      phonePlaceholder: 'ឧទាហរណ៍៖ 012 345 678',
+      address: 'អាសយដ្ឋានដឹកជញ្ជូន *',
+      addressPlaceholder: 'ផ្ទះលេខ, ផ្លូវ, សង្កាត់/ខណ្ឌ ឬខេត្ត...',
+      notes: 'សម្គាល់បន្ថែម (ស្រេចចិត្ត)',
+      notesPlaceholder: 'ទំហំចិញ្ចៀន (ឧ. លេខ ៧), ខ្ចប់ជាកាដូ...',
+      scanToPay: 'ស្កេនដើម្បីទូទាត់',
+      merchant: 'ឈ្មោះគណនី:',
+      totalDue: 'ត្រូវទូទាត់:',
+      khqrNote: '💡 ទូទាត់តាមកម្មវិធី Bakong ណាមួយ (ABA, Wing, ACLEDA)។ ម្ចាស់ហាងនឹងពិនិត្យផ្ទៀងផ្ទាត់ការទូទាត់មុននឹងដឹកជញ្ជូន!',
+      keepShopping: 'បន្តមើលទំនិញ',
+      confirmOrder: 'បញ្ជាក់ការបញ្ជាទិញ ✨',
+      submitting: 'កំពុងបញ្ជូនការបញ្ជាទិញ…',
+      orderReceivedTag: 'បានទទួលការបញ្ជាទិញ',
+      thankYou: 'សូមអរគុណ!',
+      thankYouSub: 'ការបញ្ជាទិញគ្រឿងអលង្ការរបស់អ្នកបានជោគជ័យ។',
+      orderRef: 'លេខកូដបញ្ជាទិញ:',
+      orderTotal: 'ចំនួនទឹកប្រាក់សរុប:',
+      orderStatus: 'ស្ថានភាព:',
+      pendingVerification: 'រង់ចាំការផ្ទៀងផ្ទាត់ការទូទាត់',
+      messengerNote: 'បង្កាន់ដៃបញ្ជាទិញត្រូវបានផ្ញើចូលក្នុង Messenger របស់អ្នកហើយ! ម្ចាស់ហាងនឹងពិនិត្យការទូទាត់ និងចាត់ចែងដឹកជញ្ជូន។',
+      continueShopping: 'បន្តទិញទំនិញ ✨',
+      clearBagConfirm: 'តើអ្នកពិតជាចង់លុបទំនិញទាំងអស់ចេញពីកន្ត្រកមែនទេ?',
+      bagCleared: 'បានសម្អាតកន្ត្រកទំនិញរួចរាល់',
+      addedToBag: 'បានដាក់ "{name}" ចូលកន្ត្រក!',
+      removedItem: 'បានដក "{name}" ចេញ',
+      stockLimit: 'ចំនួនដល់កម្រិតស្តុកហើយ (អតិបរមា {n})។',
+      fillRequired: 'សូមបំពេញ ឈ្មោះ លេខទូរស័ព្ទ និងអាសយដ្ឋានដឹកជញ្ជូន។',
+      noProducts: 'រកមិនឃើញគ្រឿងអលង្ការទេ',
+      noProductsSub: 'មិនទាន់មានទំនិញក្នុងប្រភេទនេះនៅឡើយទេ។',
+    }
+  };
+
+  function t(key, vars = {}) {
+    const dict = translations[currentLang] || translations.en;
+    let text = dict[key] || translations.en[key] || key;
+    for (const [k, v] of Object.entries(vars)) {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    }
+    return text;
+  }
 
   // State
   const params = new URLSearchParams(window.location.search);
@@ -19,10 +182,11 @@
   let currentCategory = 'ALL';
   let cart = [];
 
-  // Local Storage Cart Key (Scoped to PSID or guest)
   const CART_STORAGE_KEY = `luxe_cart_${psid || 'guest'}`;
 
   // DOM Elements
+  const langFlag = document.getElementById('lang-flag');
+  const langLabel = document.getElementById('lang-label');
   const headerConnBadge = document.getElementById('header-conn-badge');
   const authBanner = document.getElementById('auth-banner');
   const authBannerIcon = document.getElementById('auth-banner-icon');
@@ -58,7 +222,7 @@
 
   const toastContainer = document.getElementById('toast-container');
 
-  // --- Currency Helpers ---
+  // Currency Helpers
   function formatUSD(amount) {
     return '$' + Number(amount || 0).toFixed(2);
   }
@@ -68,7 +232,7 @@
     return '៛' + khr.toLocaleString();
   }
 
-  // --- Toast Notifications ---
+  // Toast Notifications
   function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     const bgColors = {
@@ -87,7 +251,6 @@
     `;
 
     toastContainer.appendChild(toast);
-
     setTimeout(() => {
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(-10px)';
@@ -95,11 +258,61 @@
     }, 2800);
   }
 
-  // --- Identity Verification ---
+  // Language Toggle Handler
+  window.toggleLanguage = function () {
+    currentLang = currentLang === 'en' ? 'km' : 'en';
+    localStorage.setItem('luxe_lang', currentLang);
+    applyLanguage();
+    showToast(currentLang === 'km' ? 'បានប្តូរទៅជា ភាសាខ្មែរ 🇰🇭' : 'Switched to English 🇬🇧', 'info');
+  };
+
+  function applyLanguage() {
+    langFlag.textContent = t('langFlag');
+    langLabel.textContent = t('langLabel');
+
+    // Category Pills
+    const catMap = {
+      ALL: t('catAll'),
+      Ring: t('catRing'),
+      Necklace: t('catNecklace'),
+      Bracelet: t('catBracelet'),
+      Earring: t('catEarring'),
+    };
+
+    categoryPills.forEach((pill) => {
+      const cat = pill.dataset.category;
+      if (catMap[cat]) pill.textContent = catMap[cat];
+    });
+
+    // Form placeholders & labels
+    const nameInput = document.getElementById('cust-name');
+    const phoneInput = document.getElementById('cust-phone');
+    const addressInput = document.getElementById('cust-address');
+    const noteInput = document.getElementById('cust-note');
+
+    if (nameInput) nameInput.placeholder = t('namePlaceholder');
+    if (phoneInput) phoneInput.placeholder = t('phonePlaceholder');
+    if (addressInput) addressInput.placeholder = t('addressPlaceholder');
+    if (noteInput) noteInput.placeholder = t('notesPlaceholder');
+
+    // Buttons
+    submitOrderText.textContent = t('confirmOrder');
+    const barCheckoutBtn = document.getElementById('bar-checkout-btn');
+    if (barCheckoutBtn) {
+      barCheckoutBtn.innerHTML = `<span>${t('viewCart')}</span><span class="text-sm">🛍️</span>`;
+    }
+
+    // Refresh UI elements
+    renderAuthStatus(isVerified);
+    renderProducts();
+    updateCartUI();
+  }
+
+  // Identity Verification
   async function verifyIdentity() {
     if (!psid || !sig) {
       isVerified = false;
-      renderAuthStatus(false, 'Guest Browsing (Link required to order)');
+      renderAuthStatus(false);
       return;
     }
 
@@ -109,43 +322,43 @@
 
       if (data.verified) {
         isVerified = true;
-        const displayId = psid.length > 10 ? `${psid.slice(0, 6)}…${psid.slice(-4)}` : psid;
-        renderAuthStatus(true, `Connected: ${displayId}`);
+        renderAuthStatus(true);
       } else {
         isVerified = false;
-        renderAuthStatus(false, 'Invalid or expired Messenger link');
+        renderAuthStatus(false, t('invalidBanner'));
       }
     } catch (err) {
       isVerified = false;
-      renderAuthStatus(false, 'Connection error');
+      renderAuthStatus(false, t('connErrorBanner'));
     }
   }
 
-  function renderAuthStatus(verified, message) {
+  function renderAuthStatus(verified, customMsg) {
     if (verified) {
+      const displayId = psid && psid.length > 10 ? `${psid.slice(0, 6)}…${psid.slice(-4)}` : (psid || '');
       headerConnBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60';
-      headerConnBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span> Connected';
+      headerConnBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span> ${t('connected')}`;
 
       authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-emerald-950/40 text-emerald-300 border-emerald-800/40';
       authBannerIcon.textContent = '✅';
-      authBannerText.innerHTML = `<strong>${message}</strong> · Order receipts delivered to Messenger`;
+      authBannerText.innerHTML = `<strong>${t('connectedBanner', { id: displayId })}</strong>`;
 
       checkoutAuthAlert.classList.add('hidden');
       submitOrderBtn.disabled = false;
     } else {
       headerConnBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-700/60';
-      headerConnBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span> Guest Mode';
+      headerConnBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span> ${t('guestMode')}`;
 
       authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-amber-950/30 text-amber-300/90 border-amber-800/30';
       authBannerIcon.textContent = '📱';
-      authBannerText.innerHTML = `<strong>${message}</strong>`;
+      authBannerText.innerHTML = `<strong>${customMsg || t('guestBanner')}</strong>`;
 
       checkoutAuthAlert.classList.remove('hidden');
       submitOrderBtn.disabled = true;
     }
   }
 
-  // --- Catalog Loading & Rendering ---
+  // Catalog Loading & Rendering
   async function loadCatalog() {
     try {
       const res = await fetch('/api/products');
@@ -155,7 +368,7 @@
     } catch (err) {
       productGrid.innerHTML = `
         <div class="col-span-2 text-center py-12 text-slate-400">
-          <p class="text-sm">Unable to load jewelry catalog.</p>
+          <p class="text-sm">${t('noProducts')}</p>
           <button onclick="loadCatalog()" class="mt-3 text-xs text-[#c9a84c] underline">Tap to retry</button>
         </div>
       `;
@@ -167,7 +380,7 @@
       ? productsList
       : productsList.filter((p) => p.category === currentCategory);
 
-    catalogCountLabel.textContent = `${filtered.length} piece${filtered.length === 1 ? '' : 's'} available`;
+    catalogCountLabel.textContent = t('piecesCount', { n: filtered.length, s: filtered.length === 1 ? '' : 's' });
 
     if (filtered.length === 0) {
       productGrid.innerHTML = '';
@@ -195,10 +408,10 @@
               <div class="absolute top-2 left-2">
                 ${
                   isSoldOut
-                    ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">Sold Out</span>'
+                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">${t('soldOut')}</span>`
                     : isLowStock
-                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">Only ${product.stock} left</span>`
-                    : '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">In Stock</span>'
+                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">${t('onlyLeft', { n: product.stock })}</span>`
+                    : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">${t('inStock')}</span>`
                 }
               </div>
 
@@ -244,7 +457,7 @@
               ${isSoldOut ? 'disabled' : ''}
               onclick="window.addToCart('${product.id}')"
               class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
-              <span>${isSoldOut ? 'Out of Stock' : '+ Add to Bag'}</span>
+              <span>${isSoldOut ? t('soldOut') : t('addToBag')}</span>
             </button>
           </div>
         </div>
@@ -252,7 +465,7 @@
     }).join('');
   }
 
-  // --- Category Filtering Event Handlers ---
+  // Category Filtering
   categoryPills.forEach((pill) => {
     pill.addEventListener('click', () => {
       categoryPills.forEach((p) => p.classList.remove('active'));
@@ -262,7 +475,7 @@
     });
   });
 
-  // --- Cart Management ---
+  // Cart Management
   function loadCartFromStorage() {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
@@ -286,7 +499,7 @@
     if (!product) return;
 
     if (product.stock <= 0) {
-      showToast(`"${product.name}" is currently sold out.`, 'warning');
+      showToast(t('soldOut'), 'warning');
       return;
     }
 
@@ -294,7 +507,7 @@
     const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
 
     if (currentQtyInCart + 1 > product.stock) {
-      showToast(`Cannot add more. Only ${product.stock} available in stock.`, 'warning');
+      showToast(t('stockLimit', { n: product.stock }), 'warning');
       return;
     }
 
@@ -314,7 +527,7 @@
 
     saveCartToStorage();
     updateCartUI();
-    showToast(`Added "${product.name}" to bag!`, 'success');
+    showToast(t('addedToBag', { name: product.name }), 'success');
   };
 
   window.updateItemQuantity = function (productId, delta) {
@@ -326,13 +539,13 @@
 
     if (newQty <= 0) {
       cart.splice(index, 1);
-      showToast(`Removed "${item.name}"`, 'info');
+      showToast(t('removedItem', { name: item.name }), 'info');
     } else {
       const product = productsList.find((p) => p.id === productId);
       const availableStock = product ? product.stock : item.stock;
 
       if (newQty > availableStock) {
-        showToast(`Stock limit reached (${availableStock} max).`, 'warning');
+        showToast(t('stockLimit', { n: availableStock }), 'warning');
         return;
       }
       item.quantity = newQty;
@@ -344,11 +557,11 @@
 
   window.clearCart = function () {
     if (cart.length === 0) return;
-    if (confirm('Clear all items from your shopping bag?')) {
+    if (confirm(t('clearBagConfirm'))) {
       cart = [];
       saveCartToStorage();
       updateCartUI();
-      showToast('Shopping bag cleared', 'info');
+      showToast(t('bagCleared'), 'info');
     }
   };
 
@@ -356,7 +569,6 @@
     const totalCount = cart.reduce((sum, it) => sum + it.quantity, 0);
     const totalUSD = cart.reduce((sum, it) => sum + it.price * it.quantity, 0);
 
-    // Floating bottom bar update
     barCartCount.textContent = totalCount;
     barCartUsd.textContent = formatUSD(totalUSD);
     barCartKhr.textContent = formatKHR(totalUSD);
@@ -368,7 +580,6 @@
     khqrDueUsd.textContent = formatUSD(totalUSD);
     khqrDueKhr.textContent = formatKHR(totalUSD);
 
-    // Render items in sheet
     if (cart.length === 0) {
       sheetCartItems.innerHTML = '';
       sheetCartEmpty.classList.remove('hidden');
@@ -389,7 +600,6 @@
             </div>
           </div>
 
-          <!-- Quantity Stepper -->
           <div class="flex items-center space-x-1 bg-black/40 rounded-lg p-1 border border-white/10 ml-2">
             <button type="button" onclick="window.updateItemQuantity('${item.productId}', -1)"
               class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white bg-white/5 active:scale-95">
@@ -406,7 +616,7 @@
     }
   }
 
-  // --- Modal Open/Close Controls ---
+  // Modals
   window.openCartSheet = function () {
     cartModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -422,28 +632,23 @@
     document.body.style.overflow = '';
   };
 
-  // Close modals on clicking overlay backdrop
   cartModal.addEventListener('click', (e) => {
-    if (e.target === cartModal) {
-      window.closeCartSheet();
-    }
+    if (e.target === cartModal) window.closeCartSheet();
   });
 
   successModal.addEventListener('click', (e) => {
-    if (e.target === successModal) {
-      window.closeSuccessModal();
-    }
+    if (e.target === successModal) window.closeSuccessModal();
   });
 
-  // --- Order Submission ---
+  // Order Submission
   window.submitCustomerOrder = async function () {
     if (cart.length === 0) {
-      showToast('Your shopping bag is empty! Add jewelry pieces first.', 'warning');
+      showToast(t('emptyBag'), 'warning');
       return;
     }
 
     if (!isVerified) {
-      showToast('Messenger link required. Open from Facebook chat to order.', 'error');
+      showToast(t('authAlertTitle'), 'error');
       return;
     }
 
@@ -458,24 +663,21 @@
     const note = noteInput.value.trim();
 
     if (!customerName || !phone || !address) {
-      showToast('Please fill in your Name, Phone, and Delivery Address.', 'warning');
+      showToast(t('fillRequired'), 'warning');
       if (!customerName) nameInput.focus();
       else if (!phone) phoneInput.focus();
       else addressInput.focus();
       return;
     }
 
-    // Set Loading State
     submitOrderBtn.disabled = true;
     submitOrderSpinner.classList.remove('hidden');
-    submitOrderText.textContent = 'Submitting Order…';
+    submitOrderText.textContent = t('submitting');
 
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           psid,
           sig,
@@ -491,37 +693,30 @@
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to place order.');
       }
 
-      // Successful Order!
       const totalUSD = data.total;
       successOrderId.textContent = data.orderId;
       successOrderTotal.textContent = `${formatUSD(totalUSD)} / ${formatKHR(totalUSD)}`;
 
-      // Reset cart
       cart = [];
       saveCartToStorage();
       updateCartUI();
 
-      // Close cart sheet and open success modal
       window.closeCartSheet();
       successModal.classList.remove('hidden');
-
-      // Refresh catalog stock
       loadCatalog();
     } catch (err) {
       showToast(err.message || 'Error submitting order.', 'error');
     } finally {
       submitOrderBtn.disabled = !isVerified;
       submitOrderSpinner.classList.add('hidden');
-      submitOrderText.textContent = 'Confirm Order ✨';
+      submitOrderText.textContent = t('confirmOrder');
     }
   };
 
-  // Helper function to escape HTML
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -532,7 +727,8 @@
       .replace(/'/g, '&#039;');
   }
 
-  // --- Initial Boot ---
+  // Initial Boot
+  applyLanguage();
   verifyIdentity();
   loadCatalog();
   loadCartFromStorage();

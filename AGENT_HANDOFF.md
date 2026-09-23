@@ -4,7 +4,7 @@
 > **Purpose:** This document allows any AI agent (or the same agent after a usage reset) to
 > pick up exactly where the previous session left off — with full context, zero re-explanation.
 >
-> **Last Updated:** 2026-09-23 (Phase 5 complete — live Messenger verified)  
+> **Last Updated:** 2026-09-23 (Phase 6 complete — Khmer toggle added)  
 > **Project Owner:** Trapi Seth  
 > **GitHub Repo:** https://github.com/MrSethZinTwoAccoundRealNoFakeOnTheMix/jewelry-shop_capstone-project-.git
 
@@ -19,8 +19,9 @@
 | **Phase 3** | ✅ COMPLETE | Customer webview (Tailwind CSS, mobile-first) |
 | **Phase 4** | ✅ COMPLETE | Admin panel (Tailwind CSS, mobile-first) |
 | **Phase 5** | ✅ COMPLETE | Meta Messenger webhook + notifications (Live verified) |
-| **Phase 6** | ⏳ NEXT | Khmer language toggle (🇰🇭 KM / EN) |
-| **Phase 7** | 🔜 PENDING | Telegram bot (deferred) |
+| **Phase 6** | ✅ COMPLETE | Khmer language toggle (🇰🇭 KM / EN) |
+| **Phase 7** | ⏳ NEXT | Telegram bot |
+
 
 
 
@@ -414,12 +415,13 @@ Live integration tested and verified with real Facebook Page Token and real PSID
 
 ---
 
-## Phase 6 — Khmer Language Toggle (after Phase 5 passes)
+## Phase 6 — Khmer Language Toggle (✅ COMPLETE)
 
-Add `src/templates/locales/km.js` with Khmer translations.
-Toggle button `🇰🇭 KM / EN` in top-right of both pages.
-`setLanguage(lang)` swaps the active strings object from `en.js` or `km.js`.
-Preference saved to `localStorage`.
+- Created `src/templates/locales/km.js` with full Khmer translation templates.
+- Toggle button `🇰🇭 KM / EN` added to Customer Webview and Owner Admin headers.
+- Client-side zero-latency bilingual switching engine with `localStorage` persistence.
+- Translates catalog categories, stock badges, shopping bag, delivery form, KHQR guide, success receipt, and admin order queue actions.
+
 
 ---
 
@@ -459,7 +461,8 @@ Steps when ready:
 
 ---
 
-*If you are an AI agent reading this: Phases 1, 2, 3, 4, and 5 are COMPLETE. Start with Phase 6 (Khmer Language Toggle). Do not rebuild Phases 1, 2, 3, 4, or 5.*
+*If you are an AI agent reading this: Phases 1, 2, 3, 4, 5, and 6 are COMPLETE. Start with Phase 7 (Telegram Bot). Do not rebuild Phases 1 through 6.*
+
 
 
 
