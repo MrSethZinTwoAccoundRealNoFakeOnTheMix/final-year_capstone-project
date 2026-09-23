@@ -20,7 +20,7 @@
 | **Phase 4** | ✅ COMPLETE | Admin panel (Tailwind CSS, mobile-first) |
 | **Phase 5** | ✅ COMPLETE | Meta Messenger webhook + notifications (Live verified) |
 | **Phase 6** | ✅ COMPLETE | Khmer language toggle (🇰🇭 KM / EN) |
-| **Phase 7** | ⏳ NEXT | Telegram bot |
+| **Phase 7** | ✅ COMPLETE | Telegram bot — new order alerts + inline confirm/cancel keyboard |
 
 
 
@@ -425,16 +425,20 @@ Live integration tested and verified with real Facebook Page Token and real PSID
 
 ---
 
-## Phase 7 — Telegram Bot (after Phase 6 or separately)
+## Phase 7 — Telegram Bot (✅ COMPLETE)
 
-Steps when ready:
-1. Create bot via @BotFather on Telegram → get `TELEGRAM_BOT_TOKEN`
-2. Get owner chat ID via @userinfobot
-3. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_OWNER_CHAT_ID` to `.env`
-4. Install `node-telegram-bot-api`: `npm install node-telegram-bot-api`
-5. Create `src/services/telegram.service.js`
-6. Hook into `order.service.placeOrder()` to send notification on new order
-7. Implement inline keyboard: [✅ Confirm] [❌ Cancel] callback handlers
+- `node-telegram-bot-api@0.66.0` installed (long-polling mode — no tunnel required).
+- `src/services/telegram.service.js` created with graceful no-op if env vars missing.
+- **New order** → owner receives Telegram message with order details + `[✅ Confirm & Pack]` `[❌ Cancel]` inline keyboard.
+- Tapping **Confirm** from Telegram calls `orderService.confirmOrder()` and decrements stock.
+- Tapping **Cancel** from Telegram calls `orderService.cancelOrder()` and restores stock.
+- **Ship** → owner receives Telegram confirmation that customer was notified.
+- **Cancel** (from admin panel) → owner receives Telegram info alert.
+- **Return** → owner receives Telegram alert that stock is restored.
+- Inline keyboard buttons disappear after tap (message is edited).
+- Graceful failure: all Telegram calls are fire-and-forget, never crash the server.
+- `TELEGRAM_BOT_TOKEN` and `TELEGRAM_OWNER_CHAT_ID` added to config and `.env.example`.
+- Bot polling stopped cleanly on `SIGTERM`/`SIGINT`.
 
 ---
 
@@ -461,7 +465,7 @@ Steps when ready:
 
 ---
 
-*If you are an AI agent reading this: Phases 1, 2, 3, 4, 5, and 6 are COMPLETE. Start with Phase 7 (Telegram Bot). Do not rebuild Phases 1 through 6.*
+*If you are an AI agent reading this: ALL 7 PHASES ARE COMPLETE. The app is ready for homelab deployment to Proxmox LXC @ 192.168.100.232. See `PRODUCTION_ARCHITECTURE_BLUEPRINT.md` for deployment steps.*
 
 
 
