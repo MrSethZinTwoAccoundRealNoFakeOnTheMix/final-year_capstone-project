@@ -16,7 +16,7 @@
  */
 
 const TelegramBot = require('node-telegram-bot-api');
-const { TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_ID } = require('../config');
+const { TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_IDS, BASE_URL } = require('../config');
 const logger = require('../utils/logger');
 
 // ─── Initialise Bot ──────────────────────────────────────────────────────────
@@ -25,12 +25,38 @@ let bot = null;
 
 if (!TELEGRAM_BOT_TOKEN) {
   logger.warn('[Telegram] TELEGRAM_BOT_TOKEN not set — Telegram notifications disabled.');
-} else if (!TELEGRAM_OWNER_CHAT_ID) {
-  logger.warn('[Telegram] TELEGRAM_OWNER_CHAT_ID not set — Telegram notifications disabled.');
+} else if (!TELEGRAM_OWNER_CHAT_IDS || TELEGRAM_OWNER_CHAT_IDS.length === 0) {
+  logger.warn('[Telegram] No TELEGRAM_OWNER_CHAT_ID configured — Telegram notifications disabled.');
 } else {
   try {
     // Long-polling mode: works without any public URL / tunnel
     bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+
+    // ── Command Handlers (/start, /menu) ─────────────────────────────────────
+    bot.onText(/\/start|\/menu/, async (msg) => {
+      const chatId = msg.chat.id.toString();
+      if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
+        return bot.sendMessage(
+          chatId,
+          `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID or TELEGRAM_OWNER_CHAT_ID_2.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      return bot.sendMessage(
+        chatId,
+        `👋 *Welcome to Luxe Jewelry Owner Panel* 💍\n\n` +
+        `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
+        `📱 *Features Enabled:*\n` +
+        `• Real-time new order alerts with instant 1-tap actions\n` +
+        `• Multi-stage order lifecycle: Confirm ➔ Ship ➔ Deliver/Return\n` +
+        `• Automatic stock synchronization with database\n\n` +
+        `🌐 *Web Links:*\n` +
+        `• Store: ${BASE_URL}\n` +
+        `• Admin Panel: ${BASE_URL}/admin.html`,
+        { parse_mode: 'Markdown' }
+      );
+    });
 
     // ── Inline-keyboard callback handler ─────────────────────────────────────
     // Dynamic multi-stage order lifecycle:
@@ -41,8 +67,8 @@ if (!TELEGRAM_BOT_TOKEN) {
       const chatId = query.message.chat.id.toString();
       const data   = query.data || '';
 
-      // Security: only process callbacks from the owner's chat
-      if (chatId !== TELEGRAM_OWNER_CHAT_ID) {
+      // Security: only process callbacks from authorized owners
+      if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
         await bot.answerCallbackQuery(query.id, { text: '⛔ Unauthorized.' }).catch(() => {});
         return;
       }
@@ -181,17 +207,24 @@ if (!TELEGRAM_BOT_TOKEN) {
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 /**
- * Internal: safely send a message to the owner.
+ * Internal: safely send a message to all configured owners.
  * Returns null and logs on failure — never throws.
  */
 async function _send(text, extra = {}) {
-  if (!bot) return null;
-  try {
-    return await bot.sendMessage(TELEGRAM_OWNER_CHAT_ID, text, extra);
-  } catch (err) {
-    logger.error('[Telegram] sendMessage failed:', err.message);
-    return null;
-  }
+  if (!bot || !TELEGRAM_OWNER_CHAT_IDS.length) return null;
+
+  const results = await Promise.allSettled(
+    TELEGRAM_OWNER_CHAT_IDS.map(async (chatId) => {
+      try {
+        return await bot.sendMessage(chatId, text, extra);
+      } catch (err) {
+        logger.error(`[Telegram] sendMessage failed for ${chatId}:`, err.message);
+        return null;
+      }
+    })
+  );
+
+  return results[0] ? results[0].value : null;
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────

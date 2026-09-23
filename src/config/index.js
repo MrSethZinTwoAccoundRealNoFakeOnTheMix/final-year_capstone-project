@@ -14,6 +14,15 @@ for (const key of required) {
   }
 }
 
+const ownerIds = [];
+if (process.env.TELEGRAM_OWNER_CHAT_ID) {
+  ownerIds.push(...process.env.TELEGRAM_OWNER_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean));
+}
+if (process.env.TELEGRAM_OWNER_CHAT_ID_2) {
+  ownerIds.push(...process.env.TELEGRAM_OWNER_CHAT_ID_2.split(',').map((s) => s.trim()).filter(Boolean));
+}
+const TELEGRAM_OWNER_CHAT_IDS = [...new Set(ownerIds)];
+
 module.exports = {
   APP_SECRET:              process.env.APP_SECRET,
   PAGE_TOKEN:              process.env.APP_SESSION_TOKEN,  // Meta Page Access Token
@@ -23,5 +32,6 @@ module.exports = {
   NODE_ENV:                process.env.NODE_ENV || 'development',
   PORT:                    parseInt(process.env.PORT || '3000', 10),
   TELEGRAM_BOT_TOKEN:      process.env.TELEGRAM_BOT_TOKEN || '',
-  TELEGRAM_OWNER_CHAT_ID:  process.env.TELEGRAM_OWNER_CHAT_ID || '',
+  TELEGRAM_OWNER_CHAT_ID:  TELEGRAM_OWNER_CHAT_IDS[0] || '',
+  TELEGRAM_OWNER_CHAT_IDS,
 };
