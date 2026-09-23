@@ -269,42 +269,77 @@
           </div>
         </div>
 
-        <!-- KHQR Payment Presentation Card -->
-        <div class="rounded-2xl bg-gradient-to-b from-[#1e2038] to-[#151627] border border-[#c9a84c]/30 p-4 relative overflow-hidden">
+        <!-- Payment Method Selection -->
+        <div class="space-y-2">
+          <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            <span id="payment-method-title">Payment Method</span>
+            <span class="text-[10px] text-amber-400 font-normal">Choose Option</span>
+          </label>
+
+          <div class="grid grid-cols-2 gap-2">
+            <!-- Option 1: Bakong KHQR -->
+            <button type="button" id="pay-opt-khqr" onclick="selectPaymentMethod('KHQR')"
+              class="payment-method-pill active flex flex-col items-center justify-center p-2.5 rounded-xl border border-[#c9a84c] bg-[#c9a84c]/20 text-white transition text-center shadow-sm">
+              <span class="text-base mb-1">📲</span>
+              <span class="text-xs font-bold">Bakong KHQR</span>
+              <span class="text-[9px] text-[#e5c36a] mt-0.5" id="pay-opt-khqr-sub">Scan to Pay</span>
+            </button>
+
+            <!-- Option 2: Other / Discuss with Shop -->
+            <button type="button" id="pay-opt-other" onclick="selectPaymentMethod('OTHER')"
+              class="payment-method-pill flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-center">
+              <span class="text-base mb-1">💬</span>
+              <span class="text-xs font-bold" id="pay-opt-other-title">Other Method</span>
+              <span class="text-[9px] text-slate-400 mt-0.5" id="pay-opt-other-sub">Discuss in Chat</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KHQR Payment Presentation Card (Default) -->
+        <div id="payment-khqr-box" class="rounded-2xl bg-gradient-to-b from-[#1e2038] to-[#151627] border border-[#c9a84c]/30 p-4 relative overflow-hidden transition-all">
           <div class="flex items-center justify-between mb-3 border-b border-white/10 pb-2.5">
             <div class="flex items-center space-x-2">
-              <!-- KHQR Tag Style -->
               <span class="px-2 py-0.5 rounded bg-red-600 font-extrabold text-white text-[10px] tracking-widest uppercase">
                 KHQR
               </span>
               <span class="text-xs font-bold text-white">Bakong Pay</span>
             </div>
-            <span class="text-[11px] font-medium text-[#e5c36a]">Scan to Pay</span>
+            <span class="text-[11px] font-medium text-[#e5c36a]" id="khqr-scan-label">Scan to Pay</span>
           </div>
 
           <div class="flex items-center space-x-3.5">
             <!-- Static Clean QR Code Visual Box -->
             <div class="w-24 h-24 bg-white rounded-xl p-1.5 flex-shrink-0 flex items-center justify-center shadow-md">
               <svg viewBox="0 0 100 100" class="w-full h-full text-slate-900" fill="currentColor">
-                <!-- QR Code Pattern Graphic -->
                 <path d="M0 0h30v30H0zm4 4h22v22H4zm4 4h14v14H8zM70 0h30v30H70zm4 4h22v22H74zm4 4h14v14H78zM0 70h30v30H0zm4 4h22v22H4zm4 4h14v14H8zM40 10h10v10H40zm10 10h10v10H50zm-10 20h20v10H40zm30 10h10v10H70zm10 10h10v20H80zm-20 10h10v10H60zm-20 0h10v20H40zm10 10h10v10H50zm20 10h20v10H70z"/>
                 <circle cx="50" cy="50" r="8" fill="#e11d48"/>
               </svg>
             </div>
 
             <div class="flex-1 text-xs">
-              <p class="text-slate-400 text-[11px]">Merchant:</p>
+              <p class="text-slate-400 text-[11px]" id="merchant-label">Merchant:</p>
               <p class="font-bold text-white text-xs">LUXE JEWELRY SHOP</p>
               <div class="mt-2 py-1 px-2 rounded-lg bg-black/30 border border-white/5">
-                <span class="text-[10px] text-slate-400 block">Total Due:</span>
+                <span class="text-[10px] text-slate-400 block" id="total-due-label">Total Due:</span>
                 <span id="khqr-due-usd" class="font-extrabold text-sm text-white">$0.00</span>
                 <span id="khqr-due-khr" class="text-[11px] font-semibold text-[#e5c36a] ml-1.5">៛0</span>
               </div>
             </div>
           </div>
 
-          <p class="text-[10px] text-slate-400 mt-2.5 leading-relaxed">
+          <p class="text-[10px] text-slate-400 mt-2.5 leading-relaxed" id="khqr-note-text">
             💡 Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!
+          </p>
+        </div>
+
+        <!-- Other / Discuss with Shop Card -->
+        <div id="payment-other-box" class="hidden rounded-2xl bg-gradient-to-b from-[#181d33] to-[#121424] border border-sky-500/30 p-4 relative overflow-hidden transition-all">
+          <div class="flex items-center space-x-2 text-sky-400 mb-2">
+            <span class="text-lg">💬</span>
+            <span class="text-xs font-bold text-white" id="other-pay-heading">Discuss Payment with Shop</span>
+          </div>
+          <p class="text-[11px] text-slate-300 leading-relaxed" id="other-pay-desc">
+            💡 No upfront payment required now. After submitting your order, our shop owner will contact you directly in Facebook Messenger to confirm and agree on your preferred payment method (deposit, bank transfer, or delivery terms).
           </p>
         </div>
 

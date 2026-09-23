@@ -33,8 +33,10 @@ if (!TELEGRAM_BOT_TOKEN) {
     bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 
     // ── Inline-keyboard callback handler ─────────────────────────────────────
-    // Triggered when the owner taps [✅ Confirm] or [❌ Cancel] inside Telegram.
-    // Delegates to the order service (lazy-required to avoid circular imports).
+    // Dynamic multi-stage order lifecycle:
+    // PENDING   → [✅ Confirm & Pack] [❌ Cancel]
+    // CONFIRMED → [🚚 Mark as Shipped] [❌ Cancel & Restock]
+    // SHIPPED   → [🎉 Delivered / Completed] [📦 Return & Restock (Refund)]
     bot.on('callback_query', async (query) => {
       const chatId = query.message.chat.id.toString();
       const data   = query.data || '';
@@ -45,7 +47,7 @@ if (!TELEGRAM_BOT_TOKEN) {
         return;
       }
 
-      const [action, orderId] = data.split(':'); // e.g. "confirm:ORD-123456"
+      const [action, orderId] = data.split(':'); // e.g. "tg_confirm:ORD-123456"
 
       if (!orderId) {
         await bot.answerCallbackQuery(query.id, { text: '⚠️ Unknown action.' }).catch(() => {});
@@ -59,21 +61,94 @@ if (!TELEGRAM_BOT_TOKEN) {
         if (action === 'tg_confirm') {
           orderService.confirmOrder(orderId);
           await bot.answerCallbackQuery(query.id, { text: '✅ Order confirmed & stock decremented!' });
-          // Edit the original message so the buttons disappear
+
+          // Transition to CONFIRMED stage: show [🚚 Mark as Shipped] & [❌ Cancel & Restock]
           await bot.editMessageText(
-            `✅ *Order ${orderId} CONFIRMED*\nStock decremented. Pack the items! 📦`,
+            `✅ *Order ${orderId} CONFIRMED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `📦 *Status:* Stock decremented. Items packed.\n` +
+            `👉 When handed to delivery driver, tap *Mark as Shipped*:`,
+            {
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id,
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: '🚚 Mark as Shipped', callback_data: `tg_ship:${orderId}` },
+                    { text: '❌ Cancel & Restock', callback_data: `tg_cancel:${orderId}` },
+                  ],
+                ],
+              },
+            }
+          ).catch(() => {});
+
+        } else if (action === 'tg_ship') {
+          orderService.shipOrder(orderId);
+          await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! Customer notified via Messenger.' });
+
+          // Transition to SHIPPED stage: show [🎉 Delivered] & [📦 Return & Restock]
+          await bot.editMessageText(
+            `🚚 *Order ${orderId} SHIPPED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `🛵 *Status:* Package is in transit with delivery driver.\n` +
+            `💬 Customer notified via Messenger.\n` +
+            `👉 Once delivery is completed or if package is returned:`,
+            {
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id,
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: '🎉 Delivered / Completed', callback_data: `tg_complete:${orderId}` },
+                    { text: '📦 Return & Restock (Refund)', callback_data: `tg_return:${orderId}` },
+                  ],
+                ],
+              },
+            }
+          ).catch(() => {});
+
+        } else if (action === 'tg_complete') {
+          await bot.answerCallbackQuery(query.id, { text: '🎉 Order marked as Completed!' });
+
+          // Final Completed stage: remove buttons
+          await bot.editMessageText(
+            `🎉 *Order ${orderId} COMPLETED!*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `✅ Customer received package and payment settled. Finished! ✨`,
             {
               chat_id: query.message.chat.id,
               message_id: query.message.message_id,
               parse_mode: 'Markdown',
             }
-          ).catch(() => {}); // may fail if message is too old — that's fine
+          ).catch(() => {});
+
+        } else if (action === 'tg_return') {
+          orderService.returnOrder(orderId);
+          await bot.answerCallbackQuery(query.id, { text: '📦 Order RETURNED. Stock restored to inventory!' });
+
+          // Final Returned stage: remove buttons
+          await bot.editMessageText(
+            `📦 *Order ${orderId} RETURNED / REFUNDED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `🔄 Package returned by driver. Stock automatically restored to inventory in database!`,
+            {
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id,
+              parse_mode: 'Markdown',
+            }
+          ).catch(() => {});
 
         } else if (action === 'tg_cancel') {
           orderService.cancelOrder(orderId);
           await bot.answerCallbackQuery(query.id, { text: '❌ Order cancelled.' });
+
+          // Cancelled stage: remove buttons
           await bot.editMessageText(
-            `❌ *Order ${orderId} CANCELLED*\nStock restored (if it was confirmed).`,
+            `❌ *Order ${orderId} CANCELLED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `Order has been cancelled. Stock restored if previously confirmed.`,
             {
               chat_id: query.message.chat.id,
               message_id: query.message.message_id,
@@ -137,6 +212,11 @@ async function notifyNewOrder(order, items) {
       .join('\n');
 
     const totalKHR = (Number(order.total_amount) * 4100).toLocaleString();
+    const isKhqr = (order.payment_method || 'KHQR').toUpperCase() === 'KHQR';
+    const paymentLabel = isKhqr ? '📲 Bakong KHQR (Prepaid Scan)' : '💬 Other / Discuss with Customer';
+    const paymentNotice = isKhqr
+      ? '⏰ Check Bakong app to confirm payment before tapping Confirm.'
+      : '💬 Discuss & agree on payment (transfer/deposit/delivery) with customer in chat before confirming.';
 
     const text =
       `🛍️ *New Order — ${order.id}*\n` +
@@ -144,12 +224,13 @@ async function notifyNewOrder(order, items) {
       `👤 *Customer:* ${order.customer_name || 'N/A'}\n` +
       `📞 *Phone:* ${order.phone || 'N/A'}\n` +
       `📍 *Address:* ${order.address || 'N/A'}\n` +
+      `💳 *Payment:* ${paymentLabel}\n` +
       (order.note ? `📝 *Note:* ${order.note}\n` : '') +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `${itemLines}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `💰 *Total: $${Number(order.total_amount).toFixed(2)}* (${totalKHR} ៛)\n` +
-      `⏰ Check Bakong app to confirm payment before tapping Confirm.`;
+      `${paymentNotice}`;
 
     const replyMarkup = {
       inline_keyboard: [[
@@ -159,7 +240,7 @@ async function notifyNewOrder(order, items) {
     };
 
     await _send(text, { parse_mode: 'Markdown', reply_markup: replyMarkup });
-    logger.info(`[Telegram] New order alert sent for ${order.id}`);
+    logger.info(`[Telegram] New order alert sent for ${order.id} (${isKhqr ? 'KHQR' : 'OTHER'})`);
   } catch (err) {
     logger.error(`[Telegram] notifyNewOrder error for ${order.id}:`, err.message);
   }

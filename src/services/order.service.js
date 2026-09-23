@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
  * Performs identity check, cart consolidation, price verification, soft stock check.
  * Stock is NOT decremented here — only at CONFIRMED status.
  */
-async function placeOrder({ psid, sig, items, customer_name, phone, address, note }) {
+async function placeOrder({ psid, sig, items, customer_name, phone, address, note, payment_method }) {
   // 1. Mandatory Identity Check
   const idCheck = identityService.verifyToken(psid, sig);
   if (!idCheck.ok) {
@@ -75,6 +75,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
 
   // 5. Generate Order ID: ORD- + 6 digits (or fallback timestamp if collision)
   const orderId = 'ORD-' + Date.now().toString().slice(-6);
+  const paymentMethod = (payment_method || 'KHQR').toUpperCase() === 'OTHER' ? 'OTHER' : 'KHQR';
 
   // 6. Persist order in PENDING status
   const order = orderRepository.create({
@@ -85,10 +86,11 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     phone,
     address,
     note,
+    paymentMethod,
     items: orderItemsData,
   });
 
-  logger.info(`[OrderService] Order ${orderId} created in PENDING status. Total: $${totalAmount}`);
+  logger.info(`[OrderService] Order ${orderId} created in PENDING status (${paymentMethod}). Total: $${totalAmount}`);
 
   // 7. Fire-and-forget: Send Messenger Receipt Carousel
   messengerService.sendOrderReceipt(psid, order, orderItemsData).catch((err) => {

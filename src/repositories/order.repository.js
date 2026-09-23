@@ -71,12 +71,13 @@ function findById(id) {
  * @param {string} params.phone
  * @param {string} params.address
  * @param {string} params.note
+ * @param {string} [params.paymentMethod] — 'KHQR' | 'OTHER'
  * @param {Array}  params.items — [{ productId, quantity, unit_price }]
  */
-function create({ orderId, psid, totalAmount, customerName, phone, address, note, items }) {
+function create({ orderId, psid, totalAmount, customerName, phone, address, note, paymentMethod = 'KHQR', items }) {
   const insertOrder = db.prepare(`
-    INSERT INTO orders (id, psid, status, total_amount, customer_name, phone, address, note)
-    VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?)
+    INSERT INTO orders (id, psid, status, total_amount, customer_name, phone, address, note, payment_method)
+    VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
   `);
   const insertItem = db.prepare(`
     INSERT INTO order_items (order_id, product_id, quantity, unit_price)
@@ -84,7 +85,7 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
   `);
 
   const run = db.transaction(() => {
-    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '');
+    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'KHQR');
     for (const item of items) {
       insertItem.run(orderId, item.productId, item.quantity, item.unit_price);
     }

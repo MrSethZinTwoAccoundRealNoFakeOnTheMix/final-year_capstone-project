@@ -86,6 +86,12 @@
       fillRequired: 'Please fill in your Name, Phone, and Delivery Address.',
       noProducts: 'No jewelry found',
       noProductsSub: 'There are no items currently available in this category.',
+      paymentMethodTitle: 'Payment Method',
+      payOptKhqrSub: 'Scan to Pay',
+      payOptOtherTitle: 'Other Method',
+      payOptOtherSub: 'Discuss in Chat',
+      otherPayHeading: 'Discuss Payment with Shop',
+      otherPayDesc: '💡 No upfront payment required now. After submitting your order, our shop owner will contact you directly in Facebook Messenger to confirm and agree on your preferred payment method (deposit, bank transfer, or delivery terms).',
     },
     km: {
       langLabel: 'EN',
@@ -160,6 +166,12 @@
       fillRequired: 'សូមបំពេញ ឈ្មោះ លេខទូរស័ព្ទ និងអាសយដ្ឋានដឹកជញ្ជូន។',
       noProducts: 'រកមិនឃើញគ្រឿងអលង្ការទេ',
       noProductsSub: 'មិនទាន់មានទំនិញក្នុងប្រភេទនេះនៅឡើយទេ។',
+      paymentMethodTitle: 'វិធីសាស្ត្រទូទាត់ប្រាក់',
+      payOptKhqrSub: 'ស្កេនទូទាត់ភ្លាមៗ',
+      payOptOtherTitle: 'វិធីសាស្ត្រផ្សេងទៀត',
+      payOptOtherSub: 'ពិភាក្សាក្នុងប្រអប់សារ',
+      otherPayHeading: 'ពិភាក្សាការទូទាត់ជាមួយហាង',
+      otherPayDesc: '💡 មិនទាន់តម្រូវឱ្យទូទាត់ប្រាក់ឥឡូវនេះទេ។ បន្ទាប់ពីកុម្ម៉ង់រួច ម្ចាស់ហាងនឹងទាក់ទងទៅលោកអ្នកផ្ទាល់តាម Messenger ដើម្បីពិភាក្សាលើវិធីទូទាត់ (កក់ប្រាក់, ផ្ទេរតាមធនាគារ ឬសេវាដឹកជញ្ជូន)។',
     }
   };
 
@@ -178,6 +190,28 @@
   const sig = params.get('sig');
 
   let isVerified = false;
+  let selectedPaymentMethod = 'KHQR';
+
+  window.selectPaymentMethod = function (method) {
+    selectedPaymentMethod = method === 'OTHER' ? 'OTHER' : 'KHQR';
+
+    const btnKhqr = document.getElementById('pay-opt-khqr');
+    const btnOther = document.getElementById('pay-opt-other');
+    const boxKhqr = document.getElementById('payment-khqr-box');
+    const boxOther = document.getElementById('payment-other-box');
+
+    if (selectedPaymentMethod === 'OTHER') {
+      if (btnOther) btnOther.className = 'payment-method-pill active flex flex-col items-center justify-center p-2.5 rounded-xl border border-sky-400 bg-sky-500/20 text-white transition text-center shadow-sm';
+      if (btnKhqr) btnKhqr.className = 'payment-method-pill flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-center';
+      if (boxKhqr) boxKhqr.classList.add('hidden');
+      if (boxOther) boxOther.classList.remove('hidden');
+    } else {
+      if (btnKhqr) btnKhqr.className = 'payment-method-pill active flex flex-col items-center justify-center p-2.5 rounded-xl border border-[#c9a84c] bg-[#c9a84c]/20 text-white transition text-center shadow-sm';
+      if (btnOther) btnOther.className = 'payment-method-pill flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-center';
+      if (boxKhqr) boxKhqr.classList.remove('hidden');
+      if (boxOther) boxOther.classList.add('hidden');
+    }
+  };
   let productsList = [];
   let currentCategory = 'ALL';
   let cart = [];
@@ -294,6 +328,21 @@
     if (phoneInput) phoneInput.placeholder = t('phonePlaceholder');
     if (addressInput) addressInput.placeholder = t('addressPlaceholder');
     if (noteInput) noteInput.placeholder = t('notesPlaceholder');
+
+    // Payment labels
+    const payTitle = document.getElementById('payment-method-title');
+    const payKhqrSub = document.getElementById('pay-opt-khqr-sub');
+    const payOtherTitle = document.getElementById('pay-opt-other-title');
+    const payOtherSub = document.getElementById('pay-opt-other-sub');
+    const otherHeading = document.getElementById('other-pay-heading');
+    const otherDesc = document.getElementById('other-pay-desc');
+
+    if (payTitle) payTitle.textContent = t('paymentMethodTitle');
+    if (payKhqrSub) payKhqrSub.textContent = t('payOptKhqrSub');
+    if (payOtherTitle) payOtherTitle.textContent = t('payOptOtherTitle');
+    if (payOtherSub) payOtherSub.textContent = t('payOptOtherSub');
+    if (otherHeading) otherHeading.textContent = t('otherPayHeading');
+    if (otherDesc) otherDesc.textContent = t('otherPayDesc');
 
     // Buttons
     submitOrderText.textContent = t('confirmOrder');
@@ -681,6 +730,7 @@
         body: JSON.stringify({
           psid,
           sig,
+          payment_method: selectedPaymentMethod,
           items: cart.map((it) => ({
             productId: it.productId,
             quantity: it.quantity,

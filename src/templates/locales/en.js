@@ -25,14 +25,22 @@ How can we help you today? To browse our collection or order, tap the button bel
   openShopButtonText: '✨ ចូលមើលហាង (Open Shop)',
   openShopPromptText: '👇 ចុចទីនេះដើម្បីចូលមើលហាង / Tap to open store:',
 
-  orderReceipt: (order) => 
-    `🛍️ Order Confirmed (Pending Payment)!\n\n` +
-    `Order ID: ${order.id}\n` +
-    `Total: $${Number(order.total_amount).toFixed(2)}\n` +
-    `Customer: ${order.customer_name || 'Customer'}\n` +
-    `Phone: ${order.phone || 'N/A'}\n` +
-    `Address: ${order.address || 'N/A'}\n\n` +
-    `Our shop owner will review your order shortly!`,
+  orderReceipt: (order) => {
+    const isOther = (order.payment_method || '').toUpperCase() === 'OTHER';
+    const payText = isOther ? '💬 Other / Discuss in chat' : '📲 Bakong KHQR (Scan to Pay)';
+    return (
+      `🛍️ Order Received (Pending Confirmation)!\n\n` +
+      `Order ID: ${order.id}\n` +
+      `Total: $${Number(order.total_amount).toFixed(2)}\n` +
+      `Payment: ${payText}\n` +
+      `Customer: ${order.customer_name || 'Customer'}\n` +
+      `Phone: ${order.phone || 'N/A'}\n` +
+      `Address: ${order.address || 'N/A'}\n\n` +
+      (isOther
+        ? `💬 Our shop owner will chat with you shortly to agree on payment details!`
+        : `Our shop owner will verify your payment and prepare your order shortly!`)
+    );
+  },
 
   shippingNotification: (orderId) =>
     `📦 Your order #${orderId} has been shipped! Thank you for shopping with us.`

@@ -18,14 +18,22 @@ module.exports = {
   openShopButtonText: '✨ ចូលមើលហាង (Open Shop)',
   openShopPromptText: '👇 ចុចទីនេះដើម្បីចូលមើលហាង៖',
 
-  orderReceipt: (order) =>
-    `🛍️ ការបញ្ជាទិញបានជោគជ័យ (រង់ចាំការផ្ទៀងផ្ទាត់ការទូទាត់)!\n\n` +
-    `លេខកូដបញ្ជាទិញ: ${order.id}\n` +
-    `តម្លៃសរុប: $${Number(order.total_amount).toFixed(2)}\n` +
-    `អតិថិជន: ${order.customer_name || 'អតិថិជន'}\n` +
-    `លេខទូរស័ព្ទ: ${order.phone || 'N/A'}\n` +
-    `អាសយដ្ឋានដឹកជញ្ជូន: ${order.address || 'N/A'}\n\n` +
-    `ម្ចាស់ហាងនឹងពិនិត្យមើលការទូទាត់ប្រាក់ និងរៀបចំឥវ៉ាន់ជូនលោកអ្នកក្នុងពេលឆាប់ៗនេះ!`,
+  orderReceipt: (order) => {
+    const isOther = (order.payment_method || '').toUpperCase() === 'OTHER';
+    const payText = isOther ? '💬 វិធីសាស្ត្រផ្សេងទៀត (ពិភាក្សាក្នុងប្រអប់សារ)' : '📲 Bakong KHQR (ស្កេនទូទាត់)';
+    return (
+      `🛍️ ការបញ្ជាទិញបានជោគជ័យ (រង់ចាំការបញ្ជាក់)!\n\n` +
+      `លេខកូដបញ្ជាទិញ: ${order.id}\n` +
+      `តម្លៃសរុប: $${Number(order.total_amount).toFixed(2)}\n` +
+      `ការទូទាត់: ${payText}\n` +
+      `អតិថិជន: ${order.customer_name || 'អតិថិជន'}\n` +
+      `លេខទូរស័ព្ទ: ${order.phone || 'N/A'}\n` +
+      `អាសយដ្ឋានដឹកជញ្ជូន: ${order.address || 'N/A'}\n\n` +
+      (isOther
+        ? `💬 ម្ចាស់ហាងនឹងទាក់ទងមកលោកអ្នកផ្ទាល់តាម Messenger ក្នុងពេលឆាប់ៗនេះដើម្បីពិភាក្សាលើការទូទាត់ប្រាក់!`
+        : `ម្ចាស់ហាងនឹងពិនិត្យការទូទាត់ប្រាក់ និងរៀបចំឥវ៉ាន់ជូនលោកអ្នកក្នុងពេលឆាប់ៗនេះ!`)
+    );
+  },
 
   shippingNotification: (orderId) =>
     `📦 ការបញ្ជាទិញលេខ #${orderId} របស់លោកអ្នកត្រូវបានប្រគល់ជូនអ្នកដឹកជញ្ជូនហើយ! សូមអរគុណសម្រាប់ការគាំទ្រ Luxe Jewelry។`
