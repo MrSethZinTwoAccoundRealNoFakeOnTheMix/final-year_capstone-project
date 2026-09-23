@@ -1,0 +1,165 @@
+/* Luxe Jewelry - Admin Dashboard Mobile-First Stylesheet */
+
+:root {
+  --bg-dark: #0e101a;
+  --bg-card: #171928;
+  --bg-sheet: #151726;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-gold: rgba(201, 168, 76, 0.35);
+
+  --gold-primary: #c9a84c;
+  --gold-light: #f3d489;
+  --gold-dark: #9f7d2e;
+  --gold-gradient: linear-gradient(135deg, #f0cf81 0%, #c9a84c 50%, #997829 100%);
+
+  --status-pending-bg: rgba(217, 119, 6, 0.15);
+  --status-pending-text: #fcd34d;
+  --status-pending-border: rgba(217, 119, 6, 0.4);
+
+  --status-confirmed-bg: rgba(16, 185, 129, 0.15);
+  --status-confirmed-text: #6ee7b7;
+  --status-confirmed-border: rgba(16, 185, 129, 0.4);
+
+  --status-shipped-bg: rgba(59, 130, 246, 0.15);
+  --status-shipped-text: #93c5fd;
+  --status-shipped-border: rgba(59, 130, 246, 0.4);
+
+  --status-cancelled-bg: rgba(239, 68, 68, 0.15);
+  --status-cancelled-text: #fca5a5;
+  --status-cancelled-border: rgba(239, 68, 68, 0.4);
+
+  --status-returned-bg: rgba(168, 85, 247, 0.15);
+  --status-returned-text: #d8b4fe;
+  --status-returned-border: rgba(168, 85, 247, 0.4);
+
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #f8fafc;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  padding-bottom: calc(40px + var(--safe-bottom));
+}
+
+/* Custom Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glass Header */
+.glass-header {
+  background: rgba(14, 16, 26, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Gold Gradient Button */
+.btn-gold {
+  background: var(--gold-gradient);
+  color: #0e101a;
+  font-weight: 700;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-gold:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* Navigation Tabs */
+.nav-tab.active {
+  background: rgba(201, 168, 76, 0.15);
+  color: var(--gold-light);
+  border-bottom: 2px solid var(--gold-primary);
+  font-weight: 700;
+}
+
+.nav-tab:not(.active) {
+  color: #94a3b8;
+  border-bottom: 2px solid transparent;
+}
+
+/* Card Styling */
+.admin-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Order Status Badges */
+.badge-status {
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.badge-status.status-PENDING {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+  border-color: var(--status-pending-border);
+}
+
+.badge-status.status-CONFIRMED {
+  background: var(--status-confirmed-bg);
+  color: var(--status-confirmed-text);
+  border-color: var(--status-confirmed-border);
+}
+
+.badge-status.status-SHIPPED {
+  background: var(--status-shipped-bg);
+  color: var(--status-shipped-text);
+  border-color: var(--status-shipped-border);
+}
+
+.badge-status.status-CANCELLED {
+  background: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+  border-color: var(--status-cancelled-border);
+}
+
+.badge-status.status-RETURNED {
+  background: var(--status-returned-bg);
+  color: var(--status-returned-text);
+  border-color: var(--status-returned-border);
+}
+
+/* Filter Pills */
+.filter-pill.active {
+  background: #334155;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.filter-pill:not(.active) {
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Shimmer Skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #171928 25%, #24273f 50%, #171928 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
