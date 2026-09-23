@@ -10,21 +10,21 @@ module.exports = {
 
   // --- Messenger ---
   // Cooldown before resending shop link to same PSID (prevents spam)
-  SHOP_LINK_COOLDOWN_MS: 6 * 60 * 60 * 1000, // 6 hours
-
+  // SHOP_LINK_COOLDOWN_MS: 6 * 60 * 60 * 1000, // 6 hours
+  SHOP_LINK_COOLDOWN_MS: 60 * 1000,
   // --- Product SKU Prefixes ---
   SKU_PREFIXES: {
-    Ring:     'RG',
+    Ring: 'RG',
     Necklace: 'NK',
     Bracelet: 'BR',
-    Earring:  'ER',
+    Earring: 'ER',
   },
 
   // --- Image Optimization (Sharp) ---
   IMAGE_MAX_WIDTH: 800,   // px
-  IMAGE_QUALITY:   80,    // WebP quality %
+  IMAGE_QUALITY: 80,    // WebP quality %
 
   // --- Rate Limiting ---
-  RATE_LIMIT_ORDERS_PER_HOUR:  5,   // max order submissions per PSID per hour
-  RATE_LIMIT_CATALOG_PER_MIN:  20,  // max catalog requests per IP per minute
+  RATE_LIMIT_ORDERS_PER_HOUR: 5,   // max order submissions per PSID per hour
+  RATE_LIMIT_CATALOG_PER_MIN: 20,  // max catalog requests per IP per minute
 };
