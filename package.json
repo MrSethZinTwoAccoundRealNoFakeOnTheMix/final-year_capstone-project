@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "jewelry-shop",
   "version": "1.0.0",
   "description": "Production Modular Jewelry E-Commerce Store with Meta Messenger Identity",
@@ -10,7 +10,12 @@
     "seed": "node src/db/seed.js",
     "test": "node --test"
   },
-  "keywords": ["messenger", "ecommerce", "jewelry", "khqr"],
+  "keywords": [
+    "messenger",
+    "ecommerce",
+    "jewelry",
+    "khqr"
+  ],
   "author": "Trapi Seth",
   "license": "ISC",
   "dependencies": {
@@ -18,6 +23,7 @@
     "dotenv": "^18.0.1",
     "express": "^5.2.1",
     "multer": "^1.4.5-lts.1",
+    "node-telegram-bot-api": "^0.66.0",
     "sharp": "^0.33.5"
   }
 }

@@ -2,6 +2,7 @@ const orderRepository = require('../repositories/order.repository');
 const productRepository = require('../repositories/product.repository');
 const identityService = require('./identity.service');
 const messengerService = require('./messenger.service');
+const telegramService = require('./telegram.service');
 const logger = require('../utils/logger');
 
 /**
@@ -94,6 +95,11 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     logger.error(`[OrderService] Failed sending receipt for ${orderId}:`, err);
   });
 
+  // 8. Fire-and-forget: Telegram new-order alert to owner (with inline confirm/cancel)
+  telegramService.notifyNewOrder(order, orderItemsData).catch((err) => {
+    logger.error(`[OrderService] Failed sending Telegram alert for ${orderId}:`, err);
+  });
+
   return {
     success: true,
     orderId,
@@ -109,6 +115,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
 function confirmOrder(orderId) {
   const updatedOrder = orderRepository.confirmOrder(orderId);
   logger.info(`[OrderService] Order ${orderId} confirmed and stock decremented.`);
+  // No separate Telegram notification — owner triggered this themselves
   return updatedOrder;
 }
 
@@ -119,6 +126,8 @@ function confirmOrder(orderId) {
 function cancelOrder(orderId) {
   const updatedOrder = orderRepository.cancelOrder(orderId);
   logger.info(`[OrderService] Order ${orderId} cancelled.`);
+  // Notify owner on Telegram (in case cancel came from admin panel, not inline button)
+  telegramService.notifyCancelled(orderId).catch(() => {});
   return updatedOrder;
 }
 
@@ -130,12 +139,15 @@ function shipOrder(orderId) {
   const updatedOrder = orderRepository.shipOrder(orderId);
   logger.info(`[OrderService] Order ${orderId} marked as SHIPPED.`);
 
-  // Fire-and-forget shipping notification to customer
+  // Fire-and-forget: Messenger shipping notification to customer
   if (updatedOrder.psid) {
     messengerService.sendShippingNotification(updatedOrder.psid, orderId).catch((err) => {
       logger.error(`[OrderService] Failed sending shipping notification for ${orderId}:`, err);
     });
   }
+
+  // Fire-and-forget: Telegram confirmation to owner
+  telegramService.notifyShipped(orderId).catch(() => {});
 
   return updatedOrder;
 }
@@ -147,6 +159,7 @@ function shipOrder(orderId) {
 function returnOrder(orderId) {
   const updatedOrder = orderRepository.returnOrder(orderId);
   logger.info(`[OrderService] Order ${orderId} marked as RETURNED; stock restored.`);
+  telegramService.notifyReturned(orderId).catch(() => {});
   return updatedOrder;
 }
 

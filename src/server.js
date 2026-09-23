@@ -2,6 +2,7 @@ const app = require('./app');
 const { PORT, NODE_ENV } = require('./config');
 const db = require('./db');
 const logger = require('./utils/logger');
+const telegramService = require('./services/telegram.service');
 
 const server = app.listen(PORT, () => {
   logger.info(`✨ Luxe Jewelry server running on http://localhost:${PORT} [${NODE_ENV}]`);
@@ -15,6 +16,7 @@ function shutdown(signal) {
   server.close(() => {
     logger.info('HTTP server closed.');
     try {
+      telegramService.shutdown();
       db.close();
       logger.info('SQLite database connection closed.');
     } catch (err) {
