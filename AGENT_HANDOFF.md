@@ -4,7 +4,7 @@
 > **Purpose:** This document allows any AI agent (or the same agent after a usage reset) to
 > pick up exactly where the previous session left off — with full context, zero re-explanation.
 >
-> **Last Updated:** 2026-09-23 (Phase 4 complete)  
+> **Last Updated:** 2026-09-23 (Phase 5 complete — live Messenger verified)  
 > **Project Owner:** Trapi Seth  
 > **GitHub Repo:** https://github.com/MrSethZinTwoAccoundRealNoFakeOnTheMix/jewelry-shop_capstone-project-.git
 
@@ -18,9 +18,10 @@
 | **Phase 2** | ✅ COMPLETE | Backend API — routes, services, middlewares, Express server |
 | **Phase 3** | ✅ COMPLETE | Customer webview (Tailwind CSS, mobile-first) |
 | **Phase 4** | ✅ COMPLETE | Admin panel (Tailwind CSS, mobile-first) |
-| **Phase 5** | ⏳ NEXT | Meta Messenger webhook + notifications |
-| **Phase 6** | 🔜 PENDING | Khmer language toggle |
+| **Phase 5** | ✅ COMPLETE | Meta Messenger webhook + notifications (Live verified) |
+| **Phase 6** | ⏳ NEXT | Khmer language toggle (🇰🇭 KM / EN) |
 | **Phase 7** | 🔜 PENDING | Telegram bot (deferred) |
+
 
 
 
@@ -402,16 +403,14 @@ done
 
 ---
 
-## Phase 5 — Meta Messenger Webhook (after Phase 4 checkpoint passes)
+## Phase 5 — Meta Messenger Webhook & Live Messaging (✅ COMPLETE)
 
-Live testing with real Facebook Tester account. All code already written in Phase 2.
-Steps:
-1. SSH into LXC `192.168.100.232`, pull from Git, `npm ci`, `npm run migrate`
-2. `pm2 start ecosystem.config.js`, verify `pm2 status`
-3. In Meta Developer Portal: set webhook URL to `https://test.trapiseth.site/webhook`
-4. Subscribe to `messages` and `messaging_postbacks` fields
-5. Add test Facebook account as Tester under App Roles
-6. Message the page, receive signed URL, checkout, verify receipt carousel
+Live integration tested and verified with real Facebook Page Token and real PSID (`28248567978157531`).
+- Bilingual guide text sent and delivered to Messenger.
+- Signed store button card template sent and delivered.
+- Order confirmation receipt carousel sent and delivered.
+- Failure safeguards and graceful non-blocking behavior verified.
+
 
 ---
 
@@ -460,7 +459,8 @@ Steps when ready:
 
 ---
 
-*If you are an AI agent reading this: Phases 1, 2, 3, and 4 are COMPLETE. Start with Phase 5 (Meta Messenger Webhook live configuration & notifications). Do not rebuild Phases 1, 2, 3, or 4.*
+*If you are an AI agent reading this: Phases 1, 2, 3, 4, and 5 are COMPLETE. Start with Phase 6 (Khmer Language Toggle). Do not rebuild Phases 1, 2, 3, 4, or 5.*
+
 
 
 
