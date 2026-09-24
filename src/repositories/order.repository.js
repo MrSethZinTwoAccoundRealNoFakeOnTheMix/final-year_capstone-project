@@ -23,9 +23,11 @@ function getItemsForOrder(orderId) {
   return db.prepare(`
     SELECT
       oi.id, oi.order_id, oi.product_id, oi.quantity, oi.unit_price,
-      p.name, p.photo_url, p.category
+      COALESCE(p.name, 'Item ' || oi.product_id) AS name,
+      COALESCE(p.photo_url, '') AS photo_url,
+      COALESCE(p.category, 'General') AS category
     FROM order_items oi
-    JOIN products p ON oi.product_id = p.id
+    LEFT JOIN products p ON oi.product_id = p.id
     WHERE oi.order_id = ?
   `).all(orderId);
 }

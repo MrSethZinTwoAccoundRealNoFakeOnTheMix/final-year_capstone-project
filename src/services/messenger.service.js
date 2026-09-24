@@ -51,7 +51,7 @@ async function sendOrderReceipt(psid, order, items) {
 
   try {
     const shopUrl = generateSignedUrl(psid, BASE_URL);
-    const itemElements = (items || []).slice(0, 10).map((it) => buildItemElement(it, shopUrl));
+    const itemElements = (items || []).slice(0, 10).map((it) => buildItemElement(it, shopUrl, BASE_URL));
 
     // 1. Send items carousel if items exist
     if (itemElements.length > 0) {

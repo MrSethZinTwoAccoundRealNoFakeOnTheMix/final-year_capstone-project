@@ -117,6 +117,7 @@
   let productsList = [];
   let currentOrderFilter = 'ACTION_NEEDED';
   let activeTab = 'orders';
+  let isInitialOrdersLoaded = false;
 
   // DOM Elements
   const adminLangFlag = document.getElementById('admin-lang-flag');
@@ -265,6 +266,15 @@
       throw new Error('Unauthorized');
     }
 
+    if (!res.ok) {
+      let errMsg = `Request failed (${res.status})`;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) errMsg = errJson.error;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
     return res;
   }
 
@@ -348,13 +358,28 @@
 
     try {
       const res = await authFetch('/api/admin/orders');
-      ordersList = await res.json();
+      const data = await res.json();
+      ordersList = Array.isArray(data) ? data : [];
+      isInitialOrdersLoaded = true;
       updateOrderCounts();
       renderOrders();
       updateOverviewStats();
     } catch (err) {
       if (!silent && err.message !== 'Unauthorized') {
-        showToast('Failed to load orders', 'error');
+        showToast('Failed to load orders: ' + err.message, 'error');
+      }
+      if (!isInitialOrdersLoaded) {
+        ordersEmptyEl.classList.add('hidden');
+        ordersListEl.innerHTML = `
+          <div class="text-center py-10 px-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+            <span class="text-3xl block mb-2">⚠️</span>
+            <h4 class="text-sm font-bold text-rose-300">Connection Error</h4>
+            <p class="text-xs text-rose-400/80 mt-1 mb-3">Failed to load orders (${escapeHtml(err.message)}). Retrying automatically...</p>
+            <button onclick="window.refreshData()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition">
+              🔄 Retry Now
+            </button>
+          </div>
+        `;
       }
     }
   }
@@ -373,6 +398,15 @@
   }
 
   function renderOrders() {
+    if (!isInitialOrdersLoaded && ordersList.length === 0) {
+      ordersEmptyEl.classList.add('hidden');
+      ordersListEl.innerHTML = `
+        <div class="skeleton rounded-2xl h-44"></div>
+        <div class="skeleton rounded-2xl h-44"></div>
+      `;
+      return;
+    }
+
     let filtered = [...ordersList];
 
     if (currentOrderFilter === 'ACTION_NEEDED') {
@@ -699,13 +733,14 @@
 
     try {
       const res = await authFetch('/api/admin/products');
-      productsList = await res.json();
+      const data = await res.json();
+      productsList = Array.isArray(data) ? data : [];
       tabStockBadge.textContent = productsList.length;
       renderProducts();
       updateOverviewStats();
     } catch (err) {
       if (!silent && err.message !== 'Unauthorized') {
-        showToast('Failed to load products', 'error');
+        showToast('Failed to load products: ' + err.message, 'error');
       }
     }
   }
@@ -964,6 +999,7 @@
     loadOrders(silent);
     loadProducts(silent);
   }
+  window.refreshData = refreshData;
 
   function escapeHtml(str) {
     if (!str) return '';

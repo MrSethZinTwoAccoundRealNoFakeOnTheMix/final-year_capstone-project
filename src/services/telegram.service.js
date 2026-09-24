@@ -20,45 +20,6 @@ const { TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_IDS, BASE_URL } = require('../co
 const messengerService = require('./messenger.service');
 const logger = require('../utils/logger');
 
-// ─── Initialise Bot ──────────────────────────────────────────────────────────
-
-let bot = null;
-
-if (!TELEGRAM_BOT_TOKEN) {
-  logger.warn('[Telegram] TELEGRAM_BOT_TOKEN not set — Telegram notifications disabled.');
-} else if (!TELEGRAM_OWNER_CHAT_IDS || TELEGRAM_OWNER_CHAT_IDS.length === 0) {
-  logger.warn('[Telegram] No TELEGRAM_OWNER_CHAT_ID configured — Telegram notifications disabled.');
-} else {
-  try {
-    // Long-polling mode: works without any public URL / tunnel
-    bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
-
-    // ── Command Handlers (/start, /menu) ─────────────────────────────────────
-    bot.onText(/\/start|\/menu/, async (msg) => {
-      const chatId = msg.chat.id.toString();
-      if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
-        return bot.sendMessage(
-          chatId,
-          `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID or TELEGRAM_OWNER_CHAT_ID_2.`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-
-      return bot.sendMessage(
-        chatId,
-        `👋 *Welcome to Luxe Jewelry Owner Panel* 💍\n\n` +
-        `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
-        `📱 *Features Enabled:*\n` +
-        `• Real-time new order alerts with instant 1-tap actions\n` +
-        `• Multi-stage order lifecycle: Confirm ➔ Ship ➔ Deliver/Return\n` +
-        `• Automatic stock synchronization with database\n\n` +
-        `🌐 *Web Links:*\n` +
-        `• Store: ${BASE_URL}\n` +
-        `• Admin Panel: ${BASE_URL}/admin.html`,
-        { parse_mode: 'Markdown' }
-      );
-    });
-
 // ─── Format & Meta Helpers ──────────────────────────────────────────────────
 
 function formatPhnomPenhTime(date = new Date()) {
@@ -151,6 +112,45 @@ async function getOrderMeta(orderId) {
     timestamp,
   };
 }
+
+// ─── Initialise Bot ──────────────────────────────────────────────────────────
+
+let bot = null;
+
+if (!TELEGRAM_BOT_TOKEN) {
+  logger.warn('[Telegram] TELEGRAM_BOT_TOKEN not set — Telegram notifications disabled.');
+} else if (!TELEGRAM_OWNER_CHAT_IDS || TELEGRAM_OWNER_CHAT_IDS.length === 0) {
+  logger.warn('[Telegram] No TELEGRAM_OWNER_CHAT_ID configured — Telegram notifications disabled.');
+} else {
+  try {
+    // Long-polling mode: works without any public URL / tunnel
+    bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+
+    // ── Command Handlers (/start, /menu) ─────────────────────────────────────
+    bot.onText(/\/start|\/menu/, async (msg) => {
+      const chatId = msg.chat.id.toString();
+      if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
+        return bot.sendMessage(
+          chatId,
+          `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID or TELEGRAM_OWNER_CHAT_ID_2.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+
+      return bot.sendMessage(
+        chatId,
+        `👋 *Welcome to Luxe Jewelry Owner Panel* 💍\n\n` +
+        `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
+        `📱 *Features Enabled:*\n` +
+        `• Real-time new order alerts with instant 1-tap actions\n` +
+        `• Multi-stage order lifecycle: Confirm ➔ Ship ➔ Deliver/Return\n` +
+        `• Automatic stock synchronization with database\n\n` +
+        `🌐 *Web Links:*\n` +
+        `• Store: ${BASE_URL}\n` +
+        `• Admin Panel: ${BASE_URL}/admin.html`,
+        { parse_mode: 'Markdown' }
+      );
+    });
 
     // ── Inline-keyboard callback handler ─────────────────────────────────────
     // Dynamic multi-stage order lifecycle:
