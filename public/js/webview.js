@@ -635,24 +635,26 @@
     } else {
       sheetCartEmpty.classList.add('hidden');
       sheetCartItems.innerHTML = cart.map((item) => `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
-          <div class="flex items-center space-x-2.5">
-            <img src="${item.photo_url}" alt="${escapeHtml(item.name)}"
-              class="w-12 h-12 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0"
-              onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
-            <div class="min-w-0 flex-1">
-              <h5 class="text-xs font-bold text-white truncate">${escapeHtml(item.name)}</h5>
-              <div class="text-[11px] text-[#e5c36a] font-semibold mt-0.5">
-                ${formatUSD(item.price)} <span class="text-[10px] text-slate-400 font-normal">(${formatKHR(item.price)})</span>
-              </div>
-              ${item.variants ? `<p class="text-[10px] text-slate-400 truncate italic">✨ ${escapeHtml(item.variants)}</p>` : ''}
+        <div class="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5">
+          <!-- Thumbnail -->
+          <img src="${item.photo_url}" alt="${escapeHtml(item.name)}"
+            class="w-12 h-12 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0"
+            onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+
+          <!-- Item info — min-w-0 so flex-child can truncate -->
+          <div class="min-w-0 flex-1 overflow-hidden">
+            <h5 class="text-xs font-bold text-white truncate leading-snug">${escapeHtml(item.name)}</h5>
+            <div class="text-[11px] text-[#e5c36a] font-semibold mt-0.5 truncate">
+              ${formatUSD(item.price)} <span class="text-[10px] text-slate-400 font-normal">(${formatKHR(item.price)})</span>
             </div>
+            ${item.variants ? `<p class="text-[10px] text-slate-400 truncate italic leading-tight">✨ ${escapeHtml(item.variants)}</p>` : ''}
           </div>
 
-          <div class="flex items-center space-x-1 bg-black/40 rounded-lg p-1 border border-white/10 ml-2">
+          <!-- Qty stepper — flex-shrink-0 keeps it pinned to the right -->
+          <div class="flex-shrink-0 flex items-center gap-0.5 bg-black/40 rounded-lg p-1 border border-white/10">
             <button type="button" onclick="window.updateItemQuantity('${item.productId}', -1)"
               class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white bg-white/5 active:scale-95">
-              -
+              −
             </button>
             <span class="w-6 text-center text-xs font-bold text-white">${item.quantity}</span>
             <button type="button" onclick="window.updateItemQuantity('${item.productId}', 1)"
