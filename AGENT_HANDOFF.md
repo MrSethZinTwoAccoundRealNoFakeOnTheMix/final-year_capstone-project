@@ -4,9 +4,10 @@
 > **Purpose:** This document allows any AI agent (or the same agent after a usage reset) to
 > pick up exactly where the previous session left off — with full context, zero re-explanation.
 >
-> **Last Updated:** 2026-09-23 (Phase 6 complete — Khmer toggle added)  
+> **Last Updated:** 2026-09-24 (Phase 8 complete — Admin UX redesign, COD/VET/KHQR checkout, Telegram lifecycle, rate limiting)  
 > **Project Owner:** Trapi Seth  
-> **GitHub Repo:** https://github.com/MrSethZinTwoAccoundRealNoFakeOnTheMix/jewelry-shop_capstone-project-.git
+> **Stable Backup Branch:** `phase8-stable` (Commit `52da4fa`)  
+> **GitHub Repo:** https://github.com/MrSethZinTwoAccoundRealNoFakeOnTheMix/final-year_capstone-project.git
 
 ---
 
@@ -21,6 +22,7 @@
 | **Phase 5** | ✅ COMPLETE | Meta Messenger webhook + notifications (Live verified) |
 | **Phase 6** | ✅ COMPLETE | Khmer language toggle (🇰🇭 KM / EN) |
 | **Phase 7** | ✅ COMPLETE | Telegram bot — new order alerts + inline confirm/cancel keyboard |
+| **Phase 8** | ✅ COMPLETE | Admin order UX redesign, COD/KHQR/VET checkout, COMPLETED status, rate limiter & button debounce |
 
 
 
