@@ -635,23 +635,23 @@
     } else {
       sheetCartEmpty.classList.add('hidden');
       sheetCartItems.innerHTML = cart.map((item) => `
-        <div class="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5">
+        <div class="cart-item-card flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/5 w-full min-w-0 box-border overflow-hidden">
           <!-- Thumbnail -->
           <img src="${item.photo_url}" alt="${escapeHtml(item.name)}"
-            class="w-12 h-12 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0"
+            class="cart-item-thumb w-12 h-12 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0"
             onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
 
-          <!-- Item info — min-w-0 so flex-child can truncate -->
-          <div class="min-w-0 flex-1 overflow-hidden">
-            <h5 class="text-xs font-bold text-white truncate leading-snug">${escapeHtml(item.name)}</h5>
-            <div class="text-[11px] text-[#e5c36a] font-semibold mt-0.5 truncate">
+          <!-- Item info — strictly bounded -->
+          <div class="cart-item-details min-w-0 flex-1 overflow-hidden">
+            <h5 class="text-xs font-bold text-white truncate leading-snug block">${escapeHtml(item.name)}</h5>
+            <div class="text-[11px] text-[#e5c36a] font-semibold mt-0.5 truncate block">
               ${formatUSD(item.price)} <span class="text-[10px] text-slate-400 font-normal">(${formatKHR(item.price)})</span>
             </div>
-            ${item.variants ? `<p class="text-[10px] text-slate-400 truncate italic leading-tight">✨ ${escapeHtml(item.variants)}</p>` : ''}
+            ${item.variants ? `<p class="text-[10px] text-slate-400 truncate italic leading-tight block">✨ ${escapeHtml(item.variants)}</p>` : ''}
           </div>
 
-          <!-- Qty stepper — flex-shrink-0 keeps it pinned to the right -->
-          <div class="flex-shrink-0 flex items-center gap-0.5 bg-black/40 rounded-lg p-1 border border-white/10">
+          <!-- Qty stepper — permanently anchored to the right -->
+          <div class="cart-item-controls flex-shrink-0 ml-auto flex items-center gap-0.5 bg-black/40 rounded-lg p-1 border border-white/10">
             <button type="button" onclick="window.updateItemQuantity('${item.productId}', -1)"
               class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white bg-white/5 active:scale-95">
               −

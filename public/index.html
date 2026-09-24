@@ -37,7 +37,7 @@
   </script>
   
   <!-- Custom Mobile Luxury Stylesheet -->
-  <link rel="stylesheet" href="/css/webview.css">
+  <link rel="stylesheet" href="/css/webview.css?v=1.0.3">
 </head>
 <body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
 
@@ -187,16 +187,16 @@
       </div>
 
       <!-- Sheet Scrollable Content -->
-      <div class="overflow-y-auto px-5 py-4 space-y-5 flex-1">
+      <div class="overflow-y-auto overflow-x-hidden px-5 py-4 space-y-5 flex-1 w-full min-w-0">
         
         <!-- Cart Items List Container -->
-        <div>
+        <div class="w-full min-w-0">
           <div class="flex items-center justify-between mb-2">
             <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Selected Pieces</h4>
             <button onclick="clearCart()" class="text-[11px] text-rose-400 hover:underline">Clear all</button>
           </div>
           
-          <div id="sheet-cart-items" class="space-y-2.5">
+          <div id="sheet-cart-items" class="space-y-2.5 w-full min-w-0">
             <!-- Rendered by JS -->
           </div>
           
@@ -412,6 +412,6 @@
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
   <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js"></script>
+  <script src="/js/webview.js?v=1.0.3"></script>
 </body>
 </html>
