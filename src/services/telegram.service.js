@@ -59,6 +59,69 @@ if (!TELEGRAM_BOT_TOKEN) {
       );
     });
 
+// ─── Format & Meta Helpers ──────────────────────────────────────────────────
+
+function formatPhnomPenhTime(date = new Date()) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Phnom_Penh',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
+async function getOrderMeta(orderId) {
+  let order = null;
+  try {
+    const orderRepository = require('../repositories/order.repository');
+    order = orderRepository.findById(orderId);
+  } catch (err) {
+    logger.warn(`[Telegram] Could not find order ${orderId} in repository:`, err.message);
+  }
+
+  let fbDisplay = 'N/A';
+  let custDisplay = 'N/A';
+  let totalDisplay = '';
+
+  if (order) {
+    if (order.psid) {
+      try {
+        const profile = await messengerService.getUserProfile(order.psid);
+        if (profile && profile.name) {
+          fbDisplay = profile.name.replace(/[*_`\[]/g, '');
+        } else {
+          fbDisplay = `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}`;
+        }
+      } catch (err) {
+        fbDisplay = `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}`;
+      }
+    } else {
+      fbDisplay = 'Guest / No PSID';
+    }
+
+    const cleanCustName = (order.customer_name || 'N/A').replace(/[*_`\[]/g, '');
+    custDisplay = order.phone ? `${cleanCustName} (${order.phone})` : cleanCustName;
+
+    if (order.total_amount != null) {
+      const totalKHR = (Number(order.total_amount) * 4100).toLocaleString();
+      totalDisplay = `$${Number(order.total_amount).toFixed(2)} (${totalKHR} ៛)`;
+    }
+  }
+
+  const timestamp = formatPhnomPenhTime();
+
+  return {
+    order,
+    fbDisplay,
+    custDisplay,
+    totalDisplay,
+    timestamp,
+  };
+}
+
     // ── Inline-keyboard callback handler ─────────────────────────────────────
     // Dynamic multi-stage order lifecycle:
     // PENDING   → [✅ Confirm & Pack] [❌ Cancel]
@@ -85,6 +148,8 @@ if (!TELEGRAM_BOT_TOKEN) {
       const orderService = require('./order.service');
 
       try {
+        const meta = await getOrderMeta(orderId);
+
         if (action === 'tg_confirm') {
           orderService.confirmOrder(orderId);
           await bot.answerCallbackQuery(query.id, { text: '✅ Order confirmed & stock decremented!' });
@@ -92,6 +157,11 @@ if (!TELEGRAM_BOT_TOKEN) {
           // Transition to CONFIRMED stage: show [🚚 Mark as Shipped] & [❌ Cancel & Restock]
           await bot.editMessageText(
             `✅ *Order ${orderId} CONFIRMED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+            `👤 *Customer:* ${meta.custDisplay}\n` +
+            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+            `🕒 *Confirmed At:* ${meta.timestamp}\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
             `📦 *Status:* Stock decremented. Items packed.\n` +
             `👉 When handed to delivery driver, tap *Mark as Shipped*:`,
@@ -118,6 +188,11 @@ if (!TELEGRAM_BOT_TOKEN) {
           await bot.editMessageText(
             `🚚 *Order ${orderId} SHIPPED*\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+            `👤 *Customer:* ${meta.custDisplay}\n` +
+            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+            `🕒 *Shipped At:* ${meta.timestamp}\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
             `🛵 *Status:* Package is in transit with delivery driver.\n` +
             `💬 Customer notified via Messenger.\n` +
             `👉 Once delivery is completed or if package is returned:`,
@@ -143,6 +218,11 @@ if (!TELEGRAM_BOT_TOKEN) {
           await bot.editMessageText(
             `🎉 *Order ${orderId} COMPLETED!*\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+            `👤 *Customer:* ${meta.custDisplay}\n` +
+            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+            `🕒 *Completed At:* ${meta.timestamp}\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
             `✅ Customer received package and payment settled. Finished! ✨`,
             {
               chat_id: query.message.chat.id,
@@ -159,6 +239,11 @@ if (!TELEGRAM_BOT_TOKEN) {
           await bot.editMessageText(
             `📦 *Order ${orderId} RETURNED / REFUNDED*\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+            `👤 *Customer:* ${meta.custDisplay}\n` +
+            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+            `🕒 *Returned At:* ${meta.timestamp}\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
             `🔄 Package returned by driver. Stock automatically restored to inventory in database!`,
             {
               chat_id: query.message.chat.id,
@@ -174,6 +259,11 @@ if (!TELEGRAM_BOT_TOKEN) {
           // Cancelled stage: remove buttons
           await bot.editMessageText(
             `❌ *Order ${orderId} CANCELLED*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+            `👤 *Customer:* ${meta.custDisplay}\n` +
+            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+            `🕒 *Cancelled At:* ${meta.timestamp}\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
             `Order has been cancelled. Stock restored if previously confirmed.`,
             {
@@ -304,10 +394,22 @@ async function notifyNewOrder(order, items) {
  */
 async function notifyShipped(orderId) {
   if (!bot) return;
-  await _send(
-    `🚚 *Order ${orderId} marked as SHIPPED*\nCustomer has been notified via Messenger.`,
-    { parse_mode: 'Markdown' }
-  );
+  try {
+    const meta = await getOrderMeta(orderId);
+    await _send(
+      `🚚 *Order ${orderId} marked as SHIPPED*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+      `👤 *Customer:* ${meta.custDisplay}\n` +
+      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+      `🕒 *Shipped At:* ${meta.timestamp}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `💬 Customer has been notified via Messenger.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (err) {
+    logger.error(`[Telegram] notifyShipped error for ${orderId}:`, err.message);
+  }
 }
 
 /**
@@ -316,7 +418,22 @@ async function notifyShipped(orderId) {
  */
 async function notifyCancelled(orderId) {
   if (!bot) return;
-  await _send(`❌ *Order ${orderId} has been CANCELLED.*`, { parse_mode: 'Markdown' });
+  try {
+    const meta = await getOrderMeta(orderId);
+    await _send(
+      `❌ *Order ${orderId} CANCELLED*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+      `👤 *Customer:* ${meta.custDisplay}\n` +
+      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+      `🕒 *Cancelled At:* ${meta.timestamp}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Order has been cancelled via admin panel.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (err) {
+    logger.error(`[Telegram] notifyCancelled error for ${orderId}:`, err.message);
+  }
 }
 
 /**
@@ -325,10 +442,22 @@ async function notifyCancelled(orderId) {
  */
 async function notifyReturned(orderId) {
   if (!bot) return;
-  await _send(
-    `📦 *Order ${orderId} marked as RETURNED.*\nStock has been restored to inventory.`,
-    { parse_mode: 'Markdown' }
-  );
+  try {
+    const meta = await getOrderMeta(orderId);
+    await _send(
+      `📦 *Order ${orderId} marked as RETURNED*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+      `👤 *Customer:* ${meta.custDisplay}\n` +
+      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
+      `🕒 *Returned At:* ${meta.timestamp}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Stock has been restored to inventory in database.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (err) {
+    logger.error(`[Telegram] notifyReturned error for ${orderId}:`, err.message);
+  }
 }
 
 /**
