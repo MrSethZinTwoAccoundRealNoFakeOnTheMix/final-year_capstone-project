@@ -789,7 +789,7 @@
       return `
         <div class="admin-card p-3 flex items-center justify-between">
           <div class="flex items-center space-x-3 min-w-0">
-            <img src="${product.photo_url || DEFAULT_IMAGE}" alt=""
+            <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy"
               class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0">
             <div class="min-w-0">
               <div class="flex items-center space-x-1.5">
