@@ -1,4 +1,4 @@
-const { PAGE_TOKEN, BASE_URL } = require('../config');
+const { PAGE_TOKEN, BASE_URL, MESSENGER_RATE_LIMIT_MS } = require('../config');
 const { buildItemElement, buildButtonTemplate, QUICK_REPLIES } = require('../templates/messengerCards');
 const { generateSignedUrl } = require('./identity.service');
 const locales = require('../templates/locales/en');
@@ -6,9 +6,54 @@ const logger = require('../utils/logger');
 
 const GRAPH_API_URL = 'https://graph.facebook.com/v20.0/me/messages';
 
+// Outbound rate limiting: 500-1000ms delay between consecutive messages to prevent Meta flag 1893063
+const OUTBOUND_DELAY_MS = Math.max(500, MESSENGER_RATE_LIMIT_MS || 800);
+const GLOBAL_MIN_INTERVAL_MS = 400; // minimum 400ms spacing between any outbound Graph API calls
+
+let lastGlobalSendTime = 0;
+const recipientQueues = new Map();
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Enqueue an outbound message for a specific recipient, ensuring:
+ * 1. Global pacing: at least 400ms between any 2 Graph API requests.
+ * 2. Per-thread rate limiting: at least 500-1000ms delay between consecutive messages to the same PSID.
+ * 3. Prevents Meta spam detection / OAuth error 10 (subcode 1893063).
+ */
+function enqueueMessage(recipientId, sendFn) {
+  const previous = recipientQueues.get(recipientId) || Promise.resolve();
+
+  const next = previous
+    .then(async () => {
+      const elapsedSinceGlobal = Date.now() - lastGlobalSendTime;
+      if (elapsedSinceGlobal < GLOBAL_MIN_INTERVAL_MS) {
+        await sleep(GLOBAL_MIN_INTERVAL_MS - elapsedSinceGlobal);
+      }
+      lastGlobalSendTime = Date.now();
+      return sendFn();
+    })
+    .catch((err) => {
+      logger.error(`[Messenger] Error in outbound queue for ${recipientId}:`, err.message || err);
+      return null;
+    })
+    .finally(async () => {
+      await sleep(OUTBOUND_DELAY_MS);
+      if (recipientQueues.get(recipientId) === next) {
+        recipientQueues.delete(recipientId);
+      }
+    });
+
+  recipientQueues.set(recipientId, next);
+  return next;
+}
+
 /**
  * Send an arbitrary message payload to a Facebook Messenger recipient.
  * Fire-and-forget: Catches and logs all errors, never throwing.
+ * Automatically rate-limited and queued to prevent Meta anti-spam flags.
  */
 async function sendRawMessage(recipientId, messagePayload, messagingType = 'RESPONSE') {
   if (!PAGE_TOKEN) {
@@ -16,27 +61,34 @@ async function sendRawMessage(recipientId, messagePayload, messagingType = 'RESP
     return;
   }
 
-  try {
-    const response = await fetch(`${GRAPH_API_URL}?access_token=${PAGE_TOKEN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        messaging_type: messagingType,
-        message: messagePayload,
-      }),
-    });
+  return enqueueMessage(recipientId, async () => {
+    try {
+      const response = await fetch(`${GRAPH_API_URL}?access_token=${PAGE_TOKEN}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient: { id: recipientId },
+          messaging_type: messagingType,
+          message: messagePayload,
+        }),
+      });
 
-    const data = await response.json();
-    if (!response.ok) {
-      logger.warn(`[Messenger] Graph API warning (${response.status}):`, data.error || data);
-    } else {
-      logger.info(`[Messenger] Message sent successfully to ${recipientId}`);
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.error && data.error.error_subcode === 1893063) {
+          logger.warn(`[Messenger] Meta temporary messaging restriction active (subcode 1893063) for ${recipientId}. Message not delivered.`);
+        } else {
+          logger.warn(`[Messenger] Graph API warning (${response.status}):`, data.error || data);
+        }
+      } else {
+        logger.info(`[Messenger] Message sent successfully to ${recipientId}`);
+      }
+      return data;
+    } catch (err) {
+      logger.error('[Messenger] Network/fetch error while sending message:', err.message || err);
+      return null;
     }
-    return data;
-  } catch (err) {
-    logger.error('[Messenger] Network/fetch error while sending message:', err.message || err);
-  }
+  });
 }
 
 /**
