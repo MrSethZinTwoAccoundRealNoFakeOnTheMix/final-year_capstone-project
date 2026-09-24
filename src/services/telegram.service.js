@@ -17,6 +17,7 @@
 
 const TelegramBot = require('node-telegram-bot-api');
 const { TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_IDS, BASE_URL } = require('../config');
+const messengerService = require('./messenger.service');
 const logger = require('../utils/logger');
 
 // ─── Initialise Bot ──────────────────────────────────────────────────────────
@@ -240,6 +241,23 @@ async function notifyNewOrder(order, items) {
   if (!bot) return;
 
   try {
+    // 1. Fetch Facebook profile name by PSID if available
+    let fbName = null;
+    if (order.psid) {
+      try {
+        const profile = await messengerService.getUserProfile(order.psid);
+        if (profile && profile.name) {
+          fbName = profile.name;
+        }
+      } catch (err) {
+        logger.warn(`[Telegram] Could not fetch FB name for PSID ${order.psid}:`, err.message);
+      }
+    }
+
+    const fbDisplay = fbName
+      ? fbName.replace(/[*_`\[]/g, '')
+      : (order.psid ? `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}` : 'Guest / No PSID');
+
     const itemLines = items
       .map((i) => `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`)
       .join('\n');
@@ -254,6 +272,7 @@ async function notifyNewOrder(order, items) {
     const text =
       `🛍️ *New Order — ${order.id}*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 *Facebook:* ${fbDisplay}\n\n` +
       `👤 *Customer:* ${order.customer_name || 'N/A'}\n` +
       `📞 *Phone:* ${order.phone || 'N/A'}\n` +
       `📍 *Address:* ${order.address || 'N/A'}\n` +
