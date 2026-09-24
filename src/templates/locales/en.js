@@ -6,15 +6,12 @@ module.exports = {
 ២. ជ្រើសរើសគ្រឿងអលង្ការដែលពេញចិត្ត រួចចុច "Add to Cart"
 ៣. បំពេញព័ត៌មានដឹកជញ្ជូន និងស្កេនទូទាត់តាម KHQR ពេលទូទាត់ប្រាក់
 
-💡 មិនបាច់បង្កើតគណនី (No Login)៖ បង្កាន់ដៃបញ្ជាទិញនឹងត្រូវផ្ញើចូលក្នុង Messenger នេះដោយស្វ័យប្រវត្តិ!
 
 ──────────────────
 🛍️ How to Order:
 1. Tap "Open Shop" below to browse our collection.
 2. Select your favorite jewelry and tap "Add to Cart".
-3. Enter your delivery info and pay via KHQR at checkout.
-
-💡 No account/login needed! Your order receipt will be sent directly to this chat.`,
+3. Enter your delivery info and pay via KHQR at checkout.`,
 
   welcomeGreeting: `👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Luxe Jewelry ✨
 តើពួកយើងអាចជួយអ្វីបានដែរ? បើលោកអ្នកចង់មើលទំនិញ ឬបញ្ជាទិញ សូមចុចប៊ូតុងខាងក្រោមនេះ👇
