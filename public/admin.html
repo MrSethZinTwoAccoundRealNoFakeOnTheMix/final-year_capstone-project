@@ -275,8 +275,15 @@
         <!-- Photo Upload & URL Options -->
         <div class="space-y-2">
           <label class="block text-[11px] font-semibold text-slate-300">Product Image (Upload or URL)</label>
+          <div id="prod-photo-preview-container" class="hidden items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-xl">
+            <img id="prod-photo-preview" src="" alt="Preview" class="w-12 h-12 rounded-lg object-cover bg-black/40 border border-white/10">
+            <div class="flex-1 min-w-0">
+              <p class="text-[11px] text-slate-300 truncate font-medium">Selected / Current Image</p>
+              <p id="prod-photo-preview-text" class="text-[10px] text-slate-400 truncate"></p>
+            </div>
+          </div>
           <input type="file" id="prod-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20">
-          <input type="url" id="prod-photo-url" placeholder="Or paste image URL (https://...)" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <input type="text" id="prod-photo-url" placeholder="Or paste image URL / path (e.g. /uploads/... or https://...)" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
         </div>
 
         <div class="pt-2 flex items-center space-x-2">

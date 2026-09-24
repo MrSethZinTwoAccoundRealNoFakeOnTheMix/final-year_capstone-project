@@ -43,6 +43,12 @@ async function upsertProduct(req, res, next) {
     // If an image was uploaded via multipart/form-data
     if (req.file && req.file.buffer) {
       photo_url = await imageService.processAndSave(req.file.buffer);
+    } else if (id && !photo_url) {
+      // Retain existing photo if updating an existing product and no replacement image or URL was provided
+      const existing = productRepository.findById(id);
+      if (existing && existing.photo_url) {
+        photo_url = existing.photo_url;
+      }
     }
 
     const sku = productRepository.upsert({
