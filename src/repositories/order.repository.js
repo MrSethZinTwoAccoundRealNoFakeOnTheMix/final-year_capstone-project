@@ -108,6 +108,9 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
 function confirmOrder(id) {
   const order = findById(id);
   if (!order) throw new Error('Order not found.');
+  if (order.status === 'CONFIRMED') {
+    return order;
+  }
   if (order.status !== 'PENDING') {
     throw new Error(`Cannot confirm order with status '${order.status}'.`);
   }
@@ -138,6 +141,9 @@ function confirmOrder(id) {
 function cancelOrder(id) {
   const order = findById(id);
   if (!order) throw new Error('Order not found.');
+  if (order.status === 'CANCELLED') {
+    return order;
+  }
   if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
     throw new Error(`Cannot cancel order with status '${order.status}'. Only PENDING or CONFIRMED orders can be cancelled.`);
   }
@@ -167,6 +173,9 @@ function cancelOrder(id) {
 function shipOrder(id) {
   const order = findById(id);
   if (!order) throw new Error('Order not found.');
+  if (order.status === 'SHIPPED') {
+    return order;
+  }
   if (order.status !== 'CONFIRMED') {
     throw new Error(`Cannot ship order with status '${order.status}'. Only CONFIRMED orders can be shipped.`);
   }
@@ -183,6 +192,9 @@ function shipOrder(id) {
 function returnOrder(id) {
   const order = findById(id);
   if (!order) throw new Error('Order not found.');
+  if (order.status === 'RETURNED') {
+    return order;
+  }
   if (order.status !== 'SHIPPED') {
     throw new Error(`Cannot return order with status '${order.status}'. Only SHIPPED orders can be returned.`);
   }
@@ -208,6 +220,9 @@ function returnOrder(id) {
 function completeOrder(id) {
   const order = findById(id);
   if (!order) throw new Error('Order not found.');
+  if (order.status === 'COMPLETED') {
+    return order;
+  }
   if (order.status !== 'SHIPPED') {
     throw new Error(`Cannot complete order with status '${order.status}'. Only SHIPPED orders can be completed.`);
   }

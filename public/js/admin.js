@@ -623,9 +623,14 @@
   }
 
   // Order Lifecycle Actions
+  const pendingOrderActions = new Set();
+
   window.confirmOrderAction = async function (orderId) {
+    const actionKey = `confirm_${orderId}`;
+    if (pendingOrderActions.has(actionKey)) return;
     if (!confirm(`Confirm order ${orderId} and decrement stock atomically?`)) return;
 
+    pendingOrderActions.add(actionKey);
     try {
       const res = await authFetch(`/api/admin/orders/${orderId}/confirm`, { method: 'POST' });
       const data = await res.json();
@@ -637,12 +642,17 @@
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } finally {
+      pendingOrderActions.delete(actionKey);
     }
   };
 
   window.cancelOrderAction = async function (orderId) {
+    const actionKey = `cancel_${orderId}`;
+    if (pendingOrderActions.has(actionKey)) return;
     if (!confirm(`Cancel order ${orderId}? If already confirmed, stock will be restored automatically.`)) return;
 
+    pendingOrderActions.add(actionKey);
     try {
       const res = await authFetch(`/api/admin/orders/${orderId}/cancel`, { method: 'POST' });
       const data = await res.json();
@@ -654,12 +664,17 @@
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } finally {
+      pendingOrderActions.delete(actionKey);
     }
   };
 
   window.shipOrderAction = async function (orderId) {
+    const actionKey = `ship_${orderId}`;
+    if (pendingOrderActions.has(actionKey)) return;
     if (!confirm(`Mark order ${orderId} as SHIPPED? An automated notification will be sent to the customer via Messenger.`)) return;
 
+    pendingOrderActions.add(actionKey);
     try {
       const res = await authFetch(`/api/admin/orders/${orderId}/ship`, { method: 'POST' });
       const data = await res.json();
@@ -671,12 +686,17 @@
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } finally {
+      pendingOrderActions.delete(actionKey);
     }
   };
 
   window.returnOrderAction = async function (orderId) {
+    const actionKey = `return_${orderId}`;
+    if (pendingOrderActions.has(actionKey)) return;
     if (!confirm(`Mark order ${orderId} as RETURNED? This will restore the jewelry items back into inventory.`)) return;
 
+    pendingOrderActions.add(actionKey);
     try {
       const res = await authFetch(`/api/admin/orders/${orderId}/return`, { method: 'POST' });
       const data = await res.json();
@@ -688,12 +708,17 @@
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } finally {
+      pendingOrderActions.delete(actionKey);
     }
   };
 
   window.completeOrderAction = async function (orderId) {
+    const actionKey = `complete_${orderId}`;
+    if (pendingOrderActions.has(actionKey)) return;
     if (!confirm(`Mark order ${orderId} as Delivered / Completed?`)) return;
 
+    pendingOrderActions.add(actionKey);
     try {
       const res = await authFetch(`/api/admin/orders/${orderId}/complete`, { method: 'POST' });
       const data = await res.json();
@@ -705,6 +730,8 @@
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } finally {
+      pendingOrderActions.delete(actionKey);
     }
   };
 
