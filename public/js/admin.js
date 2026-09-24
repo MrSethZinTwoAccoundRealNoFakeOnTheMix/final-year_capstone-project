@@ -688,7 +688,7 @@
   };
 
   window.deleteProduct = async function (sku) {
-    if (!confirm(`Delete product ${sku}? Note: items tied to existing order history cannot be deleted.`)) return;
+    if (!confirm(`Are you sure you want to remove product ${sku} from inventory?`)) return;
 
     try {
       const res = await authFetch(`/api/admin/products/${sku}`, { method: 'DELETE' });

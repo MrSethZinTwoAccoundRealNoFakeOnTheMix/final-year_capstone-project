@@ -7,21 +7,31 @@
 const db = require('../db');
 const { SKU_PREFIXES } = require('../config/constants');
 
+// Ensure is_active column exists (safe auto-migration fallback)
+try {
+  db.exec('ALTER TABLE products ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1');
+} catch (e) {
+  // Column already exists, safe to ignore
+}
+
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
 /**
  * Public catalog — excludes import_price (never expose to customers)
+ * Only returns active (non-archived) products.
  */
 function findAll() {
   return db.prepare(`
     SELECT id, name, category, sell_price, stock, photo_url, variants
     FROM products
+    WHERE is_active = 1
     ORDER BY category ASC, id ASC
   `).all();
 }
 
 /**
- * Admin view — includes import_price and computed profit margin
+ * Admin view — includes import_price and computed profit margin.
+ * Only returns active products currently in inventory.
  */
 function findAllAdmin() {
   return db.prepare(`
@@ -31,6 +41,7 @@ function findAllAdmin() {
       ROUND(((sell_price - import_price) / sell_price) * 100, 1) AS margin_percent,
       created_at, updated_at
     FROM products
+    WHERE is_active = 1
     ORDER BY category ASC, id ASC
   `).all();
 }
@@ -70,8 +81,8 @@ function upsert(data) {
   const id = data.id || generateSku(data.category);
 
   db.prepare(`
-    INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants)
-    VALUES (@id, @name, @category, @import_price, @sell_price, @stock, @photo_url, @variants)
+    INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants, is_active)
+    VALUES (@id, @name, @category, @import_price, @sell_price, @stock, @photo_url, @variants, 1)
     ON CONFLICT(id) DO UPDATE SET
       name         = excluded.name,
       category     = excluded.category,
@@ -79,7 +90,8 @@ function upsert(data) {
       sell_price   = excluded.sell_price,
       stock        = excluded.stock,
       photo_url    = excluded.photo_url,
-      variants     = excluded.variants
+      variants     = excluded.variants,
+      is_active    = 1
   `).run({
     id,
     name:         data.name,
@@ -96,10 +108,23 @@ function upsert(data) {
 
 /**
  * Delete a product by SKU.
- * Note: will fail with FK constraint if the product has order_items referencing it.
+ * If the product is referenced in existing order history (order_items),
+ * hard-deleting would trigger a FOREIGN KEY constraint error and corrupt past receipts.
+ * Instead, it is safely soft-deleted/archived (is_active = 0, stock = 0) so order history
+ * remains valid while removing it completely from customer catalog and active inventory.
+ * If the product was never ordered, it is permanently deleted from the database.
  */
 function remove(id) {
-  return db.prepare('DELETE FROM products WHERE id = ?').run(id);
+  const product = db.prepare('SELECT id FROM products WHERE id = ?').get(id);
+  if (!product) return { changes: 0 };
+
+  const hasOrders = db.prepare('SELECT 1 FROM order_items WHERE product_id = ? LIMIT 1').get(id);
+
+  if (hasOrders) {
+    return db.prepare('UPDATE products SET is_active = 0, stock = 0 WHERE id = ?').run(id);
+  } else {
+    return db.prepare('DELETE FROM products WHERE id = ?').run(id);
+  }
 }
 
 // ─── Inventory ────────────────────────────────────────────────────────────────
