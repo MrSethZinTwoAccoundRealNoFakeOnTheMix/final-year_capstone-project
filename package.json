@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "migrate": "node src/db/migrate.js",
     "seed": "node src/db/seed.js",
+    "seed:bulk": "node src/db/seed_bulk.js",
+    "seed:clear": "node src/db/seed_bulk.js --clear",
     "test": "node --test"
   },
   "keywords": [
