@@ -18,5 +18,7 @@ router.post('/orders/:id/confirm', requireAdmin, adminController.confirmOrder);
 router.post('/orders/:id/cancel', requireAdmin, adminController.cancelOrder);
 router.post('/orders/:id/ship', requireAdmin, adminController.shipOrder);
 router.post('/orders/:id/return', requireAdmin, adminController.returnOrder);
+router.post('/orders/:id/complete', requireAdmin, adminController.completeOrder);
+router.patch('/orders/:id/delivery-type', requireAdmin, adminController.updateDeliveryType);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 module.exports = {
   // --- Order State Machine ---
-  ORDER_STATUSES: ['PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED', 'RETURNED'],
+  ORDER_STATUSES: ['PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED', 'RETURNED', 'COMPLETED'],
 
   // Stock decrement happens at: PENDING → CONFIRMED
   // Stock increment happens at: CONFIRMED → CANCELLED  or  SHIPPED → RETURNED

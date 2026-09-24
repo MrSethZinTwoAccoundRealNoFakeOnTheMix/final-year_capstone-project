@@ -73,6 +73,36 @@ function formatPhnomPenhTime(date = new Date()) {
   }).format(date);
 }
 
+function getDeliveryDetails(paymentMethod) {
+  const method = (paymentMethod || 'COD').toUpperCase();
+  if (method === 'COD') {
+    return {
+      method: 'COD',
+      label: '🛵 Cash on Delivery (Grab Express)',
+      notice: '🛵 Grab COD: Collect cash upon driver delivery in Phnom Penh.',
+    };
+  }
+  if (method === 'KHQR') {
+    return {
+      method: 'KHQR',
+      label: '📲 Bakong KHQR (Prepaid Scan)',
+      notice: '⏰ Check Bakong app to confirm payment before tapping Confirm.',
+    };
+  }
+  if (method === 'VET') {
+    return {
+      method: 'VET',
+      label: '📦 Provincial Delivery (Virak Buntham / J&T)',
+      notice: '📦 VET / J&T: Drop at courier depot for provincial shipment.',
+    };
+  }
+  return {
+    method: 'OTHER',
+    label: '💬 Other / Discuss with Customer',
+    notice: '💬 Discuss delivery & payment details with customer before confirming.',
+  };
+}
+
 async function getOrderMeta(orderId) {
   let order = null;
   try {
@@ -137,7 +167,7 @@ async function getOrderMeta(orderId) {
         return;
       }
 
-      const [action, orderId] = data.split(':'); // e.g. "tg_confirm:ORD-123456"
+      const [action, orderId, extra] = data.split(':'); // e.g. "tg_confirm:ORD-123456" or "tg_set_type:ORD-123456:COD"
 
       if (!orderId) {
         await bot.answerCallbackQuery(query.id, { text: '⚠️ Unknown action.' }).catch(() => {});
@@ -212,6 +242,7 @@ async function getOrderMeta(orderId) {
           ).catch(() => {});
 
         } else if (action === 'tg_complete') {
+          orderService.completeOrder(orderId);
           await bot.answerCallbackQuery(query.id, { text: '🎉 Order marked as Completed!' });
 
           // Final Completed stage: remove buttons
@@ -228,6 +259,51 @@ async function getOrderMeta(orderId) {
               chat_id: query.message.chat.id,
               message_id: query.message.message_id,
               parse_mode: 'Markdown',
+            }
+          ).catch(() => {});
+
+        } else if (action === 'tg_set_type') {
+          const newType = (extra || 'COD').toUpperCase();
+          const updatedOrder = orderService.updateDeliveryType(orderId, newType);
+          await bot.answerCallbackQuery(query.id, { text: `🚚 Delivery type set to ${newType}!` });
+
+          const delivery = getDeliveryDetails(updatedOrder.payment_method);
+          const orderItems = updatedOrder.items || [];
+          const itemLines = orderItems
+            .map((i) => `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`)
+            .join('\n');
+          const totalKHR = (Number(updatedOrder.total_amount) * 4100).toLocaleString();
+
+          await bot.editMessageText(
+            `🛍️ *New Order — ${updatedOrder.id}*\n` +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            `🌐 *Facebook:* ${meta.fbDisplay}\n\n` +
+            `👤 *Customer:* ${updatedOrder.customer_name || 'N/A'}\n` +
+            `📞 *Phone:* ${updatedOrder.phone || 'N/A'}\n` +
+            `📍 *Address:* ${updatedOrder.address || 'N/A'}\n` +
+            `💳 *Delivery & Payment:* ${delivery.label}\n` +
+            (updatedOrder.note ? `📝 *Note:* ${updatedOrder.note}\n` : '') +
+            `━━━━━━━━━━━━━━━━━━━\n` +
+            (itemLines ? `${itemLines}\n━━━━━━━━━━━━━━━━━━━\n` : '') +
+            `💰 *Total: $${Number(updatedOrder.total_amount).toFixed(2)}* (${totalKHR} ៛)\n` +
+            `${delivery.notice}`,
+            {
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id,
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    { text: '✅ Confirm & Pack', callback_data: `tg_confirm:${orderId}` },
+                    { text: '❌ Cancel',         callback_data: `tg_cancel:${orderId}` },
+                  ],
+                  [
+                    { text: '🛵 Set COD', callback_data: `tg_set_type:${orderId}:COD` },
+                    { text: '📲 Set KHQR', callback_data: `tg_set_type:${orderId}:KHQR` },
+                    { text: '📦 Set VET', callback_data: `tg_set_type:${orderId}:VET` },
+                  ],
+                ],
+              },
             }
           ).catch(() => {});
 
@@ -353,11 +429,7 @@ async function notifyNewOrder(order, items) {
       .join('\n');
 
     const totalKHR = (Number(order.total_amount) * 4100).toLocaleString();
-    const isKhqr = (order.payment_method || 'KHQR').toUpperCase() === 'KHQR';
-    const paymentLabel = isKhqr ? '📲 Bakong KHQR (Prepaid Scan)' : '💬 Other / Discuss with Customer';
-    const paymentNotice = isKhqr
-      ? '⏰ Check Bakong app to confirm payment before tapping Confirm.'
-      : '💬 Discuss & agree on payment (transfer/deposit/delivery) with customer in chat before confirming.';
+    const delivery = getDeliveryDetails(order.payment_method);
 
     const text =
       `🛍️ *New Order — ${order.id}*\n` +
@@ -366,23 +438,30 @@ async function notifyNewOrder(order, items) {
       `👤 *Customer:* ${order.customer_name || 'N/A'}\n` +
       `📞 *Phone:* ${order.phone || 'N/A'}\n` +
       `📍 *Address:* ${order.address || 'N/A'}\n` +
-      `💳 *Payment:* ${paymentLabel}\n` +
+      `💳 *Delivery & Payment:* ${delivery.label}\n` +
       (order.note ? `📝 *Note:* ${order.note}\n` : '') +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `${itemLines}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `💰 *Total: $${Number(order.total_amount).toFixed(2)}* (${totalKHR} ៛)\n` +
-      `${paymentNotice}`;
+      `${delivery.notice}`;
 
     const replyMarkup = {
-      inline_keyboard: [[
-        { text: '✅ Confirm & Pack', callback_data: `tg_confirm:${order.id}` },
-        { text: '❌ Cancel',         callback_data: `tg_cancel:${order.id}` },
-      ]],
+      inline_keyboard: [
+        [
+          { text: '✅ Confirm & Pack', callback_data: `tg_confirm:${order.id}` },
+          { text: '❌ Cancel',         callback_data: `tg_cancel:${order.id}` },
+        ],
+        [
+          { text: '🛵 Set COD', callback_data: `tg_set_type:${order.id}:COD` },
+          { text: '📲 Set KHQR', callback_data: `tg_set_type:${order.id}:KHQR` },
+          { text: '📦 Set VET', callback_data: `tg_set_type:${order.id}:VET` },
+        ],
+      ],
     };
 
     await _send(text, { parse_mode: 'Markdown', reply_markup: replyMarkup });
-    logger.info(`[Telegram] New order alert sent for ${order.id} (${isKhqr ? 'KHQR' : 'OTHER'})`);
+    logger.info(`[Telegram] New order alert sent for ${order.id} (${delivery.method})`);
   } catch (err) {
     logger.error(`[Telegram] notifyNewOrder error for ${order.id}:`, err.message);
   }

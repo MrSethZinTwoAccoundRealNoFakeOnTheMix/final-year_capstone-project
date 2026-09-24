@@ -101,20 +101,17 @@
       
       <!-- Order Filter Pills -->
       <div class="flex space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-        <button class="filter-pill active flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ALL">
-          All Orders (<span id="count-all-orders">0</span>)
-        </button>
-        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="PENDING">
-          Pending Verification (<span id="count-pending-orders" class="text-amber-300">0</span>)
-        </button>
-        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="CONFIRMED">
-          Ready to Ship (<span id="count-confirmed-orders" class="text-emerald-300">0</span>)
+        <button class="filter-pill active flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ACTION_NEEDED">
+          <span class="filter-label">⚡ Action Needed</span> (<span id="count-action-orders" class="text-amber-300 font-bold">0</span>)
         </button>
         <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="SHIPPED">
-          In Transit (<span id="count-shipped-orders" class="text-blue-300">0</span>)
+          <span class="filter-label">🚚 In Transit</span> (<span id="count-shipped-orders" class="text-sky-300 font-bold">0</span>)
         </button>
         <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ARCHIVE">
-          Completed/Cancelled
+          <span class="filter-label">✅ Archive</span> (<span id="count-archive-orders" class="text-slate-400 font-bold">0</span>)
+        </button>
+        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ALL">
+          <span class="filter-label">📋 All Orders</span> (<span id="count-all-orders" class="text-slate-300 font-bold">0</span>)
         </button>
       </div>
 

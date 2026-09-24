@@ -159,6 +159,39 @@ function returnOrder(req, res, next) {
   }
 }
 
+/**
+ * Mark order as COMPLETED (Delivered successfully)
+ */
+function completeOrder(req, res, next) {
+  try {
+    const order = orderService.completeOrder(req.params.id);
+    res.json({
+      success: true,
+      message: `Order ${req.params.id} has been marked as COMPLETED.`,
+      order,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Update delivery type / payment method on order
+ */
+function updateDeliveryType(req, res, next) {
+  try {
+    const deliveryType = req.body.delivery_type || req.body.payment_method;
+    const order = orderService.updateDeliveryType(req.params.id, deliveryType);
+    res.json({
+      success: true,
+      message: `Order ${req.params.id} delivery type set to ${order.payment_method}.`,
+      order,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   login,
   getProducts,
@@ -169,4 +202,7 @@ module.exports = {
   cancelOrder,
   shipOrder,
   returnOrder,
+  completeOrder,
+  updateDeliveryType,
 };
+

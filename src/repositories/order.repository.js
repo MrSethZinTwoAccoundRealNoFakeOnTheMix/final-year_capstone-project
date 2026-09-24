@@ -71,10 +71,10 @@ function findById(id) {
  * @param {string} params.phone
  * @param {string} params.address
  * @param {string} params.note
- * @param {string} [params.paymentMethod] — 'KHQR' | 'OTHER'
+ * @param {string} [params.paymentMethod] — 'COD' | 'KHQR' | 'VET'
  * @param {Array}  params.items — [{ productId, quantity, unit_price }]
  */
-function create({ orderId, psid, totalAmount, customerName, phone, address, note, paymentMethod = 'KHQR', items }) {
+function create({ orderId, psid, totalAmount, customerName, phone, address, note, paymentMethod = 'COD', items }) {
   const insertOrder = db.prepare(`
     INSERT INTO orders (id, psid, status, total_amount, customer_name, phone, address, note, payment_method)
     VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
@@ -85,7 +85,7 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
   `);
 
   const run = db.transaction(() => {
-    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'KHQR');
+    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'COD');
     for (const item of items) {
       insertItem.run(orderId, item.productId, item.quantity, item.unit_price);
     }
@@ -198,6 +198,37 @@ function returnOrder(id) {
   return findById(id);
 }
 
+/**
+ * COMPLETE: SHIPPED → COMPLETED
+ * Terminal state for successful delivery confirmed by owner.
+ * No stock change (stock was decremented at CONFIRM).
+ */
+function completeOrder(id) {
+  const order = findById(id);
+  if (!order) throw new Error('Order not found.');
+  if (order.status !== 'SHIPPED') {
+    throw new Error(`Cannot complete order with status '${order.status}'. Only SHIPPED orders can be completed.`);
+  }
+
+  db.prepare(`UPDATE orders SET status = 'COMPLETED' WHERE id = ?`).run(id);
+  return findById(id);
+}
+
+/**
+ * Update delivery type / payment method for an order.
+ * Can only be changed while PENDING or CONFIRMED (before shipping).
+ */
+function updateDeliveryType(id, deliveryType) {
+  const order = findById(id);
+  if (!order) throw new Error('Order not found.');
+  if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
+    throw new Error(`Cannot update delivery type for order with status '${order.status}'. Only PENDING or CONFIRMED orders can be updated.`);
+  }
+
+  db.prepare(`UPDATE orders SET payment_method = ? WHERE id = ?`).run(deliveryType, id);
+  return findById(id);
+}
+
 module.exports = {
   findAll,
   findById,
@@ -206,4 +237,6 @@ module.exports = {
   cancelOrder,
   shipOrder,
   returnOrder,
+  completeOrder,
+  updateDeliveryType,
 };

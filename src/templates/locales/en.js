@@ -23,19 +23,30 @@ How can we help you today? To browse our collection or order, tap the button bel
   openShopPromptText: '👇 ចុចទីនេះដើម្បីចូលមើលហាង / Tap to open store:',
 
   orderReceipt: (order) => {
-    const isOther = (order.payment_method || '').toUpperCase() === 'OTHER';
-    const payText = isOther ? '💬 Other / Discuss in chat' : '📲 Bakong KHQR (Scan to Pay)';
+    const method = (order.payment_method || 'COD').toUpperCase();
+    let payText = '🛵 Cash on Delivery (Grab Express)';
+    let noticeText = 'Our shop owner will verify and prepare your order for Grab delivery shortly!';
+
+    if (method === 'KHQR') {
+      payText = '📲 Bakong KHQR (Prepaid Scan)';
+      noticeText = 'Our shop owner will verify your payment and prepare your order shortly!';
+    } else if (method === 'VET') {
+      payText = '📦 Provincial Delivery (Virak Buntham / J&T)';
+      noticeText = 'Our shop owner will prepare your parcel for courier shipment shortly!';
+    } else if (method === 'OTHER') {
+      payText = '💬 Other / Discuss in chat';
+      noticeText = 'Our shop owner will chat with you shortly to agree on payment details!';
+    }
+
     return (
       `🛍️ Order Received (Pending Confirmation)!\n\n` +
       `Order ID: ${order.id}\n` +
       `Total: $${Number(order.total_amount).toFixed(2)}\n` +
-      `Payment: ${payText}\n` +
+      `Delivery & Payment: ${payText}\n` +
       `Customer: ${order.customer_name || 'Customer'}\n` +
       `Phone: ${order.phone || 'N/A'}\n` +
       `Address: ${order.address || 'N/A'}\n\n` +
-      (isOther
-        ? `💬 Our shop owner will chat with you shortly to agree on payment details!`
-        : `Our shop owner will verify your payment and prepare your order shortly!`)
+      noticeText
     );
   },
 

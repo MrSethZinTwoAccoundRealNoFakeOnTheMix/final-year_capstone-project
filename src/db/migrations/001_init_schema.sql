@@ -32,14 +32,15 @@ CREATE TABLE IF NOT EXISTS orders (
   id            TEXT PRIMARY KEY,   -- e.g. ORD-1727000000000
   psid          TEXT NOT NULL,      -- Verified Meta Page-Scoped ID
   status        TEXT NOT NULL DEFAULT 'PENDING'
-                  CHECK(status IN ('PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED', 'RETURNED')),
+                  CHECK(status IN ('PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED', 'RETURNED', 'COMPLETED')),
   total_amount  REAL NOT NULL,      -- USD
   customer_name TEXT DEFAULT '',
   phone         TEXT DEFAULT '',
   address       TEXT DEFAULT '',
   note          TEXT DEFAULT '',    -- Customer sizing/variant notes
   created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+  updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+  payment_method TEXT DEFAULT 'COD'
 );
 
 -- Auto-update orders.updated_at on any row change

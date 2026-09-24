@@ -86,12 +86,20 @@
       fillRequired: 'Please fill in your Name, Phone, and Delivery Address.',
       noProducts: 'No jewelry found',
       noProductsSub: 'There are no items currently available in this category.',
-      paymentMethodTitle: 'Payment Method',
-      payOptKhqrSub: 'Scan to Pay',
-      payOptOtherTitle: 'Other Method',
-      payOptOtherSub: 'Discuss in Chat',
-      otherPayHeading: 'Discuss Payment with Shop',
-      otherPayDesc: '💡 No upfront payment required now. After submitting your order, our shop owner will contact you directly in Facebook Messenger to confirm and agree on your preferred payment method (deposit, bank transfer, or delivery terms).',
+      paymentMethodTitle: 'Delivery & Payment Method',
+      payOptCodTitle: 'Cash on Delivery (Grab)',
+      payOptCodSub: 'Phnom Penh only',
+      payOptKhqrTitle: 'Bakong KHQR',
+      payOptKhqrSub: 'Scan to Pay via Bakong / ABA',
+      payOptVetTitle: 'VET / J&T Express',
+      payOptVetSub: 'Delivery across all 25 provinces',
+      codPayHeading: 'Cash on Delivery (Grab Express)',
+      codPayDesc: '🛵 Cash on Delivery (Grab Express): For Phnom Penh only.',
+      vetPayHeading: 'Provincial Delivery (Virak Buntham / J&T)',
+      vetPayDesc: '📦 Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.',
+      addressBranchHint: '💡 Branch / Campus or Home',
+      addressPlaceholderVet: 'e.g. Province & Courier Branch / Campus (e.g. VET Siem Reap Branch) or Home Address...',
+      addressPlaceholderDefault: 'House #, Street, Sangkat/Khan or Province...',
     },
     km: {
       langLabel: 'EN',
@@ -166,12 +174,20 @@
       fillRequired: 'សូមបំពេញ ឈ្មោះ លេខទូរស័ព្ទ និងអាសយដ្ឋានដឹកជញ្ជូន។',
       noProducts: 'រកមិនឃើញគ្រឿងអលង្ការទេ',
       noProductsSub: 'មិនទាន់មានទំនិញក្នុងប្រភេទនេះនៅឡើយទេ។',
-      paymentMethodTitle: 'វិធីសាស្ត្រទូទាត់ប្រាក់',
-      payOptKhqrSub: 'ស្កេនទូទាត់ភ្លាមៗ',
-      payOptOtherTitle: 'វិធីសាស្ត្រផ្សេងទៀត',
-      payOptOtherSub: 'ពិភាក្សាក្នុងប្រអប់សារ',
-      otherPayHeading: 'ពិភាក្សាការទូទាត់ជាមួយហាង',
-      otherPayDesc: '💡 មិនទាន់តម្រូវឱ្យទូទាត់ប្រាក់ឥឡូវនេះទេ។ បន្ទាប់ពីកុម្ម៉ង់រួច ម្ចាស់ហាងនឹងទាក់ទងទៅលោកអ្នកផ្ទាល់តាម Messenger ដើម្បីពិភាក្សាលើវិធីទូទាត់ (កក់ប្រាក់, ផ្ទេរតាមធនាគារ ឬសេវាដឹកជញ្ជូន)។',
+      paymentMethodTitle: 'វិធីសាស្ត្រដឹកជញ្ជូន & ទូទាត់',
+      payOptCodTitle: 'ទូទាត់ពេលទំនិញដល់ (Grab COD)',
+      payOptCodSub: 'សម្រាប់តែរាជធានីភ្នំពេញ',
+      payOptKhqrTitle: 'បាគង KHQR',
+      payOptKhqrSub: 'ស្កេនទូទាត់តាម ABA / បាគង',
+      payOptVetTitle: 'វីរៈ ប៊ុនថាំ / J&T Express',
+      payOptVetSub: 'ដឹកជញ្ជូនទូទាំង ២៥ ខេត្ត-ក្រុង',
+      codPayHeading: 'ទូទាត់ពេលទំនិញដល់ (Grab Express)',
+      codPayDesc: '🛵 Cash on Delivery (Grab Express): សម្រាប់តែរាជធានីភ្នំពេញប៉ុណ្ណោះ។',
+      vetPayHeading: 'ផ្ញើតាមខេត្ត (វីរៈ ប៊ុនថាំ / J&T)',
+      vetPayDesc: '📦 Provincial Delivery (Virak Buntham / J&T): សេវាផ្ញើទំនិញទូទាំង ២៥ ខេត្ត-ក្រុង។',
+      addressBranchHint: '💡 ឈ្មោះសាខា ឬអាសយដ្ឋានផ្ទះ',
+      addressPlaceholderVet: 'ឧ. ខេត្ត និងសាខាបញ្ញើ (ឧ. វីរៈ ប៊ុនថាំ សាខាសៀមរាប) ឬអាសយដ្ឋានផ្ទះ...',
+      addressPlaceholderDefault: 'ផ្ទះលេខ, ផ្លូវ, សង្កាត់/ខណ្ឌ ឬខេត្ត...',
     }
   };
 
@@ -190,26 +206,90 @@
   const sig = params.get('sig');
 
   let isVerified = false;
-  let selectedPaymentMethod = 'KHQR';
+  let selectedPaymentMethod = 'COD';
 
   window.selectPaymentMethod = function (method) {
-    selectedPaymentMethod = method === 'OTHER' ? 'OTHER' : 'KHQR';
+    const valid = ['COD', 'KHQR', 'VET'];
+    selectedPaymentMethod = valid.includes(method) ? method : 'COD';
 
+    const btnCod = document.getElementById('pay-opt-cod');
     const btnKhqr = document.getElementById('pay-opt-khqr');
-    const btnOther = document.getElementById('pay-opt-other');
-    const boxKhqr = document.getElementById('payment-khqr-box');
-    const boxOther = document.getElementById('payment-other-box');
+    const btnVet = document.getElementById('pay-opt-vet');
 
-    if (selectedPaymentMethod === 'OTHER') {
-      if (btnOther) btnOther.className = 'payment-method-pill active flex flex-col items-center justify-center p-2.5 rounded-xl border border-sky-400 bg-sky-500/20 text-white transition text-center shadow-sm';
-      if (btnKhqr) btnKhqr.className = 'payment-method-pill flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-center';
+    const boxCod = document.getElementById('payment-cod-box');
+    const boxKhqr = document.getElementById('payment-khqr-box');
+    const boxVet = document.getElementById('payment-vet-box');
+
+    const addressBranchHint = document.getElementById('address-branch-hint');
+    const addressInput = document.getElementById('cust-address');
+
+    const setRadio = (btn, active, activeColor) => {
+      if (!btn) return;
+      const indicator = btn.querySelector('.radio-indicator');
+      const dot = btn.querySelector('.radio-dot');
+      if (active) {
+        if (indicator) {
+          indicator.className = `radio-indicator w-4 h-4 rounded-full border-2 border-${activeColor} flex items-center justify-center flex-shrink-0`;
+        }
+        if (dot) {
+          dot.className = `radio-dot w-2 h-2 rounded-full bg-${activeColor}`;
+          dot.classList.remove('hidden');
+        }
+      } else {
+        if (indicator) {
+          indicator.className = 'radio-indicator w-4 h-4 rounded-full border-2 border-slate-500 flex items-center justify-center flex-shrink-0';
+        }
+        if (dot) {
+          dot.className = 'radio-dot hidden w-2 h-2 rounded-full';
+        }
+      }
+    };
+
+    if (selectedPaymentMethod === 'COD') {
+      if (btnCod) btnCod.className = 'payment-method-pill active w-full flex items-center justify-between p-3 rounded-xl border border-amber-400 bg-amber-500/15 text-white transition text-left shadow-sm';
+      if (btnKhqr) btnKhqr.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+      if (btnVet) btnVet.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+
+      setRadio(btnCod, true, 'amber-400');
+      setRadio(btnKhqr, false);
+      setRadio(btnVet, false);
+
+      if (boxCod) boxCod.classList.remove('hidden');
       if (boxKhqr) boxKhqr.classList.add('hidden');
-      if (boxOther) boxOther.classList.remove('hidden');
-    } else {
-      if (btnKhqr) btnKhqr.className = 'payment-method-pill active flex flex-col items-center justify-center p-2.5 rounded-xl border border-[#c9a84c] bg-[#c9a84c]/20 text-white transition text-center shadow-sm';
-      if (btnOther) btnOther.className = 'payment-method-pill flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-center';
+      if (boxVet) boxVet.classList.add('hidden');
+
+      if (addressBranchHint) addressBranchHint.classList.add('hidden');
+      if (addressInput) addressInput.placeholder = t('addressPlaceholderDefault');
+    } else if (selectedPaymentMethod === 'KHQR') {
+      if (btnCod) btnCod.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+      if (btnKhqr) btnKhqr.className = 'payment-method-pill active w-full flex items-center justify-between p-3 rounded-xl border border-[#c9a84c] bg-[#c9a84c]/20 text-white transition text-left shadow-sm';
+      if (btnVet) btnVet.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+
+      setRadio(btnCod, false);
+      setRadio(btnKhqr, true, '[#c9a84c]');
+      setRadio(btnVet, false);
+
+      if (boxCod) boxCod.classList.add('hidden');
       if (boxKhqr) boxKhqr.classList.remove('hidden');
-      if (boxOther) boxOther.classList.add('hidden');
+      if (boxVet) boxVet.classList.add('hidden');
+
+      if (addressBranchHint) addressBranchHint.classList.add('hidden');
+      if (addressInput) addressInput.placeholder = t('addressPlaceholderDefault');
+    } else if (selectedPaymentMethod === 'VET') {
+      if (btnCod) btnCod.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+      if (btnKhqr) btnKhqr.className = 'payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left';
+      if (btnVet) btnVet.className = 'payment-method-pill active w-full flex items-center justify-between p-3 rounded-xl border border-indigo-400 bg-indigo-500/20 text-white transition text-left shadow-sm';
+
+      setRadio(btnCod, false);
+      setRadio(btnKhqr, false);
+      setRadio(btnVet, true, 'indigo-400');
+
+      if (boxCod) boxCod.classList.add('hidden');
+      if (boxKhqr) boxKhqr.classList.add('hidden');
+      if (boxVet) boxVet.classList.remove('hidden');
+
+      if (addressBranchHint) addressBranchHint.classList.remove('hidden');
+      if (addressInput) addressInput.placeholder = t('addressPlaceholderVet');
     }
   };
   let productsList = [];
@@ -331,18 +411,33 @@
 
     // Payment labels
     const payTitle = document.getElementById('payment-method-title');
+    const payCodTitle = document.getElementById('pay-opt-cod-title');
+    const payCodSub = document.getElementById('pay-opt-cod-sub');
+    const payKhqrTitle = document.getElementById('pay-opt-khqr-title');
     const payKhqrSub = document.getElementById('pay-opt-khqr-sub');
-    const payOtherTitle = document.getElementById('pay-opt-other-title');
-    const payOtherSub = document.getElementById('pay-opt-other-sub');
-    const otherHeading = document.getElementById('other-pay-heading');
-    const otherDesc = document.getElementById('other-pay-desc');
+    const payVetTitle = document.getElementById('pay-opt-vet-title');
+    const payVetSub = document.getElementById('pay-opt-vet-sub');
+    const codHeading = document.getElementById('cod-pay-heading');
+    const codDesc = document.getElementById('cod-pay-desc');
+    const vetHeading = document.getElementById('vet-pay-heading');
+    const vetDesc = document.getElementById('vet-pay-desc');
+    const branchHint = document.getElementById('address-branch-hint');
 
     if (payTitle) payTitle.textContent = t('paymentMethodTitle');
+    if (payCodTitle) payCodTitle.textContent = t('payOptCodTitle');
+    if (payCodSub) payCodSub.textContent = t('payOptCodSub');
+    if (payKhqrTitle) payKhqrTitle.textContent = t('payOptKhqrTitle');
     if (payKhqrSub) payKhqrSub.textContent = t('payOptKhqrSub');
-    if (payOtherTitle) payOtherTitle.textContent = t('payOptOtherTitle');
-    if (payOtherSub) payOtherSub.textContent = t('payOptOtherSub');
-    if (otherHeading) otherHeading.textContent = t('otherPayHeading');
-    if (otherDesc) otherDesc.textContent = t('otherPayDesc');
+    if (payVetTitle) payVetTitle.textContent = t('payOptVetTitle');
+    if (payVetSub) payVetSub.textContent = t('payOptVetSub');
+    if (codHeading) codHeading.textContent = t('codPayHeading');
+    if (codDesc) codDesc.textContent = t('codPayDesc');
+    if (vetHeading) vetHeading.textContent = t('vetPayHeading');
+    if (vetDesc) vetDesc.textContent = t('vetPayDesc');
+    if (branchHint) branchHint.textContent = t('addressBranchHint');
+
+    // Refresh selection visual state and placeholders
+    window.selectPaymentMethod(selectedPaymentMethod);
 
     // Buttons
     submitOrderText.textContent = t('confirmOrder');

@@ -22,18 +22,20 @@
       tabOrders: '📦 Orders',
       tabInventory: '💎 Inventory',
       tabOverview: '📊 Overview',
-      filterAll: 'All Orders',
-      filterPending: 'Pending Verification',
-      filterConfirmed: 'Ready to Ship',
+      filterActionNeeded: 'Action Needed',
       filterShipped: 'In Transit',
-      filterArchive: 'Completed/Cancelled',
+      filterArchive: 'Archive',
+      filterAll: 'All Orders',
       noOrdersFound: 'No orders found',
       noOrdersSub: 'There are currently no orders in this status category.',
       confirmAndPack: '✓ Confirm & Pack',
       cancelOrder: '✕ Cancel',
       markShipped: '🚚 Mark Shipped',
       cancelRefund: '✕ Cancel (Refund)',
-      markReturned: '📦 Mark as Returned (Boom Failure)',
+      markDelivered: 'Mark as Delivered',
+      markReturnedSecondary: 'Return & Restock',
+      markReturned: '📦 Mark as Returned',
+      completedState: 'Delivered & Settled',
       archivedState: 'Archived · No further actions needed',
       orderTotal: 'Order Total:',
       addJewelry: '+ Add Jewelry',
@@ -64,18 +66,20 @@
       tabOrders: '📦 ការបញ្ជាទិញ',
       tabInventory: '💎 ស្តុកទំនិញ',
       tabOverview: '📊 ទិដ្ឋភាពទូទៅ',
-      filterAll: 'ការកុម្ម៉ង់ទាំងអស់',
-      filterPending: 'រង់ចាំការផ្ទៀងផ្ទាត់',
-      filterConfirmed: 'ត្រៀមដឹកជញ្ជូន',
+      filterActionNeeded: 'ការងារត្រូវចាត់ចែង',
       filterShipped: 'កំពុងដឹកជញ្ជូន',
-      filterArchive: 'បានបញ្ចប់/បោះបង់',
+      filterArchive: 'បណ្ណសារ',
+      filterAll: 'ការកុម្ម៉ង់ទាំងអស់',
       noOrdersFound: 'មិនមានការបញ្ជាទិញទេ',
       noOrdersSub: 'បច្ចុប្បន្នមិនទាន់មានការបញ្ជាទិញក្នុងផ្នែកនេះនៅឡើយទេ។',
       confirmAndPack: '✓ បញ្ជាក់ & វេចខ្ចប់',
       cancelOrder: '✕ បោះបង់',
       markShipped: '🚚 ដឹកជញ្ជូន',
       cancelRefund: '✕ បោះបង់ (សងប្រាក់)',
-      markReturned: '📦 បញ្ជូនចូលស្តុកវិញ (ដឹកមិនបាន)',
+      markDelivered: 'បានប្រគល់ទំនិញជោគជ័យ',
+      markReturnedSecondary: 'ប្រគល់ឥវ៉ាន់មកវិញ',
+      markReturned: '📦 បញ្ជូនចូលស្តុកវិញ',
+      completedState: 'បានដឹកជញ្ជូនរួចរាល់',
       archivedState: 'បានបញ្ចប់ · មិនមានសកម្មភាពបន្ត',
       orderTotal: 'សរុបការបញ្ជាទិញ:',
       addJewelry: '+ បន្ថែមគ្រឿងអលង្ការ',
@@ -111,7 +115,7 @@
   let adminToken = localStorage.getItem('admin_token');
   let ordersList = [];
   let productsList = [];
-  let currentOrderFilter = 'ALL';
+  let currentOrderFilter = 'ACTION_NEEDED';
   let activeTab = 'orders';
 
   // DOM Elements
@@ -131,10 +135,10 @@
   const ordersListEl = document.getElementById('orders-list');
   const ordersEmptyEl = document.getElementById('orders-empty');
   const orderFilterPills = document.querySelectorAll('[data-order-filter]');
-  const countAllOrdersEl = document.getElementById('count-all-orders');
-  const countPendingOrdersEl = document.getElementById('count-pending-orders');
-  const countConfirmedOrdersEl = document.getElementById('count-confirmed-orders');
+  const countActionOrdersEl = document.getElementById('count-action-orders');
   const countShippedOrdersEl = document.getElementById('count-shipped-orders');
+  const countArchiveOrdersEl = document.getElementById('count-archive-orders');
+  const countAllOrdersEl = document.getElementById('count-all-orders');
 
   const inventoryListEl = document.getElementById('inventory-list');
   const productModal = document.getElementById('product-modal');
@@ -227,6 +231,17 @@
       } else if (tab === 'overview') {
         btn.querySelector('span:first-child').textContent = t('tabOverview');
       }
+    });
+
+    // Filter pills text
+    orderFilterPills.forEach((pill) => {
+      const filter = pill.dataset.orderFilter;
+      const label = pill.querySelector('.filter-label');
+      if (!label) return;
+      if (filter === 'ACTION_NEEDED') label.textContent = `⚡ ${t('filterActionNeeded')}`;
+      else if (filter === 'SHIPPED') label.textContent = `🚚 ${t('filterShipped')}`;
+      else if (filter === 'ARCHIVE') label.textContent = `✅ ${t('filterArchive')}`;
+      else if (filter === 'ALL') label.textContent = `📋 ${t('filterAll')}`;
     });
 
     renderOrders();
@@ -346,28 +361,35 @@
 
   function updateOrderCounts() {
     const total = ordersList.length;
-    const pending = ordersList.filter((o) => o.status === 'PENDING').length;
-    const confirmed = ordersList.filter((o) => o.status === 'CONFIRMED').length;
+    const actionNeeded = ordersList.filter((o) => ['PENDING', 'CONFIRMED'].includes(o.status)).length;
     const shipped = ordersList.filter((o) => o.status === 'SHIPPED').length;
+    const archive = ordersList.filter((o) => ['CANCELLED', 'RETURNED', 'COMPLETED'].includes(o.status)).length;
 
-    countAllOrdersEl.textContent = total;
-    countPendingOrdersEl.textContent = pending;
-    countConfirmedOrdersEl.textContent = confirmed;
-    countShippedOrdersEl.textContent = shipped;
-    tabPendingBadge.textContent = pending;
+    if (countActionOrdersEl) countActionOrdersEl.textContent = actionNeeded;
+    if (countShippedOrdersEl) countShippedOrdersEl.textContent = shipped;
+    if (countArchiveOrdersEl) countArchiveOrdersEl.textContent = archive;
+    if (countAllOrdersEl) countAllOrdersEl.textContent = total;
+    if (tabPendingBadge) tabPendingBadge.textContent = actionNeeded;
   }
 
   function renderOrders() {
-    let filtered = ordersList;
+    let filtered = [...ordersList];
 
-    if (currentOrderFilter === 'PENDING') {
-      filtered = ordersList.filter((o) => o.status === 'PENDING');
-    } else if (currentOrderFilter === 'CONFIRMED') {
-      filtered = ordersList.filter((o) => o.status === 'CONFIRMED');
+    if (currentOrderFilter === 'ACTION_NEEDED') {
+      filtered = filtered
+        .filter((o) => ['PENDING', 'CONFIRMED'].includes(o.status))
+        .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)); // Oldest first
     } else if (currentOrderFilter === 'SHIPPED') {
-      filtered = ordersList.filter((o) => o.status === 'SHIPPED');
+      filtered = filtered
+        .filter((o) => o.status === 'SHIPPED')
+        .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)); // Oldest first
     } else if (currentOrderFilter === 'ARCHIVE') {
-      filtered = ordersList.filter((o) => ['CANCELLED', 'RETURNED'].includes(o.status));
+      filtered = filtered
+        .filter((o) => ['CANCELLED', 'RETURNED', 'COMPLETED'].includes(o.status))
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)); // Newest first
+    } else {
+      // 'ALL'
+      filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)); // Newest first
     }
 
     if (filtered.length === 0) {
@@ -386,7 +408,20 @@
         minute: '2-digit',
       });
 
-      const itemsHtml = (order.items || []).map((it) => `
+      const rawMethod = (order.payment_method || 'COD').toUpperCase();
+      let deliveryBadge = '';
+      if (rawMethod === 'COD') {
+        deliveryBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">🛵 Grab • COD</span>`;
+      } else if (rawMethod === 'KHQR') {
+        deliveryBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">💳 KHQR Pre-paid</span>`;
+      } else if (rawMethod === 'VET') {
+        deliveryBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">📦 VET / J&T</span>`;
+      } else {
+        deliveryBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300 border border-slate-500/30">💬 Other</span>`;
+      }
+
+      const items = order.items || [];
+      const itemsHtml = items.map((it) => `
         <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-0">
           <div class="flex items-center space-x-2 min-w-0">
             <img src="${it.photo_url || DEFAULT_IMAGE}" alt="" class="w-8 h-8 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0">
@@ -400,6 +435,49 @@
           </div>
         </div>
       `).join('');
+
+      const firstItem = items[0];
+      const otherCount = items.length - 1;
+      const summaryText = firstItem
+        ? `${escapeHtml(firstItem.name)} (×${firstItem.quantity})${otherCount > 0 ? ` + ${otherCount} more` : ''}`
+        : 'No items';
+
+      const itemsCollapsible = `
+        <details class="group my-2">
+          <summary class="cursor-pointer text-xs font-medium text-slate-300 hover:text-white flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-black/25 hover:bg-black/35 border border-white/5 transition select-none">
+            <span class="flex items-center space-x-1.5 truncate">
+              <span>🛍️</span>
+              <span class="font-semibold text-white truncate">${summaryText}</span>
+              <span class="text-slate-400 text-[10px]">(${items.length} item${items.length === 1 ? '' : 's'})</span>
+            </span>
+            <span class="text-[10px] text-slate-400 ml-2 group-open:rotate-180 transition-transform duration-200">▼</span>
+          </summary>
+          <div class="pt-2 px-1 space-y-1">
+            ${itemsHtml}
+          </div>
+        </details>
+      `;
+
+      let deliverySwitcher = '';
+      if (['PENDING', 'CONFIRMED'].includes(order.status)) {
+        deliverySwitcher = `
+          <div class="flex items-center space-x-1.5 mt-2 pt-2 border-t border-white/5 text-[10px]">
+            <span class="text-slate-400 font-semibold mr-1">Delivery:</span>
+            <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'COD')"
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'COD' ? 'bg-amber-500/30 text-amber-300 border border-amber-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              🛵 COD
+            </button>
+            <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'KHQR')"
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'KHQR' ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              💳 KHQR
+            </button>
+            <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'VET')"
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'VET' ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              📦 VET
+            </button>
+          </div>
+        `;
+      }
 
       let actionButtons = '';
 
@@ -431,11 +509,22 @@
         `;
       } else if (order.status === 'SHIPPED') {
         actionButtons = `
-          <div class="mt-3 pt-3 border-t border-white/10">
-            <button onclick="window.returnOrderAction('${order.id}')"
-              class="w-full py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
-              <span>${t('markReturned')}</span>
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/10">
+            <button onclick="window.completeOrderAction('${order.id}')"
+              class="col-span-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
+              <span>🎉 ${t('markDelivered')}</span>
             </button>
+            <button onclick="window.returnOrderAction('${order.id}')"
+              class="col-span-1 py-2.5 px-2 rounded-xl bg-white/5 hover:bg-rose-950/80 hover:text-rose-200 border border-white/10 text-slate-400 font-semibold text-[11px] flex items-center justify-center space-x-1 transition">
+              <span>📦 ${t('markReturnedSecondary')}</span>
+            </button>
+          </div>
+        `;
+      } else if (order.status === 'COMPLETED') {
+        actionButtons = `
+          <div class="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+            <span class="text-[11px] text-emerald-400 font-semibold">✅ ${t('completedState')}</span>
+            <span class="text-[10px] text-slate-500">${t('archivedState')}</span>
           </div>
         `;
       } else {
@@ -451,6 +540,7 @@
           <div class="flex items-center justify-between mb-2.5">
             <div class="flex items-center space-x-2">
               <span class="text-xs font-mono font-extrabold text-[#f3d489]">${order.id}</span>
+              ${deliveryBadge}
               <span class="text-[10px] text-slate-400">· ${createdDate}</span>
             </div>
             <span class="badge-status status-${order.status}">
@@ -479,11 +569,10 @@
                   </div>`
                 : ''
             }
+            ${deliverySwitcher}
           </div>
 
-          <div class="space-y-1 mb-2">
-            ${itemsHtml}
-          </div>
+          ${itemsCollapsible}
 
           <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
             <span class="text-slate-400 font-medium">${t('orderTotal')}</span>
@@ -562,6 +651,42 @@
         refreshData();
       } else {
         showToast(data.error || 'Failed to return order.', 'error');
+      }
+    } catch (err) {
+      if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    }
+  };
+
+  window.completeOrderAction = async function (orderId) {
+    if (!confirm(`Mark order ${orderId} as Delivered / Completed?`)) return;
+
+    try {
+      const res = await authFetch(`/api/admin/orders/${orderId}/complete`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message, 'success');
+        refreshData();
+      } else {
+        showToast(data.error || 'Failed to complete order.', 'error');
+      }
+    } catch (err) {
+      if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    }
+  };
+
+  window.changeOrderDeliveryType = async function (orderId, deliveryType) {
+    try {
+      const res = await authFetch(`/api/admin/orders/${orderId}/delivery-type`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delivery_type: deliveryType }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Order ${orderId} delivery set to ${deliveryType}`, 'success');
+        refreshData();
+      } else {
+        showToast(data.error || 'Failed to update delivery type.', 'error');
       }
     } catch (err) {
       if (err.message !== 'Unauthorized') showToast(err.message, 'error');

@@ -75,7 +75,11 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
 
   // 5. Generate Order ID: ORD- + 6 digits (or fallback timestamp if collision)
   const orderId = 'ORD-' + Date.now().toString().slice(-6);
-  const paymentMethod = (payment_method || 'KHQR').toUpperCase() === 'OTHER' ? 'OTHER' : 'KHQR';
+  const VALID_METHODS = ['COD', 'KHQR', 'VET'];
+  const rawMethod = (payment_method || 'COD').toUpperCase();
+  const paymentMethod = VALID_METHODS.includes(rawMethod)
+    ? rawMethod
+    : (rawMethod === 'OTHER' ? 'COD' : 'COD');
 
   // 6. Persist order in PENDING status
   const order = orderRepository.create({
@@ -166,6 +170,35 @@ function returnOrder(orderId) {
 }
 
 /**
+ * Mark order as COMPLETED (Delivered successfully).
+ * Note: Customer notification is intentionally skipped to avoid annoyance.
+ * @param {string} orderId
+ */
+function completeOrder(orderId) {
+  const updatedOrder = orderRepository.completeOrder(orderId);
+  logger.info(`[OrderService] Order ${orderId} marked as COMPLETED.`);
+  return updatedOrder;
+}
+
+/**
+ * Update delivery type / payment method for an order (while PENDING or CONFIRMED).
+ * @param {string} orderId
+ * @param {string} deliveryType - 'COD' | 'KHQR' | 'VET'
+ */
+function updateDeliveryType(orderId, deliveryType) {
+  const VALID_METHODS = ['COD', 'KHQR', 'VET'];
+  const normalized = (deliveryType || '').toUpperCase();
+  if (!VALID_METHODS.includes(normalized)) {
+    const error = new Error(`Invalid delivery type '${deliveryType}'. Must be one of: COD, KHQR, VET.`);
+    error.status = 400;
+    throw error;
+  }
+  const updatedOrder = orderRepository.updateDeliveryType(orderId, normalized);
+  logger.info(`[OrderService] Order ${orderId} delivery type updated to ${normalized}.`);
+  return updatedOrder;
+}
+
+/**
  * Get all orders for admin review.
  */
 function getAllOrders() {
@@ -186,6 +219,8 @@ module.exports = {
   cancelOrder,
   shipOrder,
   returnOrder,
+  completeOrder,
+  updateDeliveryType,
   getAllOrders,
   getOrder,
 };
