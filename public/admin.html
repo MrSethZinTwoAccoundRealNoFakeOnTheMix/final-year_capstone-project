@@ -85,6 +85,9 @@
         <span>💎 Inventory</span>
         <span id="tab-stock-badge" class="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-white/10 text-slate-300">0</span>
       </button>
+      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="quicksell">
+        <span>🛒 Quick Sell</span>
+      </button>
       <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="overview">
         <span>📊 Overview</span>
       </button>
@@ -95,7 +98,7 @@
   <main class="max-w-2xl mx-auto px-4 pt-4">
 
     <!-- ───────────────────────────────────────────────────────────── -->
-    <!-- TAB 1: ORDERS QUEUE -->
+    <!-- TAB 1: ORDERS QUEUE                                           -->
     <!-- ───────────────────────────────────────────────────────────── -->
     <section id="tab-content-orders" class="space-y-4">
       
@@ -130,7 +133,7 @@
     </section>
 
     <!-- ───────────────────────────────────────────────────────────── -->
-    <!-- TAB 2: INVENTORY & PRODUCTS -->
+    <!-- TAB 2: INVENTORY & PRODUCTS                                   -->
     <!-- ───────────────────────────────────────────────────────────── -->
     <section id="tab-content-inventory" class="hidden space-y-4">
       
@@ -154,7 +157,31 @@
     </section>
 
     <!-- ───────────────────────────────────────────────────────────── -->
-    <!-- TAB 3: BUSINESS OVERVIEW -->
+    <!-- TAB 3: QUICK SELL                                             -->
+    <!-- ───────────────────────────────────────────────────────────── -->
+    <section id="tab-content-quicksell" class="hidden space-y-3 pb-8">
+
+      <!-- Category Chip Row (sticky) -->
+      <div id="qs-category-chips" class="flex space-x-2 overflow-x-auto no-scrollbar pb-0.5 sticky top-0 bg-[#0e101a]/95 backdrop-blur-md py-2 z-10">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Recent Deductions Bar -->
+      <div id="qs-deduction-bar" class="hidden bg-[#171928] border border-[#c9a84c]/30 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs">
+        <span class="text-slate-300">Deducted: <span id="qs-deduction-count" class="font-bold text-[#c9a84c]">0</span> item(s) this session</span>
+        <button onclick="window.openDeductionLog()" class="text-[#c9a84c] font-semibold hover:underline">Review / Undo →</button>
+      </div>
+
+      <!-- Product Grid -->
+      <div id="qs-grid" class="grid grid-cols-2 gap-3">
+        <!-- Rendered by JS -->
+        <div class="skeleton rounded-2xl h-52"></div>
+        <div class="skeleton rounded-2xl h-52"></div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────────────────────────────────────────── -->
+    <!-- TAB 4: BUSINESS OVERVIEW                                      -->
     <!-- ───────────────────────────────────────────────────────────── -->
     <section id="tab-content-overview" class="hidden space-y-4 pb-8">
       <div class="grid grid-cols-2 gap-3">
@@ -206,10 +233,10 @@
   </main>
 
   <!-- ───────────────────────────────────────────────────────────── -->
-  <!-- ADD / EDIT PRODUCT MODAL -->
+  <!-- ADD / EDIT PRODUCT MODAL (Single-Screen SPU + SKU Builder)   -->
   <!-- ───────────────────────────────────────────────────────────── -->
   <div id="product-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#171928] border border-white/15 rounded-3xl max-w-md w-full p-5 shadow-2xl overflow-y-auto max-h-[92vh]">
+    <div class="bg-[#171928] border border-white/15 rounded-3xl max-w-lg w-full p-5 shadow-2xl overflow-y-auto max-h-[92vh]">
       
       <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
         <h3 class="text-base font-bold text-white flex items-center space-x-2">
@@ -224,54 +251,102 @@
         <!-- Hidden ID for edit -->
         <input type="hidden" id="prod-id">
 
+        <!-- Category & Stock Row -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Category *</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] font-semibold text-slate-300">Category *</label>
+              <button type="button" id="btn-toggle-new-cat" class="text-[10px] text-[#c9a84c] hover:underline font-semibold">
+                ＋ New
+              </button>
+            </div>
             <select id="prod-category" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
-              <option value="Ring">Ring (RG)</option>
-              <option value="Necklace">Necklace (NK)</option>
-              <option value="Bracelet">Bracelet (BR)</option>
-              <option value="Earring">Earring (ER)</option>
+              <!-- Dynamically populated from /api/admin/categories -->
             </select>
+
+            <!-- Inline New Category Box (Zero-prefix, Name only) -->
+            <div id="new-cat-box" class="hidden mt-2 p-2.5 bg-white/5 border border-[#c9a84c]/30 rounded-xl space-y-2">
+              <p class="text-[10px] font-bold text-[#c9a84c] uppercase">Add Category</p>
+              <input type="text" id="new-cat-name-input" placeholder="e.g. Hairpin, Brooch, Bag" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none">
+              <div id="new-cat-error" class="hidden text-[10px] text-rose-400 font-semibold"></div>
+              <div class="flex space-x-2">
+                <button type="button" id="new-cat-cancel-btn" class="flex-1 py-1.5 rounded-lg bg-white/10 text-slate-300 text-xs font-semibold">Cancel</button>
+                <button type="button" id="new-cat-save-btn" class="flex-1 py-1.5 rounded-lg bg-[#c9a84c] text-black text-xs font-bold">Save</button>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Stock Quantity *</label>
-            <input type="number" id="prod-stock" value="5" min="0" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <!-- Base Stock Quantity (Default: 1) -->
+          <div id="main-stock-container">
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">
+              Stock Quantity <span class="text-slate-400 font-normal" id="stock-label-sub">*</span>
+            </label>
+            <input type="number" id="prod-stock" value="1" min="0" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <p id="stock-variants-hint" class="hidden text-[10px] text-slate-400 mt-1">Calculated automatically from colors below.</p>
           </div>
         </div>
 
         <div>
           <label class="block text-[11px] font-semibold text-slate-300 mb-1">Product Title *</label>
-          <input type="text" id="prod-name" placeholder="e.g. Classic Gold Diamond Ring" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <input type="text" id="prod-name" placeholder="e.g. Vintage Butterfly Hairpin" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Variants / Description (Optional)</label>
+          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Description (Optional)</label>
           <input type="text" id="prod-variants" placeholder="e.g. 18K Yellow Gold / Size 6-8" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
         </div>
 
+        <!-- Prices (Auto-fill Source) -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Import Price ($) *</label>
-            <input type="number" step="0.01" id="prod-import" placeholder="25.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Cost / Import Price ($) *</label>
+            <input type="number" step="0.01" id="prod-import" placeholder="5.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
           </div>
 
           <div>
             <label class="block text-[11px] font-semibold text-slate-300 mb-1">Sell Price ($) *</label>
-            <input type="number" step="0.01" id="prod-sell" placeholder="55.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <input type="number" step="0.01" id="prod-sell" placeholder="15.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
           </div>
         </div>
 
         <!-- Profit Margin Preview Badge -->
         <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between text-xs">
           <span class="text-slate-400">Profit Margin:</span>
-          <span id="margin-preview" class="font-bold text-emerald-400">0%</span>
+          <span id="margin-preview" class="font-bold text-slate-400">--%</span>
         </div>
 
-        <!-- Photo Upload & URL Options -->
-        <div class="space-y-2">
-          <label class="block text-[11px] font-semibold text-slate-300">Product Image (Upload or URL)</label>
+        <!-- ─── Color Variations Section (Taobao Style Container) ──────────── -->
+        <div class="pt-2 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold text-white">Color Variations</span>
+              <p class="text-[10px] text-slate-400">Enable if this item comes in multiple colors/styles</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="prod-has-variants" class="sr-only peer">
+              <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c9a84c]"></div>
+            </label>
+          </div>
+
+          <!-- Dynamic Variant Rows Container -->
+          <div id="variants-section" class="hidden mt-3 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-[#c9a84c] uppercase tracking-wider">Color Options & Individual Stock</span>
+              <button type="button" id="btn-add-variant" class="text-xs text-[#c9a84c] hover:underline font-semibold flex items-center space-x-1">
+                <span>＋ Add Color</span>
+              </button>
+            </div>
+            <div id="variants-rows-container" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+              <!-- Dynamically populated rows -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Photo Upload (Cover Image) -->
+        <div class="space-y-2 pt-2 border-t border-white/10">
+          <label class="block text-[11px] font-semibold text-slate-300">
+            Cover / Main Image <span class="text-rose-400">*</span>
+          </label>
           <div id="prod-photo-preview-container" class="hidden items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-xl">
             <img id="prod-photo-preview" src="" alt="Preview" class="w-12 h-12 rounded-lg object-cover bg-black/40 border border-white/10">
             <div class="flex-1 min-w-0">
@@ -280,10 +355,11 @@
             </div>
           </div>
           <input type="file" id="prod-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20">
-          <input type="text" id="prod-photo-url" placeholder="Or paste image URL / path (e.g. /uploads/... or https://...)" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <input type="text" id="prod-photo-url" class="hidden" tabindex="-1" aria-hidden="true">
+          <p id="prod-photo-error" class="hidden text-[11px] text-rose-400 font-semibold">⚠ A photo is required. Please upload an image.</p>
         </div>
 
-        <div class="pt-2 flex items-center space-x-2">
+        <div class="pt-3 flex items-center space-x-2">
           <button type="button" onclick="closeProductModal()" class="w-1/3 py-2.5 rounded-xl bg-white/10 text-slate-300 font-bold text-xs">
             Cancel
           </button>
@@ -295,8 +371,68 @@
     </div>
   </div>
 
+  <!-- ─── Confirm Dialog (Reusable Modal) ────────────────────────────────── -->
+  <div id="confirm-dialog" class="hidden fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm flex items-end justify-center p-4">
+    <div class="bg-[#171928] border border-white/15 rounded-3xl w-full max-w-sm p-5 shadow-2xl">
+      <p id="confirm-dialog-message" class="text-sm font-semibold text-white text-center mb-1"></p>
+      <p id="confirm-dialog-sub" class="text-xs text-slate-400 text-center mb-5"></p>
+      <div class="flex space-x-2">
+        <button id="confirm-dialog-no" class="flex-1 py-3 rounded-xl bg-white/10 text-slate-300 font-bold text-xs">Cancel</button>
+        <button id="confirm-dialog-yes" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Quick Sell: Deduction Log Drawer ──────────────────────────────── -->
+  <div id="qs-log-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[70vh] overflow-y-auto">
+      <div class="sticky top-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">📋 Deduction Log</h3>
+        <button onclick="window.closeDeductionLog()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+      </div>
+      <div id="qs-log-list" class="p-4 space-y-2">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Quick Sell: Deduct Confirmation Sheet ─────────────────────────── -->
+  <div id="qs-confirm-sheet" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto p-5 shadow-2xl">
+      <div class="flex items-center space-x-4 mb-5">
+        <img id="qs-confirm-img" src="" alt="" class="w-16 h-16 rounded-2xl object-cover border border-white/15 bg-slate-900">
+        <div>
+          <p class="text-xs text-slate-400 mb-0.5" id="qs-confirm-category"></p>
+          <p class="text-base font-bold text-white" id="qs-confirm-name"></p>
+          <p class="text-sm font-extrabold text-[#c9a84c]" id="qs-confirm-price"></p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 text-center mb-4">Deduct <strong class="text-white">1 unit</strong> from inventory?</p>
+      <div class="flex space-x-2">
+        <button onclick="window.closeQsConfirm()" class="flex-1 py-3 rounded-xl bg-white/10 text-slate-300 font-bold text-sm">Cancel</button>
+        <button id="qs-confirm-yes-btn" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition">− Deduct 1</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Quick Sell: Variant Color Drawer ──────────────────────────────── -->
+  <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] overflow-y-auto">
+      <div class="sticky top-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-white" id="qs-variant-drawer-title">Choose Color</h3>
+          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub"></p>
+        </div>
+        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+      </div>
+      <div id="qs-variant-list" class="p-4 grid grid-cols-2 gap-3">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- ───────────────────────────────────────────────────────────── -->
-  <!-- OWNER AUTHENTICATION MODAL -->
+  <!-- OWNER AUTHENTICATION MODAL                                    -->
   <!-- ───────────────────────────────────────────────────────────── -->
   <div id="login-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-[#171928] border border-white/15 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
