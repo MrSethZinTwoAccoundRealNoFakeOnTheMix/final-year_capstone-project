@@ -10,6 +10,7 @@
     "seed": "node src/db/seed.js",
     "seed:bulk": "node src/db/seed_bulk.js",
     "seed:clear": "node src/db/seed_bulk.js --clear",
+    "query:psids": "node scripts/query-psids.js",
     "test": "node --test"
   },
   "keywords": [
