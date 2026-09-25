@@ -22,7 +22,7 @@ try {
  */
 function findAll() {
   return db.prepare(`
-    SELECT id, name, category, sell_price, stock, photo_url, variants
+    SELECT id, name, category, sell_price, stock, photo_url, variants, has_variants
     FROM products
     WHERE is_active = 1
     ORDER BY category ASC, id ASC
@@ -31,36 +31,65 @@ function findAll() {
 
 /**
  * Admin view — includes import_price and computed profit margin.
- * Only returns active products currently in inventory.
+ * Attaches child variants for each product.
  */
 function findAllAdmin() {
-  return db.prepare(`
+  const products = db.prepare(`
     SELECT
       id, name, category,
-      import_price, sell_price, stock, photo_url, variants,
+      import_price, sell_price, stock, photo_url, variants, has_variants,
       ROUND(((sell_price - import_price) / sell_price) * 100, 1) AS margin_percent,
       created_at, updated_at
     FROM products
     WHERE is_active = 1
     ORDER BY category ASC, id ASC
   `).all();
+
+  const allVariants = db.prepare(`
+    SELECT id, product_id, color_name, import_price, sell_price, stock, photo_url
+    FROM product_variants
+    WHERE is_active = 1
+    ORDER BY id ASC
+  `).all();
+
+  const variantMap = new Map();
+  for (const v of allVariants) {
+    if (!variantMap.has(v.product_id)) variantMap.set(v.product_id, []);
+    variantMap.get(v.product_id).push(v);
+  }
+
+  for (const p of products) {
+    p.variant_list = variantMap.get(p.id) || [];
+  }
+
+  return products;
 }
 
 /**
- * Single product by SKU (full row including import_price)
+ * Single product by SKU (full row including import_price and variants)
  */
 function findById(id) {
-  return db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+  if (product) {
+    product.variant_list = db.prepare(`
+      SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY id ASC
+    `).all(id);
+  }
+  return product;
 }
 
 // ─── Write ────────────────────────────────────────────────────────────────────
 
 /**
  * Generate next sequential SKU for a category.
- * E.g. existing RG-0003 → returns RG-0004
+ * If known prefix exists, uses it; otherwise derives a 2-letter prefix from category name.
  */
 function generateSku(category) {
-  const prefix = SKU_PREFIXES[category] || 'JW';
+  const catClean = (category || '').trim();
+  let prefix = SKU_PREFIXES[catClean];
+  if (!prefix) {
+    prefix = catClean.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || 'JW';
+  }
   const last = db.prepare(
     "SELECT id FROM products WHERE id LIKE ? ORDER BY id DESC LIMIT 1"
   ).get(`${prefix}-%`);
@@ -79,10 +108,11 @@ function generateSku(category) {
  */
 function upsert(data) {
   const id = data.id || generateSku(data.category);
+  const hasVariants = data.has_variants ? 1 : 0;
 
   db.prepare(`
-    INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants, is_active)
-    VALUES (@id, @name, @category, @import_price, @sell_price, @stock, @photo_url, @variants, 1)
+    INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants, has_variants, is_active)
+    VALUES (@id, @name, @category, @import_price, @sell_price, @stock, @photo_url, @variants, @has_variants, 1)
     ON CONFLICT(id) DO UPDATE SET
       name         = excluded.name,
       category     = excluded.category,
@@ -91,6 +121,7 @@ function upsert(data) {
       stock        = excluded.stock,
       photo_url    = excluded.photo_url,
       variants     = excluded.variants,
+      has_variants = excluded.has_variants,
       is_active    = 1
   `).run({
     id,
@@ -98,9 +129,10 @@ function upsert(data) {
     category:     data.category,
     import_price: Number(data.import_price),
     sell_price:   Number(data.sell_price),
-    stock:        Number(data.stock ?? 0),
+    stock:        Number(data.stock ?? 1),
     photo_url:    data.photo_url || '',
     variants:     data.variants  || '',
+    has_variants: hasVariants,
   });
 
   return id;
