@@ -1,5 +1,7 @@
 const authService = require('../services/auth.service');
 const productRepository = require('../repositories/product.repository');
+const categoryRepository = require('../repositories/category.repository');
+const variantRepository = require('../repositories/variant.repository');
 const orderService = require('../services/order.service');
 const imageService = require('../services/image.service');
 
@@ -33,8 +35,15 @@ function getProducts(req, res, next) {
  */
 async function upsertProduct(req, res, next) {
   try {
-    const { id, name, category, import_price, sell_price, stock, variants } = req.body;
+    const { id, name, category, import_price, sell_price } = req.body;
     let photo_url = req.body.photo_url || '';
+    const has_variants = req.body.has_variants === true || req.body.has_variants === 'true' || req.body.has_variants === 1;
+
+    let color_variants = req.body.color_variants;
+    if (typeof color_variants === 'string') {
+      try { color_variants = JSON.parse(color_variants); } catch (e) { color_variants = []; }
+    }
+    if (!Array.isArray(color_variants)) color_variants = [];
 
     if (!name || !category || import_price == null || sell_price == null) {
       return res.status(400).json({ error: 'Missing required product fields.' });
@@ -44,11 +53,21 @@ async function upsertProduct(req, res, next) {
     if (req.file && req.file.buffer) {
       photo_url = await imageService.processAndSave(req.file.buffer);
     } else if (id && !photo_url) {
-      // Retain existing photo if updating an existing product and no replacement image or URL was provided
       const existing = productRepository.findById(id);
       if (existing && existing.photo_url) {
         photo_url = existing.photo_url;
       }
+    }
+
+    // Default cover photo to first variant photo if not provided
+    if (!photo_url && has_variants && color_variants.length > 0 && color_variants[0].photo_url) {
+      photo_url = color_variants[0].photo_url;
+    }
+
+    // Calculate total stock
+    let totalStock = Number(req.body.stock ?? 1);
+    if (has_variants && color_variants.length > 0) {
+      totalStock = color_variants.reduce((sum, v) => sum + Number(v.stock ?? 1), 0);
     }
 
     const sku = productRepository.upsert({
@@ -57,10 +76,18 @@ async function upsertProduct(req, res, next) {
       category,
       import_price: Number(import_price),
       sell_price: Number(sell_price),
-      stock: stock != null ? Number(stock) : 0,
+      stock: totalStock,
       photo_url,
-      variants: variants || '',
+      variants: req.body.variants || '',
+      has_variants: has_variants && color_variants.length > 0 ? 1 : 0,
     });
+
+    // Save child variants if enabled
+    if (has_variants && color_variants.length > 0) {
+      variantRepository.replaceForProduct(sku, color_variants);
+    } else if (id) {
+      variantRepository.deleteByProductId(sku);
+    }
 
     res.json({ success: true, id: sku, photo_url });
   } catch (err) {
@@ -192,6 +219,125 @@ function updateDeliveryType(req, res, next) {
   }
 }
 
+/**
+ * Upload single image (for instant preview on main photo or variant photos)
+ */
+async function uploadImage(req, res, next) {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'No image file provided.' });
+    }
+    const photo_url = await imageService.processAndSave(req.file.buffer);
+    res.json({ success: true, photo_url });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Category Management
+ */
+function getCategories(req, res, next) {
+  try {
+    res.json(categoryRepository.findAll());
+  } catch (err) {
+    next(err);
+  }
+}
+
+function createCategory(req, res, next) {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Category name is required.' });
+    const result = categoryRepository.create(name);
+    res.status(201).json({ success: true, ...result });
+  } catch (err) {
+    if (err.message.includes('already exists')) {
+      return res.status(409).json({ error: err.message });
+    }
+    next(err);
+  }
+}
+
+function deleteCategory(req, res, next) {
+  try {
+    const result = categoryRepository.remove(req.params.id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Category not found.' });
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message.includes('Cannot delete')) return res.status(409).json({ error: err.message });
+    next(err);
+  }
+}
+
+/**
+ * Quick Sell: Deduct 1 unit from stock (supports simple products & specific variants)
+ */
+function quickSellDeduct(req, res, next) {
+  try {
+    const { id } = req.params;
+    const variantId = req.body && req.body.variant_id;
+
+    if (variantId) {
+      const variant = variantRepository.findById(variantId);
+      if (!variant || !variant.is_active) {
+        return res.status(404).json({ error: 'Variant not found.' });
+      }
+      if (variant.stock <= 0) {
+        return res.status(409).json({ error: 'Out of stock.' });
+      }
+      const result = variantRepository.decrementStock(variantId, 1);
+      if (result.changes === 0) {
+        return res.status(409).json({ error: 'Out of stock.' });
+      }
+      return res.json({ success: true, remaining: variant.stock - 1, variant_id: variantId });
+    }
+
+    const product = productRepository.findById(id);
+    if (!product || !product.is_active) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    if (product.stock <= 0) {
+      return res.status(409).json({ error: 'Out of stock.' });
+    }
+    const result = productRepository.decrementStock(id, 1);
+    if (result.changes === 0) {
+      return res.status(409).json({ error: 'Out of stock.' });
+    }
+    res.json({ success: true, remaining: product.stock - 1 });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Quick Sell: Restock 1 unit (undo a Quick Sell deduction)
+ */
+function quickSellRestock(req, res, next) {
+  try {
+    const { id } = req.params;
+    const variantId = req.body && req.body.variant_id;
+
+    if (variantId) {
+      const variant = variantRepository.findById(variantId);
+      if (!variant || !variant.is_active) {
+        return res.status(404).json({ error: 'Variant not found.' });
+      }
+      variantRepository.incrementStock(variantId, 1);
+      return res.json({ success: true, remaining: variant.stock + 1, variant_id: variantId });
+    }
+
+    const product = productRepository.findById(id);
+    if (!product || !product.is_active) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    productRepository.incrementStock(id, 1);
+    res.json({ success: true, remaining: product.stock + 1 });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   login,
   getProducts,
@@ -204,5 +350,11 @@ module.exports = {
   returnOrder,
   completeOrder,
   updateDeliveryType,
+  uploadImage,
+  getCategories,
+  createCategory,
+  deleteCategory,
+  quickSellDeduct,
+  quickSellRestock,
 };
 
