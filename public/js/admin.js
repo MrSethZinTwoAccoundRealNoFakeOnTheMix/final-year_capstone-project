@@ -874,7 +874,7 @@
           if (!colorName) missingColor = true;
 
           collectedVariants.push({
-            id: idInput && idInput.value ? Number(idInput.value) : undefined,
+            id: idInput && idInput.value ? idInput.value.trim() : undefined,
             color_name: colorName,
             import_price: costInput ? parseFloat(costInput.value) || 0 : 0,
             sell_price: sellInput ? parseFloat(sellInput.value) || 0 : 0,
@@ -1167,7 +1167,8 @@
     qsVariantList.innerHTML = variants.map((v) => {
       const isOut = v.stock <= 0;
       return `
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-2.5 flex flex-col justify-between ${isOut ? 'opacity-40' : ''}">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-2.5 flex flex-col justify-between transition ${isOut ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-[#c9a84c]/50 active:scale-98'}"
+          ${isOut ? '' : `onclick="window.qsOpenConfirm('${product.id}', '${v.id}')"`}>
           <div class="w-full aspect-square rounded-xl bg-slate-900 overflow-hidden mb-2 relative">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${v.stock <= 1 ? 'bg-rose-950/90 text-rose-300' : 'bg-emerald-950/90 text-emerald-300'}">
@@ -1178,7 +1179,7 @@
             <h5 class="text-xs font-bold text-white truncate">${escapeHtml(v.color_name)}</h5>
             <p class="text-[11px] font-extrabold text-[#c9a84c] mt-0.5">${formatUSD(v.sell_price)}</p>
           </div>
-          <button type="button" ${isOut ? 'disabled' : ''} onclick="window.qsOpenConfirm('${product.id}', ${v.id})"
+          <button type="button" ${isOut ? 'disabled' : ''} onclick="event.stopPropagation(); window.qsOpenConfirm('${product.id}', '${v.id}')"
             class="mt-2 w-full py-1.5 rounded-xl ${isOut ? 'bg-white/5 text-slate-500' : 'bg-rose-600 hover:bg-rose-500 text-white'} text-xs font-bold flex items-center justify-center space-x-1 transition shadow-md">
             <span>${isOut ? 'Out of stock' : '− Deduct 1'}</span>
           </button>
@@ -1200,7 +1201,7 @@
 
     let variant = null;
     if (variantId && product.variant_list) {
-      variant = product.variant_list.find((v) => v.id === variantId);
+      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
     }
 
     const title = variant ? `${product.name} (${variant.color_name})` : product.name;
@@ -1265,7 +1266,7 @@
   }
 
   async function undoDeduction(logId) {
-    const idx = sessionDeductions.findIndex((d) => d.id === logId);
+    const idx = sessionDeductions.findIndex((d) => String(d.id) === String(logId));
     if (idx === -1) return;
     const item = sessionDeductions[idx];
 
@@ -1314,7 +1315,7 @@
           <p class="font-bold text-white">${escapeHtml(item.name)}</p>
           <p class="text-[10px] text-slate-400">${item.time} · ${formatUSD(item.price)}</p>
         </div>
-        <button type="button" onclick="window.undoDeductionItem(${item.id})"
+        <button type="button" onclick="window.undoDeductionItem('${item.id}')"
           class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition">
           ↺ Undo & Restock
         </button>
