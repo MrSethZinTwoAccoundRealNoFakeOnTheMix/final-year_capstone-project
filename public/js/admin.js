@@ -1199,6 +1199,9 @@
     const product = productsList.find((p) => p.id === productId);
     if (!product || !qsConfirmSheet) return;
 
+    // Auto-close variant drawer so it doesn't overshadow the confirmation popup
+    window.closeVariantDrawer();
+
     let variant = null;
     if (variantId && product.variant_list) {
       variant = product.variant_list.find((v) => String(v.id) === String(variantId));
