@@ -212,9 +212,6 @@ async function getUserProfile(psid) {
     const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(psid)}?fields=name,first_name,last_name&access_token=${PAGE_TOKEN}`;
     const res = await fetch(url);
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      logger.warn(`[Messenger] Graph API direct profile lookup failed for PSID ${psid}:`, err.error?.message || res.status);
-
       // Fallback: Query the Page's conversation thread participants for this PSID.
       // This succeeds even when direct /{psid} node lookup is restricted by Meta permissions or tester status.
       try {
@@ -232,14 +229,17 @@ async function getUserProfile(psid) {
               last_name: null,
             };
             profileCache.set(psid, fallbackProfile);
-            logger.info(`[Messenger] Resolved Facebook profile via conversation fallback for PSID ${psid}: "${fallbackProfile.name}"`);
+            logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${fallbackProfile.name}"`);
             return fallbackProfile;
           }
         }
       } catch (convErr) {
-        logger.warn(`[Messenger] Conversation fallback lookup failed for PSID ${psid}:`, convErr.message || convErr);
+        logger.debug(`[Messenger] Conversation fallback lookup error for PSID ${psid}:`, convErr.message || convErr);
       }
 
+      // Only log warning if BOTH direct lookup and conversation fallback failed
+      const err = await res.json().catch(() => ({}));
+      logger.warn(`[Messenger] Could not resolve profile for PSID ${psid}:`, err.error?.message || res.status);
       return null;
     }
 
