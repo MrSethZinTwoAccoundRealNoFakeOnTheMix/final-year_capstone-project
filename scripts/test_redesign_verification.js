@@ -2,6 +2,7 @@ const db = require('../src/db');
 const categoryRepository = require('../src/repositories/category.repository');
 const productRepository = require('../src/repositories/product.repository');
 const variantRepository = require('../src/repositories/variant.repository');
+const adminController = require('../src/controllers/admin.controller');
 
 async function testAll() {
   console.log('🧪 Starting Automated Redesign Verification...\n');
@@ -61,22 +62,42 @@ async function testAll() {
   if (p2.variant_list.length !== 2) throw new Error(`Expected 2 variants, got ${p2.variant_list.length}`);
   console.log('✅ Product container & child variants properly synchronized.');
 
-  // 4. Quick Sell Deduct on Variant
-  console.log('\n4️⃣ Testing Quick Sell Deduction on Specific Variant:');
+  // 4. Quick Sell Deduct on Variant via Controller (Simulating Client API call)
+  console.log('\n4️⃣ Testing Quick Sell Deduction via Admin Controller (String ID):');
   const redVariant = p2.variant_list.find(v => v.color_name === 'Crimson Red');
-  console.log(`- Deducting 1 from "${redVariant.color_name}" (Initial: ${redVariant.stock})`);
-  variantRepository.decrementStock(redVariant.id, 1);
-  
+  console.log(`- Calling quickSellDeduct with variant ID "${redVariant.id}"`);
+
+  let deductRes = null;
+  const mockReq = { params: { id: sku2 }, body: { variant_id: redVariant.id } };
+  const mockRes = {
+    status: (code) => mockRes,
+    json: (data) => { deductRes = data; return mockRes; }
+  };
+
+  adminController.quickSellDeduct(mockReq, mockRes, (err) => { throw err; });
+  if (!deductRes || !deductRes.success) throw new Error('quickSellDeduct failed!');
+  console.log(`- quickSellDeduct returned:`, deductRes);
+
   const p2AfterDeduct = productRepository.findById(sku2);
   const redAfter = p2AfterDeduct.variant_list.find(v => v.color_name === 'Crimson Red');
   console.log(`- Variant stock now: ${redAfter.stock}, Parent total stock now: ${p2AfterDeduct.stock}`);
   if (redAfter.stock !== 0) throw new Error(`Expected variant stock 0, got ${redAfter.stock}`);
   if (p2AfterDeduct.stock !== 2) throw new Error(`Expected parent stock 2, got ${p2AfterDeduct.stock}`);
-  console.log('✅ Quick Sell variant deduction & parent stock sync successful.');
+  console.log('✅ Quick Sell variant deduction & parent stock sync via controller successful.');
 
-  // 5. Quick Sell Restock / Undo on Variant
-  console.log('\n5️⃣ Testing Quick Sell Undo / Restock:');
-  variantRepository.incrementStock(redVariant.id, 1);
+  // 5. Quick Sell Restock / Undo via Controller
+  console.log('\n5️⃣ Testing Quick Sell Restock / Undo via Admin Controller:');
+  let restockRes = null;
+  const mockRestockReq = { params: { id: sku2 }, body: { variant_id: redVariant.id } };
+  const mockRestockRes = {
+    status: (code) => mockRestockRes,
+    json: (data) => { restockRes = data; return mockRestockRes; }
+  };
+
+  adminController.quickSellRestock(mockRestockReq, mockRestockRes, (err) => { throw err; });
+  if (!restockRes || !restockRes.success) throw new Error('quickSellRestock failed!');
+  console.log(`- quickSellRestock returned:`, restockRes);
+
   const p2AfterRestock = productRepository.findById(sku2);
   const redRestocked = p2AfterRestock.variant_list.find(v => v.color_name === 'Crimson Red');
   console.log(`- Restocked! Variant stock: ${redRestocked.stock}, Parent total stock: ${p2AfterRestock.stock}`);
