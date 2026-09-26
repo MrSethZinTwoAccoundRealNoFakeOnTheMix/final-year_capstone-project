@@ -21,6 +21,8 @@
       connected: 'Connected',
       guestMode: 'Guest Mode',
       connectedBanner: 'Connected: {id} · Order receipts delivered to Messenger',
+      connectedBannerName: 'Connected: {name} · Order receipts delivered to Messenger',
+      autoFilledName: 'Auto-filled via Messenger',
       guestBanner: 'Guest Browsing (Link required to order)',
       invalidBanner: 'Invalid or expired Messenger link',
       connErrorBanner: 'Connection error',
@@ -109,6 +111,8 @@
       connected: 'បានភ្ជាប់',
       guestMode: 'ទស្សនាជាភ្ញៀវ',
       connectedBanner: 'បានភ្ជាប់: {id} · បង្កាន់ដៃបញ្ជាទិញផ្ញើចូល Messenger',
+      connectedBannerName: 'បានភ្ជាប់: {name} · បង្កាន់ដៃបញ្ជាទិញផ្ញើចូល Messenger',
+      autoFilledName: 'បំពេញស្វ័យប្រវត្តិតាម Messenger',
       guestBanner: 'ទស្សនាជាភ្ញៀវ (តម្រូវឱ្យបើកតាមតំណភ្ជាប់ដើម្បីកុម្ម៉ង់)',
       invalidBanner: 'តំណភ្ជាប់ Messenger មិនត្រឹមត្រូវ ឬផុតកំណត់',
       connErrorBanner: 'បញ្ហាក្នុងការតភ្ជាប់',
@@ -202,8 +206,28 @@
 
   // State
   const params = new URLSearchParams(window.location.search);
-  const psid = params.get('psid');
-  const sig = params.get('sig');
+  const rawPsid = params.get('psid');
+  const rawSig = params.get('sig');
+
+  if (rawPsid) {
+    try { sessionStorage.setItem('luxe_psid', rawPsid); } catch (e) {}
+  }
+  if (rawSig) {
+    try { sessionStorage.setItem('luxe_sig', rawSig); } catch (e) {}
+  }
+
+  const psid = rawPsid || (function () {
+    try { return sessionStorage.getItem('luxe_psid'); } catch (e) { return null; }
+  })();
+  const sig = rawSig || (function () {
+    try { return sessionStorage.getItem('luxe_sig'); } catch (e) { return null; }
+  })();
+
+  let customerProfile = {
+    name: null,
+    phone: null,
+    address: null,
+  };
 
   let isVerified = false;
   let selectedPaymentMethod = 'COD';
@@ -416,6 +440,10 @@
     const addressInput = document.getElementById('cust-address');
     const noteInput = document.getElementById('cust-note');
 
+    const nameLabel = document.getElementById('name-label');
+    const badgeText = document.getElementById('cust-name-badge-text');
+    if (nameLabel) nameLabel.textContent = t('fullName');
+    if (badgeText) badgeText.textContent = t('autoFilledName');
     if (nameInput) nameInput.placeholder = t('namePlaceholder');
     if (phoneInput) phoneInput.placeholder = t('phonePlaceholder');
     if (addressInput) addressInput.placeholder = t('addressPlaceholder');
@@ -466,18 +494,26 @@
 
   // Identity Verification
   async function verifyIdentity() {
-    if (!psid || !sig) {
+    if (!psid) {
       isVerified = false;
       renderAuthStatus(false);
       return;
     }
 
     try {
-      const res = await fetch(`/api/identity?psid=${encodeURIComponent(psid)}&sig=${encodeURIComponent(sig)}`);
+      const querySig = sig ? `&sig=${encodeURIComponent(sig)}` : '';
+      const res = await fetch(`/api/identity?psid=${encodeURIComponent(psid)}${querySig}`);
       const data = await res.json();
 
       if (data.verified) {
         isVerified = true;
+        if (data.customerName) {
+          customerProfile.name = data.customerName;
+        }
+        if (data.phone) customerProfile.phone = data.phone;
+        if (data.address) customerProfile.address = data.address;
+
+        autoFillCustomerDetails();
         renderAuthStatus(true);
       } else {
         isVerified = false;
@@ -489,6 +525,30 @@
     }
   }
 
+  function autoFillCustomerDetails() {
+    const nameInput = document.getElementById('cust-name');
+    const badge = document.getElementById('cust-name-badge');
+
+    if (nameInput && customerProfile.name) {
+      // Auto-fill only if input is empty or was previously auto-filled
+      if (!nameInput.value.trim() || nameInput.dataset.autofilled === 'true') {
+        nameInput.value = customerProfile.name;
+        nameInput.dataset.autofilled = 'true';
+        if (badge) badge.classList.remove('hidden');
+      }
+    }
+
+    const phoneInput = document.getElementById('cust-phone');
+    if (phoneInput && customerProfile.phone && !phoneInput.value.trim()) {
+      phoneInput.value = customerProfile.phone;
+    }
+
+    const addressInput = document.getElementById('cust-address');
+    if (addressInput && customerProfile.address && !addressInput.value.trim()) {
+      addressInput.value = customerProfile.address;
+    }
+  }
+
   function renderAuthStatus(verified, customMsg) {
     if (verified) {
       const displayId = psid && psid.length > 10 ? `${psid.slice(0, 6)}…${psid.slice(-4)}` : (psid || '');
@@ -497,7 +557,11 @@
 
       authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-emerald-950/40 text-emerald-300 border-emerald-800/40';
       authBannerIcon.textContent = '✅';
-      authBannerText.innerHTML = `<strong>${t('connectedBanner', { id: displayId })}</strong>`;
+      if (customerProfile.name) {
+        authBannerText.innerHTML = `<strong>${t('connectedBannerName', { name: escapeHtml(customerProfile.name) })}</strong>`;
+      } else {
+        authBannerText.innerHTML = `<strong>${t('connectedBanner', { id: displayId })}</strong>`;
+      }
 
       checkoutAuthAlert.classList.add('hidden');
       submitOrderBtn.disabled = false;
@@ -1709,6 +1773,7 @@
 
   // Modals
   window.openCartSheet = function () {
+    autoFillCustomerDetails();
     cartModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     pushModalState('#view-cart');
@@ -1743,6 +1808,15 @@
   successModal.addEventListener('click', (e) => {
     if (e.target === successModal) window.closeSuccessModal();
   });
+
+  const custNameInput = document.getElementById('cust-name');
+  if (custNameInput) {
+    custNameInput.addEventListener('input', () => {
+      custNameInput.dataset.autofilled = 'false';
+      const badge = document.getElementById('cust-name-badge');
+      if (badge && !custNameInput.value.trim()) badge.classList.add('hidden');
+    });
+  }
 
   // Order Submission
   window.submitCustomerOrder = async function () {

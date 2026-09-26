@@ -41,7 +41,7 @@
   </script>
 
   <!-- Custom Mobile Luxury Stylesheet -->
-  <link rel="stylesheet" href="/css/webview.css?v=1.2.7">
+  <link rel="stylesheet" href="/css/webview.css?v=1.2.8">
 </head>
 
 <body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
@@ -310,7 +310,12 @@
           </h4>
 
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Your Full Name *</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-[11px] font-semibold text-slate-300" id="name-label">Your Full Name *</label>
+              <span id="cust-name-badge" class="hidden text-[10px] text-emerald-400 font-medium flex items-center space-x-1">
+                <span>✓</span> <span id="cust-name-badge-text">Auto-filled via Messenger</span>
+              </span>
+            </div>
             <input type="text" id="cust-name" required placeholder="e.g. Sreysros Keo"
               class="w-full bg-[#11121d] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition">
           </div>
@@ -546,7 +551,7 @@
     class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
   <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js?v=1.2.7"></script>
+  <script src="/js/webview.js?v=1.2.8"></script>
 
 </body>
 

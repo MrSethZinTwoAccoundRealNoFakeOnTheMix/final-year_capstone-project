@@ -21,13 +21,17 @@ function generateSignedUrl(psid, customBaseUrl) {
  * @returns {{ ok: boolean, reason?: string }}
  */
 function verifyToken(psid, sig) {
-  if (!psid || !sig) {
+  if (!psid) {
     return { ok: false, reason: 'missing_params' };
   }
 
   // Developer bypass: active ONLY in non-production environments
-  if (NODE_ENV !== 'production' && sig === 'demo-bypass') {
-    return { ok: true };
+  if (NODE_ENV !== 'production' && (!sig || sig === 'demo-bypass')) {
+    return { ok: true, devMode: true };
+  }
+
+  if (!sig) {
+    return { ok: false, reason: 'missing_params' };
   }
 
   const expectedSig = createHmacSha256(APP_SECRET, psid);

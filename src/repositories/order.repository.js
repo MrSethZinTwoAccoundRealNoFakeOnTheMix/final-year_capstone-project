@@ -68,6 +68,22 @@ function findById(id) {
   return order;
 }
 
+/**
+ * Find the most recent order for a PSID to retrieve past customer contact details.
+ * @param {string} psid
+ * @returns {Object|null}
+ */
+function findLatestByPsid(psid) {
+  if (!psid) return null;
+  return db.prepare(`
+    SELECT id, psid, customer_name, phone, address
+    FROM orders
+    WHERE psid = ? AND customer_name IS NOT NULL AND customer_name != ''
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(psid) || null;
+}
+
 // ─── Write ────────────────────────────────────────────────────────────────────
 
 /**
@@ -300,4 +316,5 @@ module.exports = {
   returnOrder,
   completeOrder,
   updateDeliveryType,
+  findLatestByPsid,
 };
