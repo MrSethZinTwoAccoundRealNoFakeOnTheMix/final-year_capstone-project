@@ -515,23 +515,31 @@ The previous "Color Group Tag" concept was abandoned because requiring the merch
 ### 6. Automated Verification Test Suite
 - `scripts/test_redesign_verification.js`: Automated end-to-end regression test suite verifying category creation, standalone product creation, variant container creation, variant deduction, parent stock sync, and restock/undo via controller. Passed 100%.
 
+### 7. Jewelry Style Variations & Single-to-Variant Migration
+- **Shift from "Colors" to "Styles":** In jewelry, variations represent subtle differences like gem size ("Small Gem" vs. "Big Gem"), style motifs, or finishes rather than just apparel colors. Replaced "Color Variations" with "Styles / Variations" in the admin modal, Quick Sell drawer, and inventory cards.
+- **Smart Auto-Incremented Style Naming:** Tapping `+ Add Style` auto-generates sequential style names (`Style 1`, `Style 2`, `Style 3`...) based on existing row count and highest index. Zero typing required for the owner, but remains completely editable.
+- **Automatic Single-to-Variant Photo Migration:** Fixed the critical workflow gap where converting an existing single product to variants caused the original photo to become trapped as the cover image without a variant entry. When toggling the variant switch ON for an existing product with a photo:
+  - **Style 1** is automatically created with the existing product's photo, stock, and pricing intact.
+  - **Style 2** is automatically prepared below it with default stock `1`, pre-filled prices, and ready for the owner to upload the second photo.
+  - Total stock automatically updates to `currentStock + 1`. Zero searching for old photos or re-uploading needed.
+
 ---
 
-## Phase 10 — Customer Webview Variant Support (⏳ NEXT IMMEDIATE TASK)
+## Phase 10 — Customer Webview Style Variant Support (⏳ NEXT IMMEDIATE TASK)
 
 Customer storefront UX/UI was intentionally deferred during Phase 9 to finalize the database and admin panel first.
 
 ### What Needs to be Done in Phase 10:
 1. **Catalog Display:**
-   - In `public/index.html` and `public/js/webview.js`, products with `has_variants = 1` should display a `🎨 {N} Colors` badge.
-2. **Color Selection UI:**
-   - When a customer taps on a multi-color product (or taps "Add to Bag"), show a colorway picker (modal or drawer).
-   - Display color options with their specific photos, color names, and prices.
+   - In `public/index.html` and `public/js/webview.js`, products with `has_variants = 1` should display a `✨ {N} Styles` badge.
+2. **Style Selection UI:**
+   - When a customer taps on a multi-style product (or taps "Add to Bag"), show a style picker (bottom sheet or modal drawer).
+   - Display style options with their specific photos, style names, and prices.
 3. **Cart Integration:**
-   - Adding a color variant to the cart should store `{ product_id, variant_id, color_name, photo_url, unit_price }`.
-   - Prevent adding out-of-stock color variants.
+   - Adding a style variant to the cart should store `{ product_id, variant_id, color_name, photo_url, unit_price }`.
+   - Prevent adding out-of-stock styles.
 4. **Order Submission:**
-   - Ensure `order_items` records the chosen variant in `variants` (e.g. `"Color: Crimson Red"`).
+   - Ensure `order_items` records the chosen style in `variants` (e.g. `"Style: Style 1"` or `"Style: Small Gem"`).
 
 ---
 

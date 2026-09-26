@@ -315,12 +315,12 @@
           <span id="margin-preview" class="font-bold text-slate-400">--%</span>
         </div>
 
-        <!-- ─── Color Variations Section (Taobao Style Container) ──────────── -->
+        <!-- ─── Style Variations Section (Container SPU + SKU Builder) ───── -->
         <div class="pt-2 border-t border-white/10">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-xs font-semibold text-white">Color Variations</span>
-              <p class="text-[10px] text-slate-400">Enable if this item comes in multiple colors/styles</p>
+              <span class="text-xs font-semibold text-white">Styles / Variations</span>
+              <p class="text-[10px] text-slate-400">Enable if this item comes in multiple styles/models</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="prod-has-variants" class="sr-only peer">
@@ -331,9 +331,9 @@
           <!-- Dynamic Variant Rows Container -->
           <div id="variants-section" class="hidden mt-3 space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-[#c9a84c] uppercase tracking-wider">Color Options & Individual Stock</span>
+              <span class="text-[10px] font-bold text-[#c9a84c] uppercase tracking-wider">Style Options & Individual Stock</span>
               <button type="button" id="btn-add-variant" class="text-xs text-[#c9a84c] hover:underline font-semibold flex items-center space-x-1">
-                <span>＋ Add Color</span>
+                <span>＋ Add Style</span>
               </button>
             </div>
             <div id="variants-rows-container" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
@@ -415,13 +415,13 @@
     </div>
   </div>
 
-  <!-- ─── Quick Sell: Variant Color Drawer ──────────────────────────────── -->
+  <!-- ─── Quick Sell: Variant Style Drawer ──────────────────────────────── -->
   <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
     <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] overflow-y-auto">
       <div class="sticky top-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-bold text-white" id="qs-variant-drawer-title">Choose Color</h3>
-          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub"></p>
+          <h3 class="text-sm font-bold text-white" id="qs-variant-drawer-title">Choose Style</h3>
+          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub">Select a style to deduct from inventory</p>
         </div>
         <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
       </div>

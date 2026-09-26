@@ -534,7 +534,7 @@
   }
 
   // ─────────────────────────────────────────────────────────────
-  // VARIANT BUILDER (Color Variations inside SPU container)
+  // VARIANT BUILDER (Style Variations inside SPU container)
   // ─────────────────────────────────────────────────────────────
   function recalculateVariantStock() {
     if (!prodHasVariantsCheckbox.checked) return;
@@ -559,7 +559,22 @@
     const rowSell = data.sell_price != null ? data.sell_price : parentSell;
     const rowStock = data.stock != null ? data.stock : 1; // Default stock: 1
     const rowPhoto = data.photo_url || '';
-    const rowColor = data.color_name || '';
+
+    // Smart auto-incremented style name (Style 1, Style 2, Style 3...)
+    let rowColor = data.color_name || data.style_name || '';
+    if (!rowColor) {
+      const existingInputs = variantsRowsContainer.querySelectorAll('.variant-color-input');
+      let maxNum = 0;
+      existingInputs.forEach((inp) => {
+        const match = inp.value.trim().match(/^Style\s+(\d+)$/i);
+        if (match) {
+          const n = parseInt(match[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      const nextNum = Math.max(existingInputs.length + 1, maxNum + 1);
+      rowColor = `Style ${nextNum}`;
+    }
 
     rowEl.innerHTML = `
       <div class="flex items-center space-x-2">
@@ -569,14 +584,14 @@
           <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-[10px] text-white font-bold">
             📷
           </div>
-          <input type="file" accept="image/*" class="variant-file-input absolute inset-0 opacity-0 cursor-pointer" title="Upload color photo">
+          <input type="file" accept="image/*" class="variant-file-input absolute inset-0 opacity-0 cursor-pointer" title="Upload style photo">
         </div>
         <input type="hidden" class="variant-photo-url-input" value="${escapeHtml(rowPhoto)}">
         <input type="hidden" class="variant-id-input" value="${data.id || ''}">
 
-        <!-- Color Name Input -->
+        <!-- Style Name Input -->
         <div class="flex-1 min-w-0">
-          <input type="text" required placeholder="Color name (e.g. Ruby Red, Gold)" value="${escapeHtml(rowColor)}"
+          <input type="text" required placeholder="Style name (e.g. Style 1, Small Gem)" value="${escapeHtml(rowColor)}"
             class="variant-color-input w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none">
         </div>
 
@@ -658,7 +673,7 @@
     prodPhotoUrlInput.value = url;
     if (prodPhotoPreview && prodPhotoPreviewContainer) {
       prodPhotoPreview.src = url;
-      if (prodPhotoPreviewText) prodPhotoPreviewText.textContent = 'Auto-assigned from first colorway';
+      if (prodPhotoPreviewText) prodPhotoPreviewText.textContent = 'Auto-assigned from first style';
       prodPhotoPreviewContainer.classList.remove('hidden');
       prodPhotoPreviewContainer.classList.add('flex');
     }
@@ -673,8 +688,41 @@
         prodStockInput.readOnly = true;
         prodStockInput.classList.add('opacity-60', 'bg-white/5');
         stockVariantsHint.classList.remove('hidden');
+
         if (variantsRowsContainer.children.length === 0) {
-          addVariantRow();
+          const currentPhoto = prodPhotoUrlInput.value.trim();
+          const currentStock = parseInt(prodStockInput.value, 10) || 1;
+          const currentCost = prodImportInput.value || '';
+          const currentSell = prodSellInput.value || '';
+
+          if (currentPhoto) {
+            // Migrating an existing single product with a photo to styles:
+            // 1. Preserve existing product as Style 1 with its photo, stock, and pricing
+            addVariantRow({
+              color_name: 'Style 1',
+              photo_url: currentPhoto,
+              stock: currentStock,
+              import_price: currentCost,
+              sell_price: currentSell,
+            });
+            // 2. Automatically prepare Style 2 ready for the second piece/photo
+            addVariantRow({
+              color_name: 'Style 2',
+              photo_url: '',
+              stock: 1,
+              import_price: currentCost,
+              sell_price: currentSell,
+            });
+          } else {
+            // New product being configured with styles from scratch
+            addVariantRow({
+              color_name: 'Style 1',
+              photo_url: '',
+              stock: 1,
+              import_price: currentCost,
+              sell_price: currentSell,
+            });
+          }
         }
         recalculateVariantStock();
       } else {
@@ -855,7 +903,7 @@
       if (hasVariants) {
         const rowEls = variantsRowsContainer.querySelectorAll('.variant-item-row');
         if (rowEls.length === 0) {
-          showToast('Please add at least one color variation.', 'warning');
+          showToast('Please add at least one style variation.', 'warning');
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save Product';
           return;
@@ -884,7 +932,7 @@
         });
 
         if (missingColor) {
-          showToast('Please specify a color name for each variation.', 'warning');
+          showToast('Please specify a style name for each variation.', 'warning');
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save Product';
           return;
@@ -1002,7 +1050,7 @@
               <div class="flex items-center space-x-1.5">
                 <span class="font-mono text-[10px] font-bold text-[#c9a84c]">${product.id}</span>
                 <span class="text-[10px] text-slate-400 uppercase">· ${escapeHtml(product.category)}</span>
-                ${hasVars ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30">🎨 ${varCount} Colors</span>` : ''}
+                ${hasVars ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30">✨ ${varCount} Styles</span>` : ''}
               </div>
               <h4 class="text-xs font-bold text-white truncate leading-tight">${escapeHtml(product.name)}</h4>
               <div class="text-[11px] text-slate-300 mt-0.5">
@@ -1104,7 +1152,7 @@
             <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
               <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/50 backdrop-blur-sm">
-                🎨 ${varCount} Colors
+                ✨ ${varCount} Styles
               </span>
             </div>
             <div class="p-3 flex-1 flex flex-col justify-between">
@@ -1118,7 +1166,7 @@
                   <span class="text-[10px] text-slate-400 block">${product.stock} total</span>
                 </div>
                 <button type="button" class="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#c9a84c] hover:text-black text-white text-[11px] font-bold transition">
-                  Choose Color →
+                  Choose Style →
                 </button>
               </div>
             </div>
@@ -1161,7 +1209,7 @@
     if (!product || !qsVariantDrawer) return;
 
     qsVariantDrawerTitle.textContent = product.name;
-    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap a color to deduct`;
+    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap a style to deduct`;
 
     const variants = Array.isArray(product.variant_list) ? product.variant_list : [];
     qsVariantList.innerHTML = variants.map((v) => {

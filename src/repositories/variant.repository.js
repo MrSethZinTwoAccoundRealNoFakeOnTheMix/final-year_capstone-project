@@ -35,7 +35,7 @@ function replaceForProduct(productId, variants) {
       insertStmt.run({
         id: variantId,
         product_id: productId,
-        color_name: v.color_name || `Option ${i + 1}`,
+        color_name: v.color_name || v.style_name || `Style ${i + 1}`,
         import_price: Number(v.import_price || 0),
         sell_price: Number(v.sell_price || 0),
         stock: Number(v.stock ?? 1),
