@@ -1,5 +1,6 @@
 const orderRepository = require('../repositories/order.repository');
 const productRepository = require('../repositories/product.repository');
+const variantRepository = require('../repositories/variant.repository');
 const identityService = require('./identity.service');
 const messengerService = require('./messenger.service');
 const telegramService = require('./telegram.service');
@@ -26,14 +27,20 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     throw error;
   }
 
-  // 3. Consolidate duplicate productIds in cart
+  // 3. Consolidate duplicate items in cart by productId + variantId
   const consolidatedMap = new Map();
   for (const item of items) {
     const pId = item.productId || item.id;
     if (!pId) continue;
+    const vId = item.variantId || item.variant_id || null;
+    const key = `${pId}__${vId || ''}`;
     const qty = parseInt(item.quantity, 10) || 1;
-    const prev = consolidatedMap.get(pId) || 0;
-    consolidatedMap.set(pId, prev + Math.max(1, qty));
+    const existing = consolidatedMap.get(key);
+    if (existing) {
+      existing.quantity += Math.max(1, qty);
+    } else {
+      consolidatedMap.set(key, { productId: pId, variantId: vId, quantity: Math.max(1, qty) });
+    }
   }
 
   if (consolidatedMap.size === 0) {
@@ -46,7 +53,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
   let totalAmount = 0;
   const orderItemsData = [];
 
-  for (const [productId, quantity] of consolidatedMap.entries()) {
+  for (const { productId, variantId, quantity } of consolidatedMap.values()) {
     const product = productRepository.findById(productId);
     if (!product) {
       const error = new Error(`Product "${productId}" not found.`);
@@ -54,20 +61,36 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
       throw error;
     }
 
-    if (product.stock < quantity) {
-      const error = new Error(`Insufficient stock for "${product.name}". Only ${product.stock} available.`);
+    let variant = null;
+    if (variantId) {
+      variant = variantRepository.findById(variantId);
+      if (!variant || variant.product_id !== productId) {
+        const error = new Error(`Style variant "${variantId}" not found for "${product.name}".`);
+        error.status = 400;
+        throw error;
+      }
+    }
+
+    const availableStock = variant ? variant.stock : product.stock;
+    const displayName = variant ? `${product.name} (${variant.color_name})` : product.name;
+
+    if (availableStock < quantity) {
+      const error = new Error(`Insufficient stock for "${displayName}". Only ${availableStock} available.`);
       error.status = 400;
       throw error;
     }
 
-    const unitPrice = Number(product.sell_price);
+    const unitPrice = variant ? Number(variant.sell_price || product.sell_price) : Number(product.sell_price);
+    const photoUrl = (variant && variant.photo_url) ? variant.photo_url : product.photo_url;
     const itemTotal = unitPrice * quantity;
     totalAmount += itemTotal;
 
     orderItemsData.push({
       productId: product.id,
-      name: product.name,
-      photo_url: product.photo_url,
+      variantId: variant ? variant.id : null,
+      variantName: variant ? variant.color_name : null,
+      name: displayName,
+      photo_url: photoUrl,
       quantity,
       unit_price: unitPrice,
     });

@@ -294,7 +294,14 @@
   };
   let productsList = [];
   let currentCategory = 'ALL';
+  let searchQuery = '';
+  let categoriesList = [];
   let cart = [];
+  let styleModalState = {
+    product: null,
+    selectedVariant: null,
+    qty: 1,
+  };
 
   const CART_STORAGE_KEY = `luxe_cart_${psid || 'guest'}`;
 
@@ -306,16 +313,40 @@
   const authBannerIcon = document.getElementById('auth-banner-icon');
   const authBannerText = document.getElementById('auth-banner-text');
 
-  const productGrid = document.getElementById('product-grid');
+  const customerSearchInput = document.getElementById('customer-search-input');
+  const searchClearBtn = document.getElementById('search-clear-btn');
+  const categoryPillsContainer = document.getElementById('category-pills');
+
+  const catalogHeaderBar = document.getElementById('catalog-header-bar');
   const catalogCountLabel = document.getElementById('catalog-count-label');
+  const catalogSections = document.getElementById('catalog-sections');
+  const productGrid = document.getElementById('product-grid');
   const emptyState = document.getElementById('empty-state');
-  const categoryPills = document.querySelectorAll('.category-pill');
+  const emptyStateTitle = document.getElementById('empty-state-title');
+  const emptyStateDesc = document.getElementById('empty-state-desc');
 
   const bottomBar = document.getElementById('bottom-bar');
   const barCartCount = document.getElementById('bar-cart-count');
   const barCartUsd = document.getElementById('bar-cart-usd');
   const barCartKhr = document.getElementById('bar-cart-khr');
 
+  // Style Selection Modal Elements
+  const styleModal = document.getElementById('style-modal');
+  const styleModalImg = document.getElementById('style-modal-img');
+  const styleModalStockBadge = document.getElementById('style-modal-stock-badge');
+  const styleModalSku = document.getElementById('style-modal-sku');
+  const styleModalCategory = document.getElementById('style-modal-category');
+  const styleModalTitle = document.getElementById('style-modal-title');
+  const styleModalUsd = document.getElementById('style-modal-usd');
+  const styleModalKhr = document.getElementById('style-modal-khr');
+  const styleModalDesc = document.getElementById('style-modal-desc');
+  const styleModalSwatchesContainer = document.getElementById('style-modal-swatches-container');
+  const styleModalSelectedLabel = document.getElementById('style-modal-selected-label');
+  const styleModalSwatches = document.getElementById('style-modal-swatches');
+  const styleModalQty = document.getElementById('style-modal-qty');
+  const styleModalAddBtn = document.getElementById('style-modal-add-btn');
+
+  // Cart & Checkout Elements
   const cartModal = document.getElementById('cart-modal');
   const sheetItemsCount = document.getElementById('sheet-items-count');
   const sheetCartItems = document.getElementById('sheet-cart-items');
@@ -384,19 +415,8 @@
     langFlag.textContent = t('langFlag');
     langLabel.textContent = t('langLabel');
 
-    // Category Pills
-    const catMap = {
-      ALL: t('catAll'),
-      Ring: t('catRing'),
-      Necklace: t('catNecklace'),
-      Bracelet: t('catBracelet'),
-      Earring: t('catEarring'),
-    };
-
-    categoryPills.forEach((pill) => {
-      const cat = pill.dataset.category;
-      if (catMap[cat]) pill.textContent = catMap[cat];
-    });
+    // Refresh Category Pills
+    renderCategoryPills();
 
     // Form placeholders & labels
     const nameInput = document.getElementById('cust-name');
@@ -502,122 +522,568 @@
     }
   }
 
-  // Catalog Loading & Rendering
+  // ─── Categories & Catalog Loading ──────────────────────────────────────────
+
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          categoriesList = data.map((c) => c.name);
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: extract from productsList if empty
+    if (categoriesList.length === 0 && productsList.length > 0) {
+      const cats = new Set(productsList.map((p) => p.category).filter(Boolean));
+      categoriesList = Array.from(cats);
+    }
+
+    renderCategoryPills();
+  }
+
+  function renderCategoryPills() {
+    if (!categoryPillsContainer) return;
+
+    const catMap = {
+      ALL: t('catAll') || 'All Pieces',
+      Ring: '💍 ' + (t('catRing') || 'Rings'),
+      Necklace: '📿 ' + (t('catNecklace') || 'Necklaces'),
+      Bracelet: '✨ ' + (t('catBracelet') || 'Bracelets'),
+      Earring: '💎 ' + (t('catEarring') || 'Earrings'),
+    };
+
+    const displayCategories = ['ALL', ...categoriesList];
+
+    categoryPillsContainer.innerHTML = displayCategories.map((cat) => {
+      const isActive = cat === currentCategory;
+      const label = catMap[cat] || `✦ ${escapeHtml(cat)}`;
+      return `
+        <button class="category-pill ${isActive ? 'active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
+          data-category="${escapeHtml(cat)}"
+          onclick="window.selectCategory('${escapeHtml(cat)}')">
+          ${label}
+        </button>
+      `;
+    }).join('');
+  }
+
+  window.selectCategory = function (cat) {
+    currentCategory = cat;
+    renderCategoryPills();
+    renderProducts();
+  };
+
+  // ─── Search Handlers ────────────────────────────────────────────────────────
+
+  let searchDebounceTimer = null;
+  if (customerSearchInput) {
+    customerSearchInput.addEventListener('input', (e) => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = (e.target.value || '').trim().toLowerCase();
+        if (searchClearBtn) {
+          if (searchQuery.length > 0) searchClearBtn.classList.remove('hidden');
+          else searchClearBtn.classList.add('hidden');
+        }
+        renderProducts();
+      }, 150);
+    });
+  }
+
+  window.clearCustomerSearch = function () {
+    if (customerSearchInput) customerSearchInput.value = '';
+    searchQuery = '';
+    if (searchClearBtn) searchClearBtn.classList.add('hidden');
+    renderProducts();
+  };
+
+  window.resetCatalogView = function () {
+    window.clearCustomerSearch();
+    window.selectCategory('ALL');
+  };
+
+  // ─── Catalog Loading & Rendering ───────────────────────────────────────────
+
   async function loadCatalog() {
     try {
       const res = await fetch('/api/products');
       if (!res.ok) throw new Error('Failed to load products');
       productsList = await res.json();
+      await loadCategories();
       renderProducts();
     } catch (err) {
-      productGrid.innerHTML = `
-        <div class="col-span-2 text-center py-12 text-slate-400">
-          <p class="text-sm">${t('noProducts')}</p>
-          <button onclick="loadCatalog()" class="mt-3 text-xs text-[#c9a84c] underline">Tap to retry</button>
-        </div>
-      `;
+      if (productGrid) {
+        productGrid.innerHTML = `
+          <div class="col-span-2 text-center py-12 text-slate-400">
+            <p class="text-sm">${t('noProducts')}</p>
+            <button onclick="loadCatalog()" class="mt-3 text-xs text-[#c9a84c] underline">Tap to retry</button>
+          </div>
+        `;
+      }
     }
   }
 
-  function renderProducts() {
-    const filtered = currentCategory === 'ALL'
-      ? productsList
-      : productsList.filter((p) => p.category === currentCategory);
+  function renderProductCard(product) {
+    const isSoldOut = product.stock <= 0;
+    const isLowStock = product.stock > 0 && product.stock <= 3;
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
 
+    let displayPhoto = product.photo_url || DEFAULT_IMAGE;
+    let priceUsdText = '';
+    let priceKhrText = '';
+
+    if (hasVariants) {
+      const prices = product.variant_list.map((v) => Number(v.sell_price));
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const defaultVariant = product.variant_list.find((v) => v.stock > 0) || product.variant_list[0];
+      if (defaultVariant && defaultVariant.photo_url) {
+        displayPhoto = defaultVariant.photo_url;
+      }
+
+      if (minPrice !== maxPrice) {
+        priceUsdText = `${formatUSD(minPrice)} – ${formatUSD(maxPrice)}`;
+        priceKhrText = `${formatKHR(minPrice)} – ${formatKHR(maxPrice)}`;
+      } else {
+        priceUsdText = formatUSD(minPrice);
+        priceKhrText = formatKHR(minPrice);
+      }
+    } else {
+      priceUsdText = formatUSD(product.sell_price);
+      priceKhrText = formatKHR(product.sell_price);
+    }
+
+    // Mini Swatches HTML (Option B: mini 24px circular image thumbnails)
+    let swatchesHtml = '';
+    if (hasVariants && product.variant_list.length > 1) {
+      const previewVariants = product.variant_list.slice(0, 4);
+      const extraCount = product.variant_list.length - previewVariants.length;
+      swatchesHtml = `
+        <div class="card-swatch-list mt-1.5" onclick="event.stopPropagation()">
+          ${previewVariants.map((v, idx) => `
+            <div class="card-swatch-thumb ${idx === 0 ? 'active' : ''}"
+              id="swatch-${product.id}-${v.id}"
+              title="${escapeHtml(v.color_name)} · ${formatUSD(v.sell_price)}"
+              onclick="window.selectCardStyle(event, '${product.id}', '${v.id}')">
+              <img src="${v.photo_url || displayPhoto}" alt="" class="w-full h-full object-cover"
+                onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+            </div>
+          `).join('')}
+          ${extraCount > 0 ? `
+            <span class="text-[9px] font-bold text-slate-400 pl-0.5 cursor-pointer"
+              onclick="window.openStyleModal('${product.id}')">+${extraCount}</span>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="product-card rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer group"
+        id="card-${product.id}"
+        onclick="window.openStyleModal('${product.id}')">
+        <div>
+          <!-- Image Container -->
+          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+            <img id="card-img-${product.id}" src="${displayPhoto}" alt="${escapeHtml(product.name)}" loading="lazy"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+            
+            <!-- Stock Badge -->
+            <div class="absolute top-2 left-2" id="card-stock-${product.id}">
+              ${
+                isSoldOut
+                  ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">${t('soldOut')}</span>`
+                  : isLowStock
+                  ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">${t('onlyLeft', { n: product.stock })}</span>`
+                  : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">${t('inStock')}</span>`
+              }
+            </div>
+
+            <!-- SKU pill -->
+            <div class="absolute top-2 right-2">
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/60 text-slate-300 backdrop-blur-sm">
+                ${product.id}
+              </span>
+            </div>
+
+            <!-- Styles Pill on photo if multi-variant -->
+            ${hasVariants ? `
+              <div class="absolute bottom-2 right-2">
+                <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/75 text-[#f3d489] border border-[#c9a84c]/30 backdrop-blur-sm">
+                  ✨ ${product.variant_list.length} Styles
+                </span>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Details -->
+          <div class="p-3 pb-1">
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+              ${product.category || 'Jewelry'}
+            </span>
+            <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
+              ${escapeHtml(product.name)}
+            </h3>
+
+            <!-- Mini Swatches below title -->
+            ${swatchesHtml}
+
+            <!-- Dual Currency Pricing -->
+            <div class="mt-1.5">
+              <div class="text-sm font-extrabold text-white leading-tight" id="card-price-usd-${product.id}">
+                ${priceUsdText}
+              </div>
+              <div class="text-[11px] font-semibold text-[#e5c36a]" id="card-price-khr-${product.id}">
+                ${priceKhrText}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Button -->
+        <div class="p-3 pt-2">
+          <button type="button"
+            ${isSoldOut ? 'disabled' : ''}
+            onclick="event.stopPropagation(); window.openStyleModal('${product.id}')"
+            class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
+            <span>${isSoldOut ? t('soldOut') : (hasVariants ? '✨ Select Style' : t('addToBag'))}</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.selectCardStyle = function (e, productId, variantId) {
+    if (e) e.stopPropagation();
+    const product = productsList.find((p) => p.id === productId);
+    if (!product || !product.variant_list) return;
+
+    const variant = product.variant_list.find((v) => v.id === variantId);
+    if (!variant) return;
+
+    // Update main card image
+    const cardImg = document.getElementById(`card-img-${productId}`);
+    if (cardImg && variant.photo_url) {
+      cardImg.src = variant.photo_url;
+    }
+
+    // Update price
+    const usdEl = document.getElementById(`card-price-usd-${productId}`);
+    const khrEl = document.getElementById(`card-price-khr-${productId}`);
+    if (usdEl) usdEl.textContent = formatUSD(variant.sell_price);
+    if (khrEl) khrEl.textContent = formatKHR(variant.sell_price);
+
+    // Update active swatch state
+    const card = document.getElementById(`card-${productId}`);
+    if (card) {
+      card.querySelectorAll('.card-swatch-thumb').forEach((thumb) => thumb.classList.remove('active'));
+      const activeThumb = document.getElementById(`swatch-${productId}-${variantId}`);
+      if (activeThumb) activeThumb.classList.add('active');
+    }
+  };
+
+  function renderProducts() {
+    let filtered = productsList;
+
+    // 1. Filter by category if not ALL
+    if (currentCategory !== 'ALL') {
+      filtered = filtered.filter((p) => p.category === currentCategory);
+    }
+
+    // 2. Filter by search query if active
+    if (searchQuery) {
+      filtered = filtered.filter((p) => {
+        const matchName = (p.name || '').toLowerCase().includes(searchQuery);
+        const matchSku = (p.id || '').toLowerCase().includes(searchQuery);
+        const matchCat = (p.category || '').toLowerCase().includes(searchQuery);
+        const matchVariant = Array.isArray(p.variant_list) && p.variant_list.some((v) =>
+          (v.color_name || '').toLowerCase().includes(searchQuery)
+        );
+        return matchName || matchSku || matchCat || matchVariant;
+      });
+    }
+
+    // Update count label
     catalogCountLabel.textContent = t('piecesCount', { n: filtered.length, s: filtered.length === 1 ? '' : 's' });
 
+    // Empty state check
     if (filtered.length === 0) {
       productGrid.innerHTML = '';
+      productGrid.classList.remove('hidden');
+      if (catalogSections) catalogSections.classList.add('hidden');
       emptyState.classList.remove('hidden');
+      if (searchQuery) {
+        if (emptyStateTitle) emptyStateTitle.textContent = 'No matching jewelry';
+        if (emptyStateDesc) emptyStateDesc.textContent = `No items found matching "${searchQuery}".`;
+      } else {
+        if (emptyStateTitle) emptyStateTitle.textContent = t('noProducts');
+        if (emptyStateDesc) emptyStateDesc.textContent = 'There are no items currently available in this category.';
+      }
       return;
     }
 
     emptyState.classList.add('hidden');
 
-    productGrid.innerHTML = filtered.map((product) => {
-      const isSoldOut = product.stock <= 0;
-      const isLowStock = product.stock > 0 && product.stock <= 3;
-      const photoUrl = product.photo_url || DEFAULT_IMAGE;
-
-      return `
-        <div class="product-card rounded-2xl overflow-hidden flex flex-col justify-between">
-          <div>
-            <!-- Image Container -->
-            <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
-              <img src="${photoUrl}" alt="${escapeHtml(product.name)}" loading="lazy"
-                class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
-              
-              <!-- Stock Badge -->
-              <div class="absolute top-2 left-2">
-                ${
-                  isSoldOut
-                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">${t('soldOut')}</span>`
-                    : isLowStock
-                    ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">${t('onlyLeft', { n: product.stock })}</span>`
-                    : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">${t('inStock')}</span>`
-                }
-              </div>
-
-              <!-- SKU pill -->
-              <div class="absolute top-2 right-2">
-                <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/60 text-slate-300 backdrop-blur-sm">
-                  ${product.id}
-                </span>
-              </div>
-            </div>
-
-            <!-- Details -->
-            <div class="p-3">
-              <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
-                ${product.category || 'Jewelry'}
-              </span>
-              <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
-                ${escapeHtml(product.name)}
-              </h3>
-
-              <!-- Optional Variant as Product Description -->
-              ${
-                product.variants
-                  ? `<p class="text-[10px] text-slate-400 line-clamp-1 mb-1.5 font-normal italic">✨ ${escapeHtml(product.variants)}</p>`
-                  : ''
-              }
-
-              <!-- Dual Currency Pricing -->
-              <div class="mt-1">
-                <div class="text-sm font-extrabold text-white leading-tight">
-                  ${formatUSD(product.sell_price)}
-                </div>
-                <div class="text-[11px] font-semibold text-[#e5c36a]">
-                  ${formatKHR(product.sell_price)}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Add Button -->
-          <div class="p-3 pt-0">
-            <button type="button"
-              ${isSoldOut ? 'disabled' : ''}
-              onclick="window.addToCart('${product.id}')"
-              class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
-              <span>${isSoldOut ? t('soldOut') : t('addToBag')}</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
+    // 3. Curated Section Stack View (Active when currentCategory === 'ALL' and NO search query)
+    if (currentCategory === 'ALL' && !searchQuery) {
+      productGrid.classList.add('hidden');
+      if (catalogSections) {
+        catalogSections.classList.remove('hidden');
+        renderCuratedSections(filtered);
+      }
+    } else {
+      // 4. Standard 2-Column Grid (when specific category selected or searching)
+      if (catalogSections) catalogSections.classList.add('hidden');
+      productGrid.classList.remove('hidden');
+      productGrid.innerHTML = filtered.map((p) => renderProductCard(p)).join('');
+    }
   }
 
-  // Category Filtering
-  categoryPills.forEach((pill) => {
-    pill.addEventListener('click', () => {
-      categoryPills.forEach((p) => p.classList.remove('active'));
-      pill.classList.add('active');
-      currentCategory = pill.dataset.category || 'ALL';
-      renderProducts();
-    });
-  });
+  function renderCuratedSections(allProducts) {
+    if (!catalogSections) return;
+
+    // Group products by category
+    const catMap = new Map();
+    for (const p of allProducts) {
+      const cat = p.category || 'Jewelry';
+      if (!catMap.has(cat)) catMap.set(cat, []);
+      catMap.get(cat).push(p);
+    }
+
+    const catIconMap = {
+      Ring: '💍',
+      Necklace: '📿',
+      Bracelet: '✨',
+      Earring: '💎',
+    };
+
+    let html = '';
+    for (const [catName, items] of catMap.entries()) {
+      if (items.length === 0) continue;
+      const icon = catIconMap[catName] || '✦';
+      const previewItems = items.slice(0, 4); // Featured 4 items per section
+
+      html += `
+        <section class="category-curated-block">
+          <div class="section-header">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">${icon}</span>
+              <h3 class="text-sm font-bold text-white tracking-wide">
+                ${escapeHtml(catName)}
+                <span class="text-[11px] font-normal text-slate-400 ml-1">(${items.length})</span>
+              </h3>
+            </div>
+            <button type="button" onclick="window.selectCategory('${escapeHtml(catName)}')"
+              class="section-explore-link">
+              <span>Explore All</span>
+              <span class="text-xs">→</span>
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            ${previewItems.map((p) => renderProductCard(p)).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    catalogSections.innerHTML = html;
+  }
+
+  // ─── Style Selection Modal Logic ──────────────────────────────────────────
+
+  window.openStyleModal = function (productId, defaultVariantId) {
+    const product = productsList.find((p) => p.id === productId);
+    if (!product) return;
+
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+    let selectedVariant = null;
+
+    if (hasVariants) {
+      if (defaultVariantId) {
+        selectedVariant = product.variant_list.find((v) => v.id === defaultVariantId) || product.variant_list[0];
+      } else {
+        selectedVariant = product.variant_list.find((v) => v.stock > 0) || product.variant_list[0];
+      }
+    }
+
+    styleModalState = {
+      product,
+      selectedVariant,
+      qty: 1,
+    };
+
+    updateStyleModalUI();
+    if (styleModal) styleModal.classList.remove('hidden');
+  };
+
+  window.closeStyleModal = function () {
+    if (styleModal) styleModal.classList.add('hidden');
+  };
+
+  window.changeStyleModalQty = function (delta) {
+    const { product, selectedVariant } = styleModalState;
+    if (!product) return;
+    const maxStock = selectedVariant ? selectedVariant.stock : product.stock;
+    const nextQty = styleModalState.qty + delta;
+
+    if (nextQty >= 1 && nextQty <= Math.max(1, maxStock)) {
+      styleModalState.qty = nextQty;
+      if (styleModalQty) styleModalQty.textContent = styleModalState.qty;
+    } else if (nextQty > maxStock) {
+      showToast(t('stockLimit', { n: maxStock }), 'warning');
+    }
+  };
+
+  window.selectModalStyleVariant = function (variantId) {
+    const { product } = styleModalState;
+    if (!product || !product.variant_list) return;
+
+    const variant = product.variant_list.find((v) => v.id === variantId);
+    if (!variant) return;
+
+    styleModalState.selectedVariant = variant;
+    styleModalState.qty = 1;
+    updateStyleModalUI();
+  };
+
+  function updateStyleModalUI() {
+    const { product, selectedVariant, qty } = styleModalState;
+    if (!product) return;
+
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+    const activePhoto = (selectedVariant && selectedVariant.photo_url) || product.photo_url || DEFAULT_IMAGE;
+    const activePrice = selectedVariant ? Number(selectedVariant.sell_price) : Number(product.sell_price);
+    const activeStock = selectedVariant ? selectedVariant.stock : product.stock;
+    const isSoldOut = activeStock <= 0;
+
+    if (styleModalImg) {
+      styleModalImg.src = activePhoto;
+      styleModalImg.alt = escapeHtml(product.name);
+    }
+    if (styleModalSku) {
+      styleModalSku.textContent = selectedVariant ? selectedVariant.id : product.id;
+    }
+    if (styleModalCategory) {
+      styleModalCategory.textContent = product.category || 'Jewelry';
+    }
+    if (styleModalTitle) {
+      styleModalTitle.textContent = product.name;
+    }
+    if (styleModalUsd) {
+      styleModalUsd.textContent = formatUSD(activePrice);
+    }
+    if (styleModalKhr) {
+      styleModalKhr.textContent = formatKHR(activePrice);
+    }
+    if (styleModalQty) {
+      styleModalQty.textContent = qty;
+    }
+
+    // Stock Badge
+    if (styleModalStockBadge) {
+      if (isSoldOut) {
+        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">${t('soldOut')}</span>`;
+      } else if (activeStock <= 3) {
+        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">${t('onlyLeft', { n: activeStock })}</span>`;
+      } else {
+        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">${t('inStock')}</span>`;
+      }
+    }
+
+    // Style Swatches in modal
+    if (styleModalSwatchesContainer) {
+      if (hasVariants) {
+        styleModalSwatchesContainer.classList.remove('hidden');
+        if (styleModalSelectedLabel) {
+          styleModalSelectedLabel.textContent = selectedVariant ? selectedVariant.color_name : '';
+        }
+        if (styleModalSwatches) {
+          styleModalSwatches.innerHTML = product.variant_list.map((v) => {
+            const isSelected = selectedVariant && selectedVariant.id === v.id;
+            const isVOut = v.stock <= 0;
+            return `
+              <div class="style-tile ${isSelected ? 'active' : ''} ${isVOut ? 'sold-out' : ''}"
+                onclick="window.selectModalStyleVariant('${v.id}')">
+                <img src="${v.photo_url || activePhoto}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover"
+                  onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+                <div class="style-tile-badge">
+                  <span>${escapeHtml(v.color_name)}</span>
+                  <div class="text-[#f3d489] text-[8px] font-mono">${formatUSD(v.sell_price)}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } else {
+        styleModalSwatchesContainer.classList.add('hidden');
+      }
+    }
+
+    // Modal Add Button
+    if (styleModalAddBtn) {
+      if (isSoldOut) {
+        styleModalAddBtn.disabled = true;
+        styleModalAddBtn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-500 cursor-not-allowed shadow-none';
+        styleModalAddBtn.innerHTML = `<span>${t('soldOut')}</span>`;
+      } else {
+        styleModalAddBtn.disabled = false;
+        styleModalAddBtn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
+        const label = selectedVariant
+          ? `Add ${escapeHtml(selectedVariant.color_name)} • ${formatUSD(activePrice * qty)}`
+          : `${t('addToBag')} • ${formatUSD(activePrice * qty)}`;
+        styleModalAddBtn.innerHTML = `<span>${label}</span><span class="text-sm">🛍️</span>`;
+      }
+    }
+  }
+
+  window.confirmAddStyleToCart = function () {
+    const { product, selectedVariant, qty } = styleModalState;
+    if (!product) return;
+
+    const availableStock = selectedVariant ? selectedVariant.stock : product.stock;
+    if (availableStock <= 0) {
+      showToast(t('soldOut'), 'warning');
+      return;
+    }
+
+    const itemKey = selectedVariant ? `${product.id}_${selectedVariant.id}` : product.id;
+    const existingIndex = cart.findIndex((it) => it.itemKey === itemKey);
+    const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
+
+    if (currentQtyInCart + qty > availableStock) {
+      showToast(t('stockLimit', { n: availableStock }), 'warning');
+      return;
+    }
+
+    const unitPrice = selectedVariant ? Number(selectedVariant.sell_price) : Number(product.sell_price);
+    const photoUrl = (selectedVariant && selectedVariant.photo_url) || product.photo_url || DEFAULT_IMAGE;
+    const displayName = selectedVariant ? `${product.name} (${selectedVariant.color_name})` : product.name;
+
+    if (existingIndex >= 0) {
+      cart[existingIndex].quantity += qty;
+    } else {
+      cart.push({
+        itemKey,
+        productId: product.id,
+        variantId: selectedVariant ? selectedVariant.id : null,
+        variantName: selectedVariant ? selectedVariant.color_name : null,
+        name: displayName,
+        baseName: product.name,
+        price: unitPrice,
+        photo_url: photoUrl,
+        stock: availableStock,
+        quantity: qty,
+      });
+    }
+
+    saveCartToStorage();
+    updateCartUI();
+    window.closeStyleModal();
+    showToast(t('addedToBag', { name: displayName }), 'success');
+  };
 
   // Cart Management
   function loadCartFromStorage() {
@@ -642,12 +1108,18 @@
     const product = productsList.find((p) => p.id === productId);
     if (!product) return;
 
+    if (Array.isArray(product.variant_list) && product.variant_list.length > 0) {
+      window.openStyleModal(productId);
+      return;
+    }
+
     if (product.stock <= 0) {
       showToast(t('soldOut'), 'warning');
       return;
     }
 
-    const existingIndex = cart.findIndex((it) => it.productId === productId);
+    const itemKey = product.id;
+    const existingIndex = cart.findIndex((it) => it.itemKey === itemKey);
     const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
 
     if (currentQtyInCart + 1 > product.stock) {
@@ -659,8 +1131,12 @@
       cart[existingIndex].quantity += 1;
     } else {
       cart.push({
+        itemKey,
         productId: product.id,
+        variantId: null,
+        variantName: null,
         name: product.name,
+        baseName: product.name,
         price: Number(product.sell_price),
         photo_url: product.photo_url || DEFAULT_IMAGE,
         variants: product.variants || '',
@@ -674,8 +1150,8 @@
     showToast(t('addedToBag', { name: product.name }), 'success');
   };
 
-  window.updateItemQuantity = function (productId, delta) {
-    const index = cart.findIndex((it) => it.productId === productId);
+  window.updateItemQuantity = function (itemKey, delta) {
+    const index = cart.findIndex((it) => it.itemKey === itemKey || it.productId === itemKey);
     if (index === -1) return;
 
     const item = cart[index];
@@ -685,14 +1161,23 @@
       cart.splice(index, 1);
       showToast(t('removedItem', { name: item.name }), 'info');
     } else {
-      const product = productsList.find((p) => p.id === productId);
-      const availableStock = product ? product.stock : item.stock;
+      const product = productsList.find((p) => p.id === item.productId);
+      let availableStock = item.stock;
+      if (product) {
+        if (item.variantId && Array.isArray(product.variant_list)) {
+          const v = product.variant_list.find((x) => x.id === item.variantId);
+          if (v) availableStock = v.stock;
+        } else {
+          availableStock = product.stock;
+        }
+      }
 
       if (newQty > availableStock) {
         showToast(t('stockLimit', { n: availableStock }), 'warning');
         return;
       }
       item.quantity = newQty;
+      item.stock = availableStock;
     }
 
     saveCartToStorage();
@@ -738,21 +1223,21 @@
 
           <!-- Item info — strictly bounded -->
           <div class="cart-item-details min-w-0 flex-1 overflow-hidden">
-            <h5 class="text-xs font-bold text-white truncate leading-snug block">${escapeHtml(item.name)}</h5>
+            <h5 class="text-xs font-bold text-white truncate leading-snug block">${escapeHtml(item.baseName || item.name)}</h5>
+            ${item.variantName ? `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30 mt-0.5">✦ ${escapeHtml(item.variantName)}</span>` : ''}
             <div class="text-[11px] text-[#e5c36a] font-semibold mt-0.5 truncate block">
               ${formatUSD(item.price)} <span class="text-[10px] text-slate-400 font-normal">(${formatKHR(item.price)})</span>
             </div>
-            ${item.variants ? `<p class="text-[10px] text-slate-400 truncate italic leading-tight block">✨ ${escapeHtml(item.variants)}</p>` : ''}
           </div>
 
           <!-- Qty stepper — permanently anchored to the right -->
           <div class="cart-item-controls flex-shrink-0 ml-auto flex items-center gap-0.5 bg-black/40 rounded-lg p-1 border border-white/10">
-            <button type="button" onclick="window.updateItemQuantity('${item.productId}', -1)"
+            <button type="button" onclick="window.updateItemQuantity('${item.itemKey || item.productId}', -1)"
               class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white bg-white/5 active:scale-95">
               −
             </button>
             <span class="w-6 text-center text-xs font-bold text-white">${item.quantity}</span>
-            <button type="button" onclick="window.updateItemQuantity('${item.productId}', 1)"
+            <button type="button" onclick="window.updateItemQuantity('${item.itemKey || item.productId}', 1)"
               class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-slate-300 hover:text-white bg-white/5 active:scale-95">
               +
             </button>
@@ -830,6 +1315,7 @@
           payment_method: selectedPaymentMethod,
           items: cart.map((it) => ({
             productId: it.productId,
+            variantId: it.variantId || null,
             quantity: it.quantity,
           })),
           customer_name: customerName,

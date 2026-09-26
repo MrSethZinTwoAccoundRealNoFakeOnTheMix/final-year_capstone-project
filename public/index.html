@@ -107,40 +107,46 @@
       </div>
     </div>
 
+    <!-- Minimalist Luxury Search Bar -->
+    <div class="relative mb-3.5">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+      <input type="text" id="customer-search-input"
+        placeholder="Search collection, style, or SKU..."
+        autocomplete="off"
+        class="w-full pl-10 pr-9 py-2.5 bg-[#171829] border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:ring-1 focus:ring-[#c9a84c] transition shadow-inner">
+      <button id="search-clear-btn" type="button" onclick="window.clearCustomerSearch()"
+        class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition">
+        <span class="text-[11px] font-bold bg-white/10 w-4 h-4 rounded-full inline-flex items-center justify-center">✕</span>
+      </button>
+    </div>
+
     <!-- Category Filter Tabs (Horizontal Scrollable Pills) -->
-    <div class="sticky top-[61px] z-20 py-2.5 -mx-4 px-4 bg-[#11121d]/95 backdrop-blur-md mb-2">
+    <div class="sticky top-[61px] z-20 py-2 -mx-4 px-4 bg-[#11121d]/95 backdrop-blur-md mb-2">
       <div class="flex space-x-2 overflow-x-auto no-scrollbar py-0.5" id="category-pills">
         <button class="category-pill active flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
           data-category="ALL">
           All Pieces
         </button>
-        <button class="category-pill flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-          data-category="Ring">
-          💍 Rings
-        </button>
-        <button class="category-pill flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-          data-category="Necklace">
-          📿 Necklaces
-        </button>
-        <button class="category-pill flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-          data-category="Bracelet">
-          ✨ Bracelets
-        </button>
-        <button class="category-pill flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
-          data-category="Earring">
-          💎 Earrings
-        </button>
       </div>
     </div>
 
     <!-- Catalog Section Header -->
-    <div class="flex items-center justify-between mb-3 px-1">
+    <div class="flex items-center justify-between mb-3 px-1" id="catalog-header-bar">
       <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" id="catalog-count-label">Loading
         jewelry…</span>
       <span class="text-[11px] text-[#e5c36a] font-medium">1 USD = ៛4,100</span>
     </div>
 
-    <!-- Product Grid (2-Column Mobile) -->
+    <!-- Curated Section Stack View (Active when Category === 'ALL' and not searching) -->
+    <div id="catalog-sections" class="space-y-7 pb-8 hidden">
+      <!-- Dynamically populated with category mini-grids -->
+    </div>
+
+    <!-- Product Grid (2-Column Mobile for filtered category or search results) -->
     <div id="product-grid" class="grid grid-cols-2 gap-3 pb-8">
       <!-- Skeletons will appear here initially -->
       <div class="skeleton rounded-2xl h-64"></div>
@@ -152,8 +158,11 @@
     <!-- Empty State (Hidden by default) -->
     <div id="empty-state" class="hidden text-center py-16 px-4">
       <span class="text-5xl block mb-3">🔍</span>
-      <h3 class="text-base font-bold text-white mb-1">No jewelry found</h3>
-      <p class="text-xs text-slate-400">There are no items currently available in this category.</p>
+      <h3 class="text-base font-bold text-white mb-1" id="empty-state-title">No jewelry found</h3>
+      <p class="text-xs text-slate-400" id="empty-state-desc">There are no items currently available in this category.</p>
+      <button type="button" onclick="window.resetCatalogView()" class="mt-4 px-4 py-2 rounded-xl text-xs font-bold btn-gold-outline inline-block">
+        Explore All Pieces
+      </button>
     </div>
 
   </main>
@@ -182,6 +191,81 @@
         <span>View Cart</span>
         <span class="text-sm">🛍️</span>
       </button>
+    </div>
+  </div>
+
+  <!-- Slide-up Bottom Sheet Modal (Product Detail & Style Selection) -->
+  <div id="style-modal"
+    class="modal-overlay hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center">
+    <div class="modal-sheet glass-modal-sheet w-full max-w-md rounded-t-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <!-- Drag handle & close header -->
+      <div class="relative px-5 pt-3 pb-2 border-b border-white/10 flex-shrink-0 flex items-center justify-center">
+        <div class="drag-handle mx-auto mb-0"></div>
+        <button onclick="window.closeStyleModal()"
+          class="absolute right-4 top-2.5 w-7 h-7 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- Scrollable content -->
+      <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1">
+        <!-- Main High-Res Preview Image -->
+        <div class="relative w-full aspect-square rounded-2xl bg-slate-900 overflow-hidden border border-white/10 shadow-lg">
+          <img id="style-modal-img" src="" alt="" class="w-full h-full object-cover transition-all duration-300">
+          <div id="style-modal-stock-badge" class="absolute top-3 left-3"></div>
+          <div class="absolute top-3 right-3">
+            <span id="style-modal-sku" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm"></span>
+          </div>
+        </div>
+
+        <!-- Title & Category & Price -->
+        <div>
+          <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-wider font-bold"></span>
+          <h2 id="style-modal-title" class="text-base font-extrabold text-white mt-0.5 leading-snug"></h2>
+          
+          <div class="flex items-baseline space-x-2 mt-1.5">
+            <span id="style-modal-usd" class="text-xl font-extrabold text-white leading-none">$0.00</span>
+            <span id="style-modal-khr" class="text-xs font-semibold text-[#e5c36a]">៛0</span>
+          </div>
+          <p id="style-modal-desc" class="text-xs text-slate-400 mt-2 leading-relaxed hidden"></p>
+        </div>
+
+        <!-- Visual Style Swatches (Tiles) -->
+        <div id="style-modal-swatches-container">
+          <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-2 flex items-center justify-between">
+            <span>Available Styles:</span>
+            <span id="style-modal-selected-label" class="text-[#f3d489] font-semibold"></span>
+          </label>
+          <div id="style-modal-swatches" class="grid grid-cols-4 gap-2.5">
+            <!-- Dynamically populated style tiles -->
+          </div>
+        </div>
+
+        <!-- Quantity Stepper -->
+        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+          <span class="text-xs font-semibold text-slate-300">Quantity</span>
+          <div class="flex items-center space-x-3">
+            <button type="button" onclick="window.changeStyleModalQty(-1)"
+              class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition">
+              −
+            </button>
+            <span id="style-modal-qty" class="text-xs font-extrabold text-white w-5 text-center">1</span>
+            <button type="button" onclick="window.changeStyleModalQty(1)"
+              class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition">
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Bottom Sheet Footer / Action CTA -->
+      <div class="p-4 border-t border-white/10 bg-[#171829] flex-shrink-0">
+        <button id="style-modal-add-btn" type="button" onclick="window.confirmAddStyleToCart()"
+          class="btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2">
+          <span>Add to Bag</span>
+          <span class="text-sm">🛍️</span>
+        </button>
+      </div>
     </div>
   </div>
 

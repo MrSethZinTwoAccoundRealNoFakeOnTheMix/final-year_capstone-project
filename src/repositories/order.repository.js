@@ -13,6 +13,13 @@
 
 const db = require('../db');
 
+// Ensure variant_id column exists in order_items (safe auto-migration fallback)
+try {
+  db.exec('ALTER TABLE order_items ADD COLUMN variant_id TEXT DEFAULT NULL');
+} catch (e) {
+  // Column already exists, safe to ignore
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -22,12 +29,14 @@ const db = require('../db');
 function getItemsForOrder(orderId) {
   return db.prepare(`
     SELECT
-      oi.id, oi.order_id, oi.product_id, oi.quantity, oi.unit_price,
+      oi.id, oi.order_id, oi.product_id, oi.variant_id, oi.quantity, oi.unit_price,
+      COALESCE(pv.color_name, '') AS variant_name,
+      COALESCE(pv.photo_url, p.photo_url, '') AS photo_url,
       COALESCE(p.name, 'Item ' || oi.product_id) AS name,
-      COALESCE(p.photo_url, '') AS photo_url,
       COALESCE(p.category, 'General') AS category
     FROM order_items oi
     LEFT JOIN products p ON oi.product_id = p.id
+    LEFT JOIN product_variants pv ON oi.variant_id = pv.id
     WHERE oi.order_id = ?
   `).all(orderId);
 }
@@ -82,14 +91,14 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
     VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
   `);
   const insertItem = db.prepare(`
-    INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
   const run = db.transaction(() => {
     insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'COD');
     for (const item of items) {
-      insertItem.run(orderId, item.productId, item.quantity, item.unit_price);
+      insertItem.run(orderId, item.productId, item.variantId || null, item.quantity, item.unit_price);
     }
   });
 
@@ -101,7 +110,7 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
 
 /**
  * CONFIRM: PENDING → CONFIRMED
- * Atomically decrements stock for every item.
+ * Atomically decrements stock for every item (either variant or parent product).
  * If any item has insufficient stock, the ENTIRE transaction rolls back.
  * Throws descriptive Error on any failure (caller catches and returns 409).
  */
@@ -118,13 +127,33 @@ function confirmOrder(id) {
   const decrementStock = db.prepare(`
     UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?
   `);
+  const decrementVariant = db.prepare(`
+    UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?
+  `);
+  const syncParent = db.prepare(`
+    UPDATE products
+    SET stock = (
+      SELECT COALESCE(SUM(stock), 0)
+      FROM product_variants
+      WHERE product_id = ? AND is_active = 1
+    )
+    WHERE id = ?
+  `);
   const setStatus = db.prepare(`UPDATE orders SET status = 'CONFIRMED' WHERE id = ?`);
 
   db.transaction(() => {
     for (const item of order.items) {
-      const result = decrementStock.run(item.quantity, item.product_id, item.quantity);
-      if (result.changes === 0) {
-        throw new Error(`Insufficient stock for "${item.name}" (${item.product_id}). Cannot confirm.`);
+      if (item.variant_id) {
+        const vResult = decrementVariant.run(item.quantity, item.variant_id, item.quantity);
+        if (vResult.changes === 0) {
+          throw new Error(`Insufficient stock for "${item.name}" (${item.variant_name || item.variant_id}). Cannot confirm.`);
+        }
+        syncParent.run(item.product_id, item.product_id);
+      } else {
+        const result = decrementStock.run(item.quantity, item.product_id, item.quantity);
+        if (result.changes === 0) {
+          throw new Error(`Insufficient stock for "${item.name}" (${item.product_id}). Cannot confirm.`);
+        }
       }
     }
     setStatus.run(id);
@@ -150,13 +179,28 @@ function cancelOrder(id) {
 
   const wasConfirmed = order.status === 'CONFIRMED';
   const restoreStock = db.prepare(`UPDATE products SET stock = stock + ? WHERE id = ?`);
-  const setStatus    = db.prepare(`UPDATE orders SET status = 'CANCELLED' WHERE id = ?`);
+  const restoreVariant = db.prepare(`UPDATE product_variants SET stock = stock + ? WHERE id = ?`);
+  const syncParent = db.prepare(`
+    UPDATE products
+    SET stock = (
+      SELECT COALESCE(SUM(stock), 0)
+      FROM product_variants
+      WHERE product_id = ? AND is_active = 1
+    )
+    WHERE id = ?
+  `);
+  const setStatus = db.prepare(`UPDATE orders SET status = 'CANCELLED' WHERE id = ?`);
 
   db.transaction(() => {
     if (wasConfirmed) {
       // Restore stock that was decremented at confirmation
       for (const item of order.items) {
-        restoreStock.run(item.quantity, item.product_id);
+        if (item.variant_id) {
+          restoreVariant.run(item.quantity, item.variant_id);
+          syncParent.run(item.product_id, item.product_id);
+        } else {
+          restoreStock.run(item.quantity, item.product_id);
+        }
       }
     }
     setStatus.run(id);

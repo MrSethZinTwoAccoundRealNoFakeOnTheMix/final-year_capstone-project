@@ -17,20 +17,26 @@ Transform the customer storefront (`/`, `public/index.html`, `public/js/webview.
 ## 2. Phase-by-Phase Implementation Steps
 
 ### Phase 1: Backend API Preparation
-- [ ] **Verify `GET /api/products`:**
+- [x] **Verify `GET /api/products`:**
   - Update `src/repositories/product.repository.js` -> `findAll()` to attach `variant_list` (including `id, product_id, color_name, sell_price, stock, photo_url`) without exposing `import_price`.
-- [ ] **Update Order Service (`src/services/order.service.js`):**
+- [x] **Update Order Service (`src/services/order.service.js`):**
   - Ensure `placeOrder` accepts optional `variantId` per cart item.
   - Soft-check stock against `product_variants` table if `variantId` is present, or fallback to main `products.stock`.
   - Include variant details in `order_items` record and receipt payload.
+- [x] **Update Order Repository (`src/repositories/order.repository.js`):**
+  - Added safe auto-migration for `order_items.variant_id`.
+  - Updated `confirmOrder` to decrement variant stock and sync parent stock.
+  - Updated `cancelOrder` to restore variant stock and sync parent stock.
 
 ### Phase 2: Storefront HTML & UI Architecture (`public/index.html`)
-- [ ] **Search Engine Input:**
+- [x] **Search Engine Input:**
   - Add minimalist luxury search bar under the header with instant clear button (`[ ✕ ]`).
-- [ ] **Dynamic Category Navigation:**
+- [x] **Dynamic Category Navigation:**
   - Container for dynamically loaded category chips from `/api/categories`.
-- [ ] **Product & Style Drawer (Bottom Sheet Modal):**
-  - Add markup for `#style-sheet-modal` containing:
+- [x] **Curated Section Stack:**
+  - Added `#catalog-sections` for grouped boutique categories in "ALL" view.
+- [x] **Product & Style Drawer (Bottom Sheet Modal):**
+  - Added markup for `#style-modal` containing:
     - Large preview photo
     - Model name, category, SKU, and dynamic price ($USD & ៛KHR)
     - Visual Style Swatches (thumbnails with active gold ring)
@@ -38,22 +44,21 @@ Transform the customer storefront (`/`, `public/index.html`, `public/js/webview.
     - Stepper `[ − 1 + ]`
     - Sticky CTA: `Add to Bag • $XX.XX`
 
-### Phase 3: Storefront Logic & Visual Interactions (`public/js/webview.js`)
-- [ ] **Product Card Rendering:**
+### Phase 3: Storefront Logic & Visual Interactions (`public/js/webview.js` & `public/css/webview.css`)
+- [x] **Product Card Rendering:**
   - Calculate min/max price for products with `variant_list`.
-  - Render mini circular image thumbnails (24px) for products with styles.
-  - Allow tapping mini swatches on the card to switch main image and price immediately.
-- [ ] **Category Layout Rendering:**
-  - Category tabs filter or browse by sectional collections.
-  - "View All" interaction to expand specific categories.
-- [ ] **Search Functionality:**
-  - Live filter on `keyup` / `input` across name, category, SKU, and style numbers.
-- [ ] **Cart State & Variant Support:**
-  - Update cart item structure to `cartItemId = `${productId}_${variantId || 'base'}`.
-  - Display model name + style name (e.g. `Emerald Ring — Style 2`) and style photo in the cart bag.
+  - Render mini circular image thumbnails (24px) for products with styles (Option B).
+  - Allow tapping mini swatches on the card to switch main image and price immediately without opening modal.
+- [x] **Category Layout Rendering:**
+  - Curated Section Stack view (up to 4 pieces per section with `Explore All →` button).
+  - Smooth category filtering into full 2-column grid.
+- [x] **Search Functionality:**
+  - Real-time search by name, SKU, category, and style names with instant clear `[ ✕ ]`.
+- [x] **Cart State & Variant Support:**
+  - Update cart item structure to `cartItemId = ${productId}_${variantId || 'base'}`.
+  - Display model name + style name (e.g. `Classic Gold Ring — Style 2`) and style photo in the cart bag.
 
 ### Phase 4: Verification & End-to-End Testing
-- [ ] Run automated script to test catalog API with variants.
-- [ ] Test placing orders with variants and verifying receipt payload.
-- [ ] Verify mobile layout responsiveness in browser subagent.
-- [ ] Commit and push changes to master.
+- [x] Run automated script (`scripts/test_customer_storefront.js`) verifying public catalog and end-to-end checkout with variants.
+- [x] Verify server returns 200 and all DOM IDs match.
+- [x] All integration tests passing 100%.

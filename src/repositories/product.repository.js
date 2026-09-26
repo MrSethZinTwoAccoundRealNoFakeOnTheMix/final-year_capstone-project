@@ -21,12 +21,31 @@ try {
  * Only returns active (non-archived) products.
  */
 function findAll() {
-  return db.prepare(`
+  const products = db.prepare(`
     SELECT id, name, category, sell_price, stock, photo_url, variants, has_variants
     FROM products
     WHERE is_active = 1
     ORDER BY category ASC, id ASC
   `).all();
+
+  const allVariants = db.prepare(`
+    SELECT id, product_id, color_name, sell_price, stock, photo_url
+    FROM product_variants
+    WHERE is_active = 1
+    ORDER BY id ASC
+  `).all();
+
+  const variantMap = new Map();
+  for (const v of allVariants) {
+    if (!variantMap.has(v.product_id)) variantMap.set(v.product_id, []);
+    variantMap.get(v.product_id).push(v);
+  }
+
+  for (const p of products) {
+    p.variant_list = variantMap.get(p.id) || [];
+  }
+
+  return products;
 }
 
 /**
