@@ -385,12 +385,12 @@
 
   <!-- ─── Quick Sell: Deduction Log Drawer ──────────────────────────────── -->
   <div id="qs-log-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[70vh] overflow-y-auto">
-      <div class="sticky top-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[70vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="flex-shrink-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between z-10">
         <h3 class="text-sm font-bold text-white">📋 Deduction Log</h3>
-        <button onclick="window.closeDeductionLog()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+        <button onclick="window.closeDeductionLog()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition">✕</button>
       </div>
-      <div id="qs-log-list" class="p-4 space-y-2">
+      <div id="qs-log-list" class="flex-1 overflow-y-auto p-4 space-y-2 overscroll-contain">
         <!-- Rendered by JS -->
       </div>
     </div>
@@ -417,15 +417,15 @@
 
   <!-- ─── Quick Sell: Variant Style Drawer ──────────────────────────────── -->
   <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] overflow-y-auto">
-      <div class="sticky top-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="flex-shrink-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between z-10">
         <div>
           <h3 class="text-sm font-bold text-white" id="qs-variant-drawer-title">Choose Style</h3>
           <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub">Select a style to deduct from inventory</p>
         </div>
-        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition">✕</button>
       </div>
-      <div id="qs-variant-list" class="p-4 grid grid-cols-2 gap-3">
+      <div id="qs-variant-list" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 overscroll-contain">
         <!-- Rendered by JS -->
       </div>
     </div>
