@@ -913,10 +913,15 @@
     const nameLabel = document.getElementById('sm-focused-name');
     if (nameLabel) nameLabel.innerHTML = `<span>✨</span> <span>${escapeHtml(v.color_name)}</span>`;
 
-    // 6. Highlight focused tile ring
+    // 6. Highlight focused tile ring & auto-scroll into view in horizontal reel
     product.variant_list.forEach((variant, i) => {
       const tile = document.getElementById(`sm-tile-${variant.id}`);
-      if (tile) tile.classList.toggle('sm-tile-focused', i === focusedIdx);
+      if (tile) {
+        tile.classList.toggle('sm-tile-focused', i === focusedIdx);
+        if (i === focusedIdx) {
+          tile.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
     });
   }
 
@@ -1120,7 +1125,7 @@
             <span id="sm-selection-count" class="text-[10px] text-[#f3d489] font-semibold"></span>
           </div>
           ${tilesHtml}
-          <p class="text-[10px] text-slate-500 mt-2 text-center">Tap a style to select · Tap again to deselect</p>
+          <p class="text-[10px] text-slate-500 mt-1.5 text-center">Swipe to explore styles · Tap to select</p>
         </div>
       ` : ''}
 

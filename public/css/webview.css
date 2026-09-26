@@ -429,20 +429,26 @@ body {
   border: 1px solid rgba(6, 95, 70, 0.7);
 }
 
-/* ── Multi-Select Style Tiles ───────────────────────────────────────────── */
+/* ── Multi-Select Style Tiles (Horizontal Swipeable Reel) ── */
 .sm-tiles-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  align-items: stretch;
   gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 2px 8px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
 }
 
-@media (min-width: 380px) {
-  .sm-tiles-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.sm-tiles-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .sm-style-tile {
+  flex: 0 0 74px;
+  width: 74px;
   position: relative;
   border-radius: 10px;
   border: 2px solid rgba(255, 255, 255, 0.1);
