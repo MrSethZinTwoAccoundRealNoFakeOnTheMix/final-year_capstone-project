@@ -1345,7 +1345,7 @@
       const { product, currentTrackPos } = styleModalState;
       if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
       const gallery = document.getElementById('sm-gallery');
-      const galleryW = gallery ? gallery.offsetWidth : 260;
+      const galleryW = gallery ? gallery.offsetWidth : 300;
       const baseOffset = (currentTrackPos || 1) * galleryW;
       const track = document.getElementById('sm-gallery-track');
       if (track) {

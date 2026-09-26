@@ -295,7 +295,7 @@ body {
 .sm-gallery {
   position: relative;
   width: 100%;
-  max-width: 260px;
+  max-width: 300px;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
   border-radius: 16px;
