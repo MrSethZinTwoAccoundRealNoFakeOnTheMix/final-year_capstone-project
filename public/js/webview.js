@@ -1037,9 +1037,9 @@
       ? `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: initStock })}</span>`
       : `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
 
-    // ── Pagination dots ──
+    // ── Pagination dots (visual indicator only, non-clickable) ──
     const dotsHtml = hasVariants && N > 1
-      ? `<div class="sm-dots">${variants.map((_, i) => `<button type="button" class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}" onclick="window.galleryGoTo(${i})" aria-label="Style ${i + 1}"></button>`).join('')}</div>`
+      ? `<div class="sm-dots">${variants.map((_, i) => `<span class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}"></span>`).join('')}</div>`
       : '';
 
     // ── Nav arrows (modern luxury glass buttons with SVG chevrons) ──
@@ -1078,7 +1078,7 @@
     if (!scrollEl) return;
 
     scrollEl.innerHTML = `
-      <!-- Swipeable Gallery (Compact 200px) -->
+      <!-- Swipeable Gallery -->
       <div class="sm-gallery" id="sm-gallery"
         data-product-id="${product.id}"
         ontouchstart="window.smTouchStart(event)"
@@ -1345,7 +1345,7 @@
       const { product, currentTrackPos } = styleModalState;
       if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
       const gallery = document.getElementById('sm-gallery');
-      const galleryW = gallery ? gallery.offsetWidth : 200;
+      const galleryW = gallery ? gallery.offsetWidth : 260;
       const baseOffset = (currentTrackPos || 1) * galleryW;
       const track = document.getElementById('sm-gallery-track');
       if (track) {

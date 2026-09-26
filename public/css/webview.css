@@ -295,10 +295,10 @@ body {
 .sm-gallery {
   position: relative;
   width: 100%;
-  max-width: 200px;
+  max-width: 260px;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   background: #121324;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -366,7 +366,7 @@ body {
 .sm-arrow-left { left: 8px; }
 .sm-arrow-right { right: 8px; }
 
-/* Dot indicators */
+/* Dot indicators (visual page indicator only, non-clickable) */
 .sm-dots {
   position: absolute;
   bottom: 8px;
@@ -381,6 +381,8 @@ body {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
 }
 
 .sm-dot {
@@ -390,9 +392,7 @@ body {
   background: rgba(255, 255, 255, 0.4);
   transition: all 0.2s ease;
   flex-shrink: 0;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+  pointer-events: none;
 }
 
 .sm-dot-active {
