@@ -30,10 +30,11 @@
       promoTitle: 'Fine Cambodian Craftsmanship',
       promoSub: 'Direct checkout via KHQR & verified Messenger delivery.',
       catAll: 'All Pieces',
+      catBag: '👜 Bags',
+      catHairpin: '✨ Hairpins',
+      catBrooch: '🧷 Brooches',
       catRing: '💍 Rings',
-      catNecklace: '📿 Necklaces',
       catBracelet: '✨ Bracelets',
-      catEarring: '💎 Earrings',
       rateDisplay: '1 USD = ៛4,100',
       piecesCount: '{n} piece{s} available',
       inStock: 'In Stock',
@@ -120,10 +121,11 @@
       promoTitle: 'សិប្បកម្មគ្រឿងអលង្ការខ្មែរប្រណិត',
       promoSub: 'ទូទាត់ផ្ទាល់តាម KHQR & ដឹកជញ្ជូនរហ័សប្រកបដោយទំនុកចិត្ត។',
       catAll: 'គ្រឿងអលង្ការទាំងអស់',
+      catBag: '👜 កាបូប',
+      catHairpin: '✨ ស្នាតសក់',
+      catBrooch: '🧷 កន្លាស់អាវ',
       catRing: '💍 ចិញ្ចៀន',
-      catNecklace: '📿 ខ្សែក',
-      catBracelet: '✨ ខ្សែដៃ',
-      catEarring: '💎 ក្រវិល',
+      catBracelet: '✨ កងដៃ',
       rateDisplay: '១ ដុល្លារ = ៛៤,១០០',
       piecesCount: 'មាន {n} មុខសម្រាប់ជ្រើសរើស',
       inStock: 'មានក្នុងស្តុក',
@@ -608,10 +610,16 @@
 
     const catMap = {
       ALL: t('catAll') || 'All Pieces',
-      Ring: '💍 ' + (t('catRing') || 'Rings'),
-      Necklace: '📿 ' + (t('catNecklace') || 'Necklaces'),
-      Bracelet: '✨ ' + (t('catBracelet') || 'Bracelets'),
-      Earring: '💎 ' + (t('catEarring') || 'Earrings'),
+      'កាបូប': t('catBag') || '👜 Bags',
+      'ស្នាតសក់': t('catHairpin') || '✨ Hairpins',
+      'កន្លាស់អាវ': t('catBrooch') || '🧷 Brooches',
+      'ចិញ្ចៀន': t('catRing') || '💍 Rings',
+      'កងដៃ': t('catBracelet') || '✨ Bracelets',
+      Bag: t('catBag') || '👜 Bags',
+      Hairpin: t('catHairpin') || '✨ Hairpins',
+      Brooch: t('catBrooch') || '🧷 Brooches',
+      Ring: t('catRing') || '💍 Rings',
+      Bracelet: t('catBracelet') || '✨ Bracelets',
     };
 
     const displayCategories = ['ALL', ...categoriesList];
@@ -757,7 +765,11 @@
           <!-- Details -->
           <div class="p-2 pb-0.5">
             <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
-              ${product.category || 'Jewelry'}
+              ${(function() {
+                const label = catMap[product.category];
+                if (label) return label.replace(/^[^\w\s\u1780-\u17FF]+\s*/, '');
+                return product.category || 'Jewelry';
+              })()}
             </span>
             <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
               ${escapeHtml(product.name)}
