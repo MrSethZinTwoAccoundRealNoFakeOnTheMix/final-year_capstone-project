@@ -135,24 +135,42 @@
     <!-- ───────────────────────────────────────────────────────────── -->
     <!-- TAB 2: INVENTORY & PRODUCTS                                   -->
     <!-- ───────────────────────────────────────────────────────────── -->
-    <section id="tab-content-inventory" class="hidden space-y-4">
+    <section id="tab-content-inventory" class="hidden space-y-3.5">
       
       <!-- Top Actions Bar -->
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-bold text-white">Product Catalog</h3>
-          <p class="text-[11px] text-slate-400">Manage pricing, margin, and stock levels</p>
+          <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
+            <span>💎 Product Catalog</span>
+            <span id="inv-total-count" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#c9a84c]/20 text-[#f3d489]">0</span>
+          </h3>
+          <p class="text-[11px] text-slate-400">Manage visuals, pricing, and stock levels</p>
         </div>
         <button onclick="openProductModal()" class="btn-gold px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-md">
           <span>+ Add Jewelry</span>
         </button>
       </div>
 
-      <!-- Products Grid/List Container -->
+      <!-- Live Search & Category Chips -->
+      <div class="space-y-2">
+        <div class="relative">
+          <input type="search" id="inv-search-input" placeholder="Search jewelry name or SKU..."
+            class="w-full bg-[#171928] border border-white/10 focus:border-[#c9a84c] rounded-xl px-3 py-2 pl-8 pr-8 text-xs text-white placeholder-slate-400 outline-none transition">
+          <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+          <button type="button" id="inv-search-clear" onclick="window.clearInvSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold w-4 h-4 flex items-center justify-center">✕</button>
+        </div>
+
+        <!-- Category Chip Row -->
+        <div id="inv-category-chips" class="flex space-x-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Products List Container -->
       <div id="inventory-list" class="space-y-3 pb-8">
         <!-- Rendered by JS -->
-        <div class="skeleton rounded-2xl h-24"></div>
-        <div class="skeleton rounded-2xl h-24"></div>
+        <div class="skeleton rounded-2xl h-28"></div>
+        <div class="skeleton rounded-2xl h-28"></div>
       </div>
     </section>
 
@@ -481,6 +499,18 @@
       <button onclick="window.openQsCartDrawer()" class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition">
         <span>Review & Sell ➔</span>
       </button>
+    </div>
+  </div>
+
+  <!-- ─── Image Lightbox Zoom Modal (High-Res Detail Preview) ────────── -->
+  <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[75] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4" onclick="window.closeImageLightbox()">
+    <div class="relative max-w-lg w-full flex flex-col items-center" onclick="event.stopPropagation()">
+      <button onclick="window.closeImageLightbox()" class="absolute -top-12 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition">✕</button>
+      <img id="lightbox-img" src="" alt="High resolution preview" class="w-full max-h-[75vh] object-contain rounded-2xl border border-white/15 bg-black/60 shadow-2xl">
+      <div class="mt-3 text-center px-4">
+        <p id="lightbox-title" class="text-sm font-bold text-white"></p>
+        <p id="lightbox-sub" class="text-xs text-slate-400 mt-0.5"></p>
+      </div>
     </div>
   </div>
 

@@ -124,6 +124,9 @@
   let isInitialOrdersLoaded = false;
   let qsCategory = 'All';
   let qsSearchQuery = '';
+  let invCategory = 'All';
+  let invSearchQuery = '';
+  const expandedStylesSet = new Set();
   const qsBasket = new Map(); // Key: itemKey -> { key, productId, variantId, product, variant, name, category, unitPrice, photoUrl, maxStock, qty }
   let sessionDeductions = [];
   let currentConfirmAction = null;
@@ -153,6 +156,14 @@
 
   // Inventory & Product Modal Elements
   const inventoryListEl = document.getElementById('inventory-list');
+  const invTotalCountEl = document.getElementById('inv-total-count');
+  const invSearchInput = document.getElementById('inv-search-input');
+  const invSearchClear = document.getElementById('inv-search-clear');
+  const invCategoryChips = document.getElementById('inv-category-chips');
+  const imageLightboxModal = document.getElementById('image-lightbox-modal');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxTitle = document.getElementById('lightbox-title');
+  const lightboxSub = document.getElementById('lightbox-sub');
   const productModal = document.getElementById('product-modal');
   const productForm = document.getElementById('product-form');
   const prodIdInput = document.getElementById('prod-id');
@@ -437,6 +448,10 @@
 
       tabContentOrders.classList.toggle('hidden', activeTab !== 'orders');
       tabContentInventory.classList.toggle('hidden', activeTab !== 'inventory');
+      if (activeTab === 'inventory') {
+        renderInvCategories();
+        renderProducts();
+      }
       if (tabContentQuicksell) {
         tabContentQuicksell.classList.toggle('hidden', activeTab !== 'quicksell');
         if (activeTab === 'quicksell') {
@@ -472,6 +487,7 @@
       categoriesList = Array.isArray(data) ? data : [];
       populateCategoryDropdown(selectedName);
       renderQsCategories();
+      renderInvCategories();
     } catch (err) {
       console.error('Failed to load categories:', err);
     }
@@ -1034,63 +1050,285 @@
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // INVENTORY TAB: VISUAL-FIRST CATALOG, FILTERING & FAST RESTOCK
+  // ─────────────────────────────────────────────────────────────
+
+  // Live Inventory Search
+  if (invSearchInput) {
+    invSearchInput.addEventListener('input', (e) => {
+      invSearchQuery = (e.target.value || '').trim().toLowerCase();
+      if (invSearchClear) {
+        if (invSearchQuery) invSearchClear.classList.remove('hidden');
+        else invSearchClear.classList.add('hidden');
+      }
+      renderProducts();
+    });
+  }
+
+  window.clearInvSearch = function () {
+    if (invSearchInput) invSearchInput.value = '';
+    invSearchQuery = '';
+    if (invSearchClear) invSearchClear.classList.add('hidden');
+    renderProducts();
+  };
+
+  // Category Filtering for Inventory
+  function renderInvCategories() {
+    if (!invCategoryChips) return;
+    const cats = ['All', ...categoriesList.map((c) => c.name)];
+    invCategoryChips.innerHTML = cats.map((cat) => {
+      const isActive = cat === invCategory;
+      return `
+        <button type="button" onclick="window.setInvCategory('${escapeHtml(cat)}')"
+          class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition ${
+            isActive
+              ? 'bg-[#c9a84c] text-black shadow-md'
+              : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+          }">
+          ${escapeHtml(cat)}
+        </button>
+      `;
+    }).join('');
+  }
+
+  window.setInvCategory = function (cat) {
+    invCategory = cat;
+    renderInvCategories();
+    renderProducts();
+  };
+
+  // Toggle multi-style accordion breakdown
+  window.toggleInvStyles = function (productId, event = null) {
+    if (event) event.stopPropagation();
+    if (expandedStylesSet.has(productId)) {
+      expandedStylesSet.delete(productId);
+    } else {
+      expandedStylesSet.add(productId);
+    }
+    renderProducts();
+  };
+
+  // Fast inline stock adjustment (+ Restock or − Deduct)
+  window.quickAdjustStock = async function (productId, variantId = null, delta = 1, event = null) {
+    if (event) event.stopPropagation();
+
+    const product = productsList.find((p) => p.id === productId);
+    if (!product) return;
+
+    let variant = null;
+    if (variantId && product.variant_list) {
+      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
+    }
+
+    const curStock = variant ? Number(variant.stock) : Number(product.stock);
+    if (delta < 0 && curStock <= 0) {
+      showToast('Stock is already 0.', 'warning');
+      return;
+    }
+
+    const endpoint = delta > 0
+      ? `/api/admin/products/${productId}/restock`
+      : `/api/admin/products/${productId}/deduct`;
+
+    try {
+      const res = await authFetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant_id: variant ? variant.id : undefined }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (variant) {
+          variant.stock = data.remaining;
+          product.stock = product.variant_list.reduce((sum, v) => sum + Number(v.stock), 0);
+        } else {
+          product.stock = data.remaining;
+        }
+
+        renderProducts();
+        if (activeTab === 'quicksell') renderQsGrid();
+
+        const title = variant ? `${product.name} (${variant.color_name})` : product.name;
+        showToast(
+          `${delta > 0 ? 'Restocked +1' : 'Deducted 1'} · ${title} (${data.remaining} in stock)`,
+          'success'
+        );
+      } else {
+        showToast(data.message || data.error || 'Stock adjustment failed.', 'error');
+      }
+    } catch (err) {
+      showToast('Error adjusting stock: ' + err.message, 'error');
+    }
+  };
+
+  // Image Lightbox Zoom Modal
+  window.openImageLightbox = function (imgUrl, title = '', sub = '') {
+    if (!imageLightboxModal || !imgUrl) return;
+    if (lightboxImg) lightboxImg.src = imgUrl;
+    if (lightboxTitle) lightboxTitle.textContent = title;
+    if (lightboxSub) lightboxSub.textContent = sub;
+    imageLightboxModal.classList.remove('hidden');
+  };
+
+  window.closeImageLightbox = function () {
+    if (imageLightboxModal) imageLightboxModal.classList.add('hidden');
+  };
+
   function renderProducts() {
     if (!inventoryListEl) return;
-    if (productsList.length === 0) {
+
+    const filtered = productsList.filter((p) => {
+      const matchesCat = invCategory === 'All' || p.category === invCategory;
+      if (!matchesCat) return false;
+
+      if (!invSearchQuery) return true;
+      const q = invSearchQuery;
+      const nameMatch = (p.name || '').toLowerCase().includes(q);
+      const skuMatch = (p.id || '').toLowerCase().includes(q);
+      const catMatch = (p.category || '').toLowerCase().includes(q);
+      return nameMatch || skuMatch || catMatch;
+    });
+
+    if (invTotalCountEl) {
+      invTotalCountEl.textContent = `${filtered.length} piece${filtered.length === 1 ? '' : 's'}`;
+    }
+
+    if (filtered.length === 0) {
       inventoryListEl.innerHTML = `
         <div class="text-center py-12 text-slate-400">
-          <p class="text-xs">No jewelry pieces in catalog.</p>
+          <p class="text-3xl mb-2">💎</p>
+          <p class="text-xs font-semibold">No jewelry found matching your filter.</p>
         </div>
       `;
       return;
     }
 
-    inventoryListEl.innerHTML = productsList.map((product) => {
-      const isLowStock = product.stock <= 3;
+    inventoryListEl.innerHTML = filtered.map((product) => {
       const margin = product.margin_percent != null ? `${product.margin_percent}%` : '0%';
       const hasVars = product.has_variants === 1 || product.has_variants === true || (product.variant_list && product.variant_list.length > 0);
       const varCount = product.variant_list ? product.variant_list.length : 0;
+      const isExpanded = expandedStylesSet.has(product.id);
 
       return `
-        <div class="admin-card p-3 flex items-center justify-between">
-          <div class="flex items-center space-x-3 min-w-0">
-            <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy"
-              class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0">
-            <div class="min-w-0">
-              <div class="flex items-center space-x-1.5">
-                <span class="font-mono text-[10px] font-bold text-[#c9a84c]">${product.id}</span>
-                <span class="text-[10px] text-slate-400 uppercase">· ${escapeHtml(product.category)}</span>
-                ${hasVars ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30">✨ ${varCount} Styles</span>` : ''}
+        <div class="admin-card p-3 flex flex-col space-y-3 border border-white/10 transition hover:border-white/20">
+          <!-- Top Row: Large Image + Details & Actions -->
+          <div class="flex items-start space-x-3.5 min-w-0">
+            <!-- Large Image with Tap-To-Zoom -->
+            <div class="relative w-24 h-24 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer group"
+              onclick="window.openImageLightbox('${product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)}', '${product.id} · ${escapeHtml(product.category)}')">
+              <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+              <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/75 text-[9px] text-slate-300 font-bold flex items-center space-x-0.5 pointer-events-none">
+                <span>🔍</span>
+              </span>
+            </div>
+
+            <!-- Details & Financials -->
+            <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
+              <div>
+                <div class="flex items-center space-x-1.5 flex-wrap">
+                  <span class="font-mono text-[10px] font-bold text-[#c9a84c]">${product.id}</span>
+                  <span class="text-[10px] text-slate-400 uppercase font-semibold">· ${escapeHtml(product.category)}</span>
+                </div>
+                <h4 class="text-xs font-bold text-white leading-tight mt-1 truncate" title="${escapeHtml(product.name)}">
+                  ${escapeHtml(product.name)}
+                </h4>
               </div>
-              <h4 class="text-xs font-bold text-white truncate leading-tight">${escapeHtml(product.name)}</h4>
-              <div class="text-[11px] text-slate-300 mt-0.5">
+
+              <!-- Price & Cost (clean, no alert badges) -->
+              <div class="text-[11px] text-slate-300 mt-1">
                 Sell: <strong class="text-white">${formatUSD(product.sell_price)}</strong>
-                <span class="text-slate-500">|</span>
+                <span class="text-slate-500 mx-1">·</span>
                 Cost: <span class="text-slate-400">${formatUSD(product.import_price)}</span>
                 <span class="text-emerald-400 font-semibold text-[10px] ml-1">(+${margin})</span>
               </div>
+
+              <!-- Actions row: Edit & Delete -->
+              <div class="flex items-center space-x-1.5 mt-2">
+                <button onclick="window.editProduct('${product.id}')"
+                  class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-slate-200 font-bold flex items-center space-x-1 transition active:scale-95">
+                  <span>✏️ Edit</span>
+                </button>
+                <button onclick="window.deleteProduct('${product.id}')"
+                  class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-[11px] text-rose-300 font-bold flex items-center space-x-1 transition active:scale-95">
+                  <span>🗑️ Delete</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="text-right flex flex-col items-end space-y-1.5 ml-2">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              isLowStock
-                ? 'bg-rose-950/80 text-rose-300 border border-rose-800/80'
-                : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/80'
-            }">
-              ${t('inStock', { n: product.stock })}
-            </span>
-            <div class="flex items-center space-x-1">
-              <button onclick="window.editProduct('${product.id}')"
-                class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-[11px] text-slate-300 font-bold transition">
-                ${t('edit')}
-              </button>
-              <button onclick="window.deleteProduct('${product.id}')"
-                class="px-2.5 py-1 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-[11px] text-rose-300 font-bold transition">
-                ${t('del')}
-              </button>
+          <!-- Bottom Row: Stock Levels & Quick Stepper / Style Accordion -->
+          ${hasVars ? `
+            <div class="pt-2 border-t border-white/5 flex flex-col space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-300 font-medium">
+                  Total Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+                </span>
+                <button type="button" onclick="window.toggleInvStyles('${product.id}', event)"
+                  class="px-2.5 py-1 rounded-lg ${isExpanded ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/40' : 'bg-white/10 text-slate-200 border-white/10'} border text-[11px] font-bold flex items-center space-x-1 transition active:scale-95">
+                  <span>✨ ${varCount} Styles</span>
+                  <span class="text-[10px]">${isExpanded ? '▲ Hide' : '▼ View'}</span>
+                </button>
+              </div>
+
+              <!-- Accordion Content -->
+              ${isExpanded ? `
+                <div class="mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 space-y-2.5">
+                  ${(product.variant_list || []).map((v) => `
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-b-0">
+                      <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                        <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}"
+                          onclick="window.openImageLightbox('${v.photo_url || product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)} (${escapeHtml(v.color_name)})', '${formatUSD(v.sell_price)} · ${v.stock} in stock')"
+                          class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer hover:scale-105 transition"
+                          title="Tap to zoom">
+                        <div class="min-w-0 pr-2">
+                          <p class="font-bold text-white text-xs truncate leading-tight">${escapeHtml(v.color_name)}</p>
+                          <p class="text-[11px] text-[#c9a84c] font-extrabold mt-0.5">${formatUSD(v.sell_price)}</p>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center space-x-1 bg-black/50 border border-white/10 rounded-xl p-0.5 flex-shrink-0">
+                        <button type="button" onclick="window.quickAdjustStock('${product.id}', '${v.id}', -1, event)"
+                          class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                          title="Deduct 1 unit">
+                          −
+                        </button>
+                        <span class="min-w-[24px] text-center font-extrabold text-[#f3d489] text-xs select-none">
+                          ${v.stock}
+                        </span>
+                        <button type="button" onclick="window.quickAdjustStock('${product.id}', '${v.id}', 1, event)"
+                          class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
+                          title="Restock 1 unit">
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
             </div>
-          </div>
+          ` : `
+            <div class="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+              <span class="text-slate-300 font-medium">
+                In Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+              </span>
+              <div class="flex items-center space-x-1 bg-black/40 border border-white/10 rounded-xl p-0.5">
+                <button type="button" onclick="window.quickAdjustStock('${product.id}', null, -1, event)"
+                  class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                  title="Deduct 1 unit">
+                  −
+                </button>
+                <span class="min-w-[28px] text-center font-extrabold text-[#f3d489] text-xs select-none">
+                  ${product.stock}
+                </span>
+                <button type="button" onclick="window.quickAdjustStock('${product.id}', null, 1, event)"
+                  class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
+                  title="Restock 1 unit">
+                  +
+                </button>
+              </div>
+            </div>
+          `}
         </div>
       `;
     }).join('');
@@ -1890,10 +2128,15 @@
     }
   });
 
+  // Image Lightbox Modal
+  enableBackdropDismiss(imageLightboxModal, () => window.closeImageLightbox());
+
   // Keyboard Accessibility: Escape key closes active overlay
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
+      if (imageLightboxModal && !imageLightboxModal.classList.contains('hidden')) {
+        window.closeImageLightbox();
+      } else if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
         window.closeQsCartDrawer();
       } else if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
         window.closeVariantDrawer();
