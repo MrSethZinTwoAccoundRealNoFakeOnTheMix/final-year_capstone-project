@@ -864,11 +864,15 @@
     buildStyleModalDOM();
     if (styleModal) styleModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    pushModalState('style-modal');
   };
 
-  window.closeStyleModal = function () {
+  window.closeStyleModal = function (syncHistory = true) {
     if (styleModal) styleModal.classList.add('hidden');
     document.body.style.overflow = '';
+    if (syncHistory) {
+      closeModalState('style-modal');
+    }
   };
 
   // ── Gallery Infinite Carousel Helpers ─────────────────────────────────────
@@ -1646,21 +1650,70 @@
     }
   }
 
+  // ─── Modal History Management (Android Hardware/Gesture Back Button) ───────
+  let activeModalHistory = null;
+
+  function pushModalState(modalName) {
+    if (activeModalHistory === modalName) return;
+    activeModalHistory = modalName;
+    try {
+      history.pushState({ luxeModal: modalName }, '');
+    } catch (e) {}
+  }
+
+  function closeModalState(modalName) {
+    if (activeModalHistory === modalName) {
+      activeModalHistory = null;
+      try {
+        if (history.state && history.state.luxeModal === modalName) {
+          history.back();
+        }
+      } catch (e) {}
+    }
+  }
+
+  window.addEventListener('popstate', () => {
+    // Intercept Android back button or back swipe gesture: close active modal instead of leaving page
+    if (styleModal && !styleModal.classList.contains('hidden')) {
+      activeModalHistory = null;
+      window.closeStyleModal(false);
+    } else if (cartModal && !cartModal.classList.contains('hidden')) {
+      activeModalHistory = null;
+      window.closeCartSheet(false);
+    } else if (successModal && !successModal.classList.contains('hidden')) {
+      activeModalHistory = null;
+      window.closeSuccessModal(false);
+    }
+  });
+
   // Modals
   window.openCartSheet = function () {
     cartModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    pushModalState('cart-modal');
   };
 
-  window.closeCartSheet = function () {
+  window.closeCartSheet = function (syncHistory = true) {
     cartModal.classList.add('hidden');
     document.body.style.overflow = '';
+    if (syncHistory) {
+      closeModalState('cart-modal');
+    }
   };
 
-  window.closeSuccessModal = function () {
+  window.closeSuccessModal = function (syncHistory = true) {
     successModal.classList.add('hidden');
     document.body.style.overflow = '';
+    if (syncHistory) {
+      closeModalState('success-modal');
+    }
   };
+
+  if (styleModal) {
+    styleModal.addEventListener('click', (e) => {
+      if (e.target === styleModal) window.closeStyleModal();
+    });
+  }
 
   cartModal.addEventListener('click', (e) => {
     if (e.target === cartModal) window.closeCartSheet();
