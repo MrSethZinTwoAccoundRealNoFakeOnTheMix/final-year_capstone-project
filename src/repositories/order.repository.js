@@ -30,13 +30,18 @@ function getItemsForOrder(orderId) {
   return db.prepare(`
     SELECT
       oi.id, oi.order_id, oi.product_id, oi.variant_id, oi.quantity, oi.unit_price,
-      COALESCE(pv.color_name, '') AS variant_name,
-      COALESCE(pv.photo_url, p.photo_url, '') AS photo_url,
-      COALESCE(p.name, 'Item ' || oi.product_id) AS name,
-      COALESCE(p.category, 'General') AS category
+      oi.unit_price AS price_at_order,
+      COALESCE(p.name, parent_p.name, 'Item ' || oi.product_id) AS name,
+      COALESCE(p.name, parent_p.name, 'Item ' || oi.product_id) AS product_name,
+      COALESCE(pv.color_name, pv_fallback.color_name, '') AS variant_name,
+      COALESCE(pv.color_name, pv_fallback.color_name, '') AS variants,
+      COALESCE(pv.photo_url, p.photo_url, pv_fallback.photo_url, parent_p.photo_url, '') AS photo_url,
+      COALESCE(p.category, parent_p.category, 'General') AS category
     FROM order_items oi
     LEFT JOIN products p ON oi.product_id = p.id
     LEFT JOIN product_variants pv ON oi.variant_id = pv.id
+    LEFT JOIN product_variants pv_fallback ON oi.product_id = pv_fallback.id
+    LEFT JOIN products parent_p ON pv_fallback.product_id = parent_p.id
     WHERE oi.order_id = ?
   `).all(orderId);
 }

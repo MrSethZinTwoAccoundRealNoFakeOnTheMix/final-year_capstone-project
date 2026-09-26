@@ -43,11 +43,13 @@ function formatImageUrl(photoUrl, baseUrl) {
  * @param {string} [baseUrl]
  */
 function buildItemElement(item, shopUrl, baseUrl) {
-  const unitPrice = Number(item.unit_price || 0).toFixed(2);
+  const unitPrice = Number(item.unit_price || item.price_at_order || 0).toFixed(2);
   const qty = item.quantity || 1;
+  const styleLabel = item.variant_name || item.variants ? ` (${item.variant_name || item.variants})` : '';
+  const itemName = (item.name || item.product_name || 'Jewelry Item') + styleLabel;
 
   const element = {
-    title: item.name || 'Jewelry Item',
+    title: itemName.slice(0, 80),
     subtitle: `Qty: ${qty} × $${unitPrice}`,
     image_url: formatImageUrl(item.photo_url, baseUrl),
   };

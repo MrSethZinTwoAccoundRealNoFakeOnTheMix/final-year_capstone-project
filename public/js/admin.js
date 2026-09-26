@@ -2391,16 +2391,42 @@
       }
 
       const itemsList = order.items && order.items.length
-        ? order.items.map((i) => `
-            <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-0">
-              <div class="flex items-center space-x-2 min-w-0">
-                <span class="font-bold text-[#c9a84c]">${i.quantity}x</span>
-                <span class="text-white truncate">${escapeHtml(i.product_name || i.product_id)}</span>
-                ${i.variants ? `<span class="text-[10px] text-slate-400 italic truncate">(${escapeHtml(i.variants)})</span>` : ''}
+        ? order.items.map((i) => {
+            const unitPrice = Number(i.unit_price != null ? i.unit_price : (i.price_at_order != null ? i.price_at_order : 0));
+            const lineTotal = unitPrice * (i.quantity || 1);
+            const itemName = i.name || i.product_name || i.product_id || 'Jewelry Piece';
+            const itemStyle = i.variant_name || i.variants || (i.variant_id ? `Style #${i.variant_id}` : '');
+            const itemPhoto = i.photo_url || DEFAULT_IMAGE;
+
+            return `
+              <div class="flex items-center justify-between text-xs py-2 border-b border-white/5 last:border-0 gap-2.5">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer"
+                    onclick="window.openImageLightbox('${itemPhoto}', '${escapeHtml(itemName)}', '${itemStyle ? escapeHtml(itemStyle) : escapeHtml(i.product_id)}')">
+                    <img src="${itemPhoto}" alt="" class="w-full h-full object-cover" onerror="this.src='${DEFAULT_IMAGE}'">
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center space-x-1.5 flex-wrap">
+                      <span class="font-bold text-[#c9a84c] text-xs">${i.quantity}x</span>
+                      <span class="text-white font-semibold truncate leading-tight">${escapeHtml(itemName)}</span>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-0.5 flex-wrap">
+                      ${itemStyle ? `
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30">
+                          ✨ ${escapeHtml(itemStyle)}
+                        </span>
+                      ` : ''}
+                      <span class="text-[9px] font-mono text-slate-400">#${escapeHtml(i.variant_id || i.product_id)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <span class="font-bold text-white text-xs block">${formatUSD(lineTotal)}</span>
+                  ${i.quantity > 1 ? `<span class="text-[10px] text-slate-400 block">${formatUSD(unitPrice)} ea</span>` : ''}
+                </div>
               </div>
-              <span class="font-medium text-slate-300 ml-2">${formatUSD(i.price_at_order * i.quantity)}</span>
-            </div>
-          `).join('')
+            `;
+          }).join('')
         : `<p class="text-xs text-slate-500 italic">No item details available</p>`;
 
       const itemsCollapsible = `
