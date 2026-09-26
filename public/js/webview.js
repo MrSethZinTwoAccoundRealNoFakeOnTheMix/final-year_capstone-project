@@ -864,14 +864,14 @@
     buildStyleModalDOM();
     if (styleModal) styleModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    pushModalState('style-modal');
+    pushModalState('#view-style');
   };
 
   window.closeStyleModal = function (syncHistory = true) {
     if (styleModal) styleModal.classList.add('hidden');
     document.body.style.overflow = '';
     if (syncHistory) {
-      closeModalState('style-modal');
+      closeModalState('#view-style');
     }
   };
 
@@ -1650,54 +1650,75 @@
     }
   }
 
-  // ─── Modal History Management (Android Hardware/Gesture Back Button) ───────
-  let activeModalHistory = null;
+  // ─── Modal History Management (Android Hardware/Gesture Back Button in Messenger & Browsers) ───
+  let ignoreNextHashChange = false;
 
-  function pushModalState(modalName) {
-    if (activeModalHistory === modalName) return;
-    activeModalHistory = modalName;
+  // Clear any residual hash on initial page load
+  try {
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  } catch (e) {}
+
+  function pushModalState(modalHash) {
+    if (window.location.hash === modalHash) return;
     try {
-      history.pushState({ luxeModal: modalName }, '');
-    } catch (e) {}
-  }
-
-  function closeModalState(modalName) {
-    if (activeModalHistory === modalName) {
-      activeModalHistory = null;
-      try {
-        if (history.state && history.state.luxeModal === modalName) {
-          history.back();
-        }
-      } catch (e) {}
+      history.pushState({ luxeModal: modalHash }, '', modalHash);
+    } catch (e) {
+      window.location.hash = modalHash;
     }
   }
 
-  window.addEventListener('popstate', () => {
-    // Intercept Android back button or back swipe gesture: close active modal instead of leaving page
-    if (styleModal && !styleModal.classList.contains('hidden')) {
-      activeModalHistory = null;
+  function closeModalState(modalHash) {
+    if (window.location.hash === modalHash) {
+      ignoreNextHashChange = true;
+      try {
+        history.back();
+      } catch (e) {
+        window.location.hash = '';
+      }
+      setTimeout(() => {
+        ignoreNextHashChange = false;
+      }, 250);
+    }
+  }
+
+  function handleBackNavigation() {
+    if (ignoreNextHashChange) return;
+
+    const currentHash = window.location.hash || '';
+
+    // If popped back away from #view-style, close style modal
+    if (currentHash !== '#view-style' && styleModal && !styleModal.classList.contains('hidden')) {
       window.closeStyleModal(false);
-    } else if (cartModal && !cartModal.classList.contains('hidden')) {
-      activeModalHistory = null;
+    }
+
+    // If popped back away from #view-cart, close cart sheet
+    if (currentHash !== '#view-cart' && cartModal && !cartModal.classList.contains('hidden')) {
       window.closeCartSheet(false);
-    } else if (successModal && !successModal.classList.contains('hidden')) {
-      activeModalHistory = null;
+    }
+
+    // If popped back away from #view-success, close success modal
+    if (currentHash !== '#view-success' && successModal && !successModal.classList.contains('hidden')) {
       window.closeSuccessModal(false);
     }
-  });
+  }
+
+  window.addEventListener('popstate', handleBackNavigation);
+  window.addEventListener('hashchange', handleBackNavigation);
 
   // Modals
   window.openCartSheet = function () {
     cartModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    pushModalState('cart-modal');
+    pushModalState('#view-cart');
   };
 
   window.closeCartSheet = function (syncHistory = true) {
     cartModal.classList.add('hidden');
     document.body.style.overflow = '';
     if (syncHistory) {
-      closeModalState('cart-modal');
+      closeModalState('#view-cart');
     }
   };
 
@@ -1705,7 +1726,7 @@
     successModal.classList.add('hidden');
     document.body.style.overflow = '';
     if (syncHistory) {
-      closeModalState('success-modal');
+      closeModalState('#view-success');
     }
   };
 
@@ -1792,6 +1813,8 @@
 
       window.closeCartSheet();
       successModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      pushModalState('#view-success');
       loadCatalog();
     } catch (err) {
       showToast(err.message || 'Error submitting order.', 'error');
