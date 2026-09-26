@@ -41,7 +41,7 @@
   </script>
 
   <!-- Custom Mobile Luxury Stylesheet -->
-  <link rel="stylesheet" href="/css/webview.css?v=1.1.0">
+  <link rel="stylesheet" href="/css/webview.css?v=1.2.0">
 </head>
 
 <body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
@@ -146,9 +146,11 @@
       <!-- Dynamically populated with category mini-grids -->
     </div>
 
-    <!-- Product Grid (2-Column Mobile for filtered category or search results) -->
-    <div id="product-grid" class="grid grid-cols-2 gap-3 pb-8">
+    <!-- Product Grid (3-Column Mobile for filtered category or search results) -->
+    <div id="product-grid" class="grid grid-cols-3 gap-2 pb-8">
       <!-- Skeletons will appear here initially -->
+      <div class="skeleton rounded-2xl h-64"></div>
+      <div class="skeleton rounded-2xl h-64"></div>
       <div class="skeleton rounded-2xl h-64"></div>
       <div class="skeleton rounded-2xl h-64"></div>
       <div class="skeleton rounded-2xl h-64"></div>
@@ -544,7 +546,7 @@
     class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
   <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js?v=1.1.0"></script>
+  <script src="/js/webview.js?v=1.2.0"></script>
 
 </body>
 

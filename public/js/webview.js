@@ -648,30 +648,6 @@
       priceKhrText = formatKHR(product.sell_price);
     }
 
-    // Mini Swatches HTML (Option B: mini 24px circular image thumbnails)
-    let swatchesHtml = '';
-    if (hasVariants && product.variant_list.length > 1) {
-      const previewVariants = product.variant_list.slice(0, 4);
-      const extraCount = product.variant_list.length - previewVariants.length;
-      swatchesHtml = `
-        <div class="card-swatch-list mt-1.5" onclick="event.stopPropagation()">
-          ${previewVariants.map((v, idx) => `
-            <div class="card-swatch-thumb ${idx === 0 ? 'active' : ''}"
-              id="swatch-${product.id}-${v.id}"
-              title="${escapeHtml(v.color_name)} · ${formatUSD(v.sell_price)}"
-              onclick="window.selectCardStyle(event, '${product.id}', '${v.id}')">
-              <img src="${v.photo_url || displayPhoto}" alt="" class="w-full h-full object-cover"
-                onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
-            </div>
-          `).join('')}
-          ${extraCount > 0 ? `
-            <span class="text-[9px] font-bold text-slate-400 pl-0.5 cursor-pointer"
-              onclick="window.openStyleModal('${product.id}')">+${extraCount}</span>
-          ` : ''}
-        </div>
-      `;
-    }
-
     return `
       <div class="product-card rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer group"
         id="card-${product.id}"
@@ -712,7 +688,7 @@
           </div>
 
           <!-- Details -->
-          <div class="p-3 pb-1">
+          <div class="p-2 pb-0.5">
             <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
               ${product.category || 'Jewelry'}
             </span>
@@ -720,62 +696,27 @@
               ${escapeHtml(product.name)}
             </h3>
 
-            <!-- Mini Swatches below title -->
-            ${swatchesHtml}
-
             <!-- Dual Currency Pricing -->
             <div class="mt-1.5">
               <div class="text-sm font-extrabold text-white leading-tight" id="card-price-usd-${product.id}">
                 ${priceUsdText}
-              </div>
-              <div class="text-[11px] font-semibold text-[#e5c36a]" id="card-price-khr-${product.id}">
-                ${priceKhrText}
               </div>
             </div>
           </div>
         </div>
 
         <!-- Add Button -->
-        <div class="p-3 pt-2">
+        <div class="p-2 pt-1">
           <button type="button"
             ${isSoldOut ? 'disabled' : ''}
             onclick="event.stopPropagation(); window.openStyleModal('${product.id}')"
-            class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
+            class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-1.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
             <span>${isSoldOut ? t('soldOut') : (hasVariants ? '✨ Select Style' : t('addToBag'))}</span>
           </button>
         </div>
       </div>
     `;
   }
-
-  window.selectCardStyle = function (e, productId, variantId) {
-    if (e) e.stopPropagation();
-    const product = productsList.find((p) => p.id === productId);
-    if (!product || !product.variant_list) return;
-
-    const variant = product.variant_list.find((v) => v.id === variantId);
-    if (!variant) return;
-
-    // Update main card image
-    const cardImg = document.getElementById(`card-img-${productId}`);
-    if (cardImg && variant.photo_url) {
-      cardImg.src = variant.photo_url;
-    }
-
-    // Update price
-    const usdEl = document.getElementById(`card-price-usd-${productId}`);
-    const khrEl = document.getElementById(`card-price-khr-${productId}`);
-    if (usdEl) usdEl.textContent = formatUSD(variant.sell_price);
-    if (khrEl) khrEl.textContent = formatKHR(variant.sell_price);
-
-    // Update active swatch state
-    const card = document.getElementById(`card-${productId}`);
-    if (card) {
-      card.querySelectorAll('.card-swatch-thumb').forEach((thumb) => thumb.classList.remove('active'));
-      const activeThumb = document.getElementById(`swatch-${productId}-${variantId}`);
-      if (activeThumb) activeThumb.classList.add('active');
-    }
-  };
 
   function renderProducts() {
     let filtered = productsList;
@@ -874,7 +815,7 @@
               <span class="text-xs">→</span>
             </button>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-3 gap-2">
             ${previewItems.map((p) => renderProductCard(p)).join('')}
           </div>
         </section>

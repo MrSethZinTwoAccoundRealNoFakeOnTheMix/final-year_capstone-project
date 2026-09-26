@@ -222,38 +222,6 @@ body {
   margin-left: auto;
 }
 
-/* Mini Card Swatches (Option B) */
-.card-swatch-list {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 4px 0;
-}
-
-.card-swatch-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 9999px;
-  overflow: hidden;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  flex-shrink: 0;
-  background-color: #1e2030;
-}
-
-.card-swatch-thumb:hover {
-  transform: scale(1.1);
-  border-color: #f3d489;
-}
-
-.card-swatch-thumb.active {
-  border-color: #c9a84c;
-  box-shadow: 0 0 8px rgba(201, 168, 76, 0.6);
-  transform: scale(1.12);
-}
-
 /* Style Selection Modal Tiles */
 .style-tile {
   position: relative;
