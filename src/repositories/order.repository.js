@@ -13,11 +13,59 @@
 
 const db = require('../db');
 
-// Ensure variant_id column exists in order_items (safe auto-migration fallback)
+// Ensure columns & tables exist (safe auto-migration fallback)
 try {
   db.exec('ALTER TABLE order_items ADD COLUMN variant_id TEXT DEFAULT NULL');
-} catch (e) {
-  // Column already exists, safe to ignore
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE orders ADD COLUMN facebook_name TEXT DEFAULT NULL');
+} catch (e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS facebook_profiles (
+      psid TEXT PRIMARY KEY,
+      name TEXT,
+      status TEXT DEFAULT 'RESOLVED',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_fb_profiles_psid ON facebook_profiles(psid);
+  `);
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE facebook_profiles ADD COLUMN status TEXT DEFAULT "RESOLVED"');
+} catch (e) {}
+
+/**
+ * Read cached Facebook Profile from SQLite.
+ * Returns: string (name), null (unresolvable/failed), or undefined (not cached yet).
+ */
+function getCachedFacebookProfile(psid) {
+  if (!psid) return null;
+  const row = db.prepare('SELECT name, status FROM facebook_profiles WHERE psid = ?').get(psid);
+  if (!row) return undefined;
+  return row.name || null;
+}
+
+/**
+ * Write Facebook Profile to SQLite cache and update historical orders for this PSID.
+ */
+function setCachedFacebookProfile(psid, name, status = 'RESOLVED') {
+  if (!psid) return;
+  db.prepare(`
+    INSERT INTO facebook_profiles (psid, name, status, updated_at)
+    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(psid) DO UPDATE SET
+      name = excluded.name,
+      status = excluded.status,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(psid, name || null, status);
+
+  if (name) {
+    db.prepare('UPDATE orders SET facebook_name = ? WHERE psid = ? AND (facebook_name IS NULL OR facebook_name = \'\')').run(name, psid);
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,10 +154,10 @@ function findLatestByPsid(psid) {
  * @param {string} [params.paymentMethod] — 'COD' | 'KHQR' | 'VET'
  * @param {Array}  params.items — [{ productId, quantity, unit_price }]
  */
-function create({ orderId, psid, totalAmount, customerName, phone, address, note, paymentMethod = 'COD', items }) {
+function create({ orderId, psid, totalAmount, customerName, phone, address, note, paymentMethod = 'COD', items, facebookName = null }) {
   const insertOrder = db.prepare(`
-    INSERT INTO orders (id, psid, status, total_amount, customer_name, phone, address, note, payment_method)
-    VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
+    INSERT INTO orders (id, psid, status, total_amount, customer_name, phone, address, note, payment_method, facebook_name)
+    VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertItem = db.prepare(`
     INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price)
@@ -117,7 +165,7 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
   `);
 
   const run = db.transaction(() => {
-    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'COD');
+    insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'COD', facebookName || null);
     for (const item of items) {
       insertItem.run(orderId, item.productId, item.variantId || null, item.quantity, item.unit_price);
     }
@@ -322,4 +370,6 @@ module.exports = {
   completeOrder,
   updateDeliveryType,
   findLatestByPsid,
+  getCachedFacebookProfile,
+  setCachedFacebookProfile,
 };

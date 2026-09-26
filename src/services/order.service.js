@@ -105,6 +105,12 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     : (rawMethod === 'OTHER' ? 'COD' : 'COD');
 
   // 6. Persist order in PENDING status
+  let initialFbName = null;
+  if (psid) {
+    const cached = orderRepository.getCachedFacebookProfile(psid);
+    if (cached) initialFbName = cached;
+  }
+
   const order = orderRepository.create({
     orderId,
     psid,
@@ -115,6 +121,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     note,
     paymentMethod,
     items: orderItemsData,
+    facebookName: initialFbName,
   });
 
   logger.info(`[OrderService] Order ${orderId} created in PENDING status (${paymentMethod}). Total: $${totalAmount}`);
@@ -221,34 +228,56 @@ function updateDeliveryType(orderId, deliveryType) {
   return updatedOrder;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Helper to attach resolved Facebook profile name to an order object.
+ * Fast & synchronous: checks order column and SQLite cache with zero external network calls.
  */
-async function attachFacebookName(order) {
+function attachFacebookName(order) {
   if (!order) return order;
-  if (order.psid) {
-    try {
-      const profile = await messengerService.getUserProfile(order.psid);
-      order.facebook_name = profile?.name || null;
-    } catch (e) {
-      order.facebook_name = null;
+  if (!order.facebook_name && order.psid) {
+    const cached = orderRepository.getCachedFacebookProfile(order.psid);
+    if (cached) {
+      order.facebook_name = cached;
     }
-  } else {
-    order.facebook_name = null;
   }
   return order;
 }
 
 /**
  * Get all orders for admin review with Facebook profile names attached.
+ * Zero-delay response: reads from SQLite immediately and queues paced background resolution for uncached PSIDs.
  */
 async function getAllOrders() {
   const orders = orderRepository.findAll();
-  await Promise.all(
-    orders.map(async (order) => {
-      await attachFacebookName(order);
-    })
-  );
+
+  // 1. Instantly attach any names already saved in SQLite
+  for (const order of orders) {
+    attachFacebookName(order);
+  }
+
+  // 2. Identify unique PSIDs not yet in SQLite cache (if any)
+  const uncachedPsids = [...new Set(
+    orders
+      .filter((o) => !o.facebook_name && o.psid && orderRepository.getCachedFacebookProfile(o.psid) === undefined)
+      .map((o) => o.psid)
+  )];
+
+  // 3. Resolve uncached PSIDs in the background with safe pacing (max 1 call per 400ms)
+  if (uncachedPsids.length > 0) {
+    (async () => {
+      for (const psid of uncachedPsids) {
+        try {
+          await messengerService.getUserProfile(psid);
+          await sleep(400); // 400ms pacing protects against Meta burst limits
+        } catch (e) {}
+      }
+    })().catch(() => {});
+  }
+
   return orders;
 }
 

@@ -2,6 +2,7 @@ const { PAGE_TOKEN, BASE_URL, MESSENGER_RATE_LIMIT_MS } = require('../config');
 const { buildItemElement, buildButtonTemplate, QUICK_REPLIES } = require('../templates/messengerCards');
 const { generateSignedUrl } = require('./identity.service');
 const locales = require('../templates/locales/en');
+const orderRepository = require('../repositories/order.repository');
 const logger = require('../utils/logger');
 
 const GRAPH_API_URL = 'https://graph.facebook.com/v20.0/me/messages';
@@ -188,82 +189,109 @@ async function sendLightweightGreeting(psid) {
   }
 }
 
-// In-memory cache for user profile lookups (PSID -> { name, first_name, last_name })
+// In-memory cache & in-flight deduplication for user profile lookups
 const profileCache = new Map();
+const inFlightLookups = new Map();
 
 /**
  * Fetch Facebook user profile name by PSID via Graph API.
- * Results are cached in-memory to avoid redundant Graph API network calls.
+ * Results are cached persistently in SQLite and in-memory to prevent repeated Meta calls.
+ * In-flight requests for the same PSID are deduplicated into a single Promise.
  * @param {string} psid - Page Scoped User ID
  * @returns {Promise<{ name: string|null, first_name?: string, last_name?: string }|null>}
  */
 async function getUserProfile(psid) {
   if (!psid) return null;
+
+  // 1. In-memory hot cache
   if (profileCache.has(psid)) {
     return profileCache.get(psid);
   }
 
-  if (!PAGE_TOKEN) {
-    logger.warn('[Messenger] PAGE_TOKEN not configured; skipping profile lookup.');
-    return null;
+  // 2. Persistent SQLite cache (survives PM2 reloads)
+  const cachedName = orderRepository.getCachedFacebookProfile(psid);
+  if (cachedName !== undefined) {
+    const profile = cachedName ? { name: cachedName } : null;
+    profileCache.set(psid, profile);
+    return profile;
   }
 
-  try {
-    const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(psid)}?fields=name,first_name,last_name&access_token=${PAGE_TOKEN}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      // Fallback: Query the Page's conversation thread participants for this PSID.
-      // This succeeds even when direct /{psid} node lookup is restricted by Meta permissions or tester status.
-      try {
-        const convUrl = `https://graph.facebook.com/v20.0/me/conversations?user_id=${encodeURIComponent(psid)}&fields=participants&access_token=${PAGE_TOKEN}`;
-        const convRes = await fetch(convUrl);
-        if (convRes.ok) {
-          const convData = await convRes.json();
-          const conv = convData.data && convData.data[0];
-          const participants = conv?.participants?.data || [];
-          const userParticipant = participants.find((p) => p.id === psid);
-          if (userParticipant && userParticipant.name) {
-            const fallbackProfile = {
-              name: userParticipant.name,
-              first_name: null,
-              last_name: null,
-            };
-            profileCache.set(psid, fallbackProfile);
-            logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${fallbackProfile.name}"`);
-            return fallbackProfile;
-          }
-        }
-      } catch (convErr) {
-        logger.debug(`[Messenger] Conversation fallback lookup error for PSID ${psid}:`, convErr.message || convErr);
-      }
+  // 3. Deduplicate concurrent in-flight requests for the same PSID
+  if (inFlightLookups.has(psid)) {
+    return inFlightLookups.get(psid);
+  }
 
-      // Only log warning if BOTH direct lookup and conversation fallback failed
-      const err = await res.json().catch(() => ({}));
-      logger.warn(`[Messenger] Could not resolve profile for PSID ${psid}:`, err.error?.message || res.status);
+  const lookupPromise = (async () => {
+    if (!PAGE_TOKEN) {
+      logger.warn('[Messenger] PAGE_TOKEN not configured; skipping profile lookup.');
+      orderRepository.setCachedFacebookProfile(psid, null, 'NO_TOKEN');
       profileCache.set(psid, null);
       return null;
     }
 
-    const data = await res.json();
-    const profile = {
-      name: data.name || [data.first_name, data.last_name].filter(Boolean).join(' ') || null,
-      first_name: data.first_name || null,
-      last_name: data.last_name || null,
-    };
+    try {
+      const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(psid)}?fields=name,first_name,last_name&access_token=${PAGE_TOKEN}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        // Fallback: Query the Page's conversation thread participants for this PSID.
+        try {
+          const convUrl = `https://graph.facebook.com/v20.0/me/conversations?user_id=${encodeURIComponent(psid)}&fields=participants&access_token=${PAGE_TOKEN}`;
+          const convRes = await fetch(convUrl);
+          if (convRes.ok) {
+            const convData = await convRes.json();
+            const conv = convData.data && convData.data[0];
+            const participants = conv?.participants?.data || [];
+            const userParticipant = participants.find((p) => p.id === psid);
+            if (userParticipant && userParticipant.name) {
+              const fallbackProfile = {
+                name: userParticipant.name,
+                first_name: null,
+                last_name: null,
+              };
+              profileCache.set(psid, fallbackProfile);
+              orderRepository.setCachedFacebookProfile(psid, fallbackProfile.name, 'RESOLVED');
+              logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${fallbackProfile.name}"`);
+              return fallbackProfile;
+            }
+          }
+        } catch (convErr) {
+          logger.debug(`[Messenger] Conversation fallback lookup error for PSID ${psid}:`, convErr.message || convErr);
+        }
 
-    if (profile.name) {
-      profileCache.set(psid, profile);
-      logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${profile.name}"`);
-    } else {
-      profileCache.set(psid, null);
+        const err = await res.json().catch(() => ({}));
+        logger.warn(`[Messenger] Could not resolve profile for PSID ${psid}:`, err.error?.message || res.status);
+        orderRepository.setCachedFacebookProfile(psid, null, 'UNRESOLVABLE');
+        profileCache.set(psid, null);
+        return null;
+      }
+
+      const data = await res.json();
+      const profile = {
+        name: data.name || [data.first_name, data.last_name].filter(Boolean).join(' ') || null,
+        first_name: data.first_name || null,
+        last_name: data.last_name || null,
+      };
+
+      if (profile.name) {
+        profileCache.set(psid, profile);
+        orderRepository.setCachedFacebookProfile(psid, profile.name, 'RESOLVED');
+        logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${profile.name}"`);
+      } else {
+        profileCache.set(psid, null);
+        orderRepository.setCachedFacebookProfile(psid, null, 'EMPTY');
+      }
+
+      return profile;
+    } catch (err) {
+      logger.warn(`[Messenger] Network error fetching profile for PSID ${psid}:`, err.message || err);
+      return null;
+    } finally {
+      inFlightLookups.delete(psid);
     }
+  })();
 
-    return profile;
-  } catch (err) {
-    logger.warn(`[Messenger] Network error fetching profile for PSID ${psid}:`, err.message || err);
-    profileCache.set(psid, null);
-    return null;
-  }
+  inFlightLookups.set(psid, lookupPromise);
+  return lookupPromise;
 }
 
 module.exports = {
