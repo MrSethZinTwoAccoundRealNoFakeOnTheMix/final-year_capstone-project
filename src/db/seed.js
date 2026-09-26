@@ -16,9 +16,21 @@ const variantRepo = require('../repositories/variant.repository');
 
 console.log('\n🇰🇭 Seeding Authentic Khmer Local Jewelry Catalog...\n');
 
-// 1. Remove demo products and archive historical test SKUs
-db.prepare("DELETE FROM products WHERE id LIKE 'DEMO-%'").run();
-db.prepare("UPDATE products SET is_active = 0 WHERE id IN ('RG-0001', 'NK-0001', 'BR-0001', 'NK-0002')").run();
+// 1. Archive all existing products first so they disappear from storefront
+db.prepare("UPDATE products SET is_active = 0").run();
+
+// 2. Safely delete ONLY products that are NOT referenced in order_items
+db.prepare(`
+  DELETE FROM products 
+  WHERE id NOT IN (SELECT DISTINCT product_id FROM order_items)
+    AND id NOT IN (
+      'KB-0001', 'KB-0002', 'KB-0003', 'KB-0004', 'KB-0005',
+      'SS-0001', 'SS-0002', 'SS-0003', 'SS-0004', 'SS-0005',
+      'KA-0001', 'KA-0002', 'KA-0003', 'KA-0004', 'KA-0005',
+      'CJ-0001', 'CJ-0002', 'CJ-0003', 'CJ-0004', 'CJ-0005',
+      'KD-0001', 'KD-0002', 'KD-0003', 'KD-0004', 'KD-0005'
+    )
+`).run();
 
 // 2. Ensure categories table has all 5 Khmer categories
 const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');

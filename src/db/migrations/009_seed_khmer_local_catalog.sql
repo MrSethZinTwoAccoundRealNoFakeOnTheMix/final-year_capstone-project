@@ -3,11 +3,23 @@
 -- កាបូប, ស្នាតសក់, កន្លាស់អាវ, ចិញ្ចៀន, កងដៃ
 -- Around 5 products per category, with rich style/color variants and unique photos.
 
--- 1. Remove old DEMO products and archive historical test SKUs without breaking foreign keys
-DELETE FROM products WHERE id LIKE 'DEMO-%';
-UPDATE products SET is_active = 0 WHERE id IN ('RG-0001', 'NK-0001', 'BR-0001', 'NK-0002');
+PRAGMA foreign_keys = OFF;
 
--- 2. Ensure categories table has all 5 Khmer categories
+-- 1. Archive all existing products so they never appear in storefront
+UPDATE products SET is_active = 0;
+
+-- 2. Safely delete ONLY products that are NOT referenced by any order_items
+DELETE FROM products 
+WHERE id NOT IN (SELECT DISTINCT product_id FROM order_items)
+  AND id NOT IN (
+    'KB-0001', 'KB-0002', 'KB-0003', 'KB-0004', 'KB-0005',
+    'SS-0001', 'SS-0002', 'SS-0003', 'SS-0004', 'SS-0005',
+    'KA-0001', 'KA-0002', 'KA-0003', 'KA-0004', 'KA-0005',
+    'CJ-0001', 'CJ-0002', 'CJ-0003', 'CJ-0004', 'CJ-0005',
+    'KD-0001', 'KD-0002', 'KD-0003', 'KD-0004', 'KD-0005'
+  );
+
+-- 3. Ensure categories table has all 5 Khmer categories
 INSERT OR IGNORE INTO categories (name) VALUES
   ('កាបូប'),
   ('ស្នាតសក់'),
@@ -15,7 +27,7 @@ INSERT OR IGNORE INTO categories (name) VALUES
   ('ចិញ្ចៀន'),
   ('កងដៃ');
 
--- 3. Upsert 25 authentic Khmer local products (5 per category)
+-- 4. Upsert 25 authentic Khmer local products (5 per category)
 INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants, has_variants, is_active)
 VALUES
   -- ─── Category: កាបូប (Bags & Clutches) ────────────────────────────────────
@@ -263,9 +275,7 @@ ON CONFLICT(id) DO UPDATE SET
   has_variants = excluded.has_variants,
   is_active    = 1;
 
--- 4. Upsert Product Child Variants (Distinct style options & unique photos)
-DELETE FROM product_variants WHERE product_id IN ('KB-0001', 'SS-0001', 'KA-0001', 'CJ-0001', 'KD-0001');
-
+-- 5. Upsert Product Child Variants (Safe ON CONFLICT, no blind DELETE)
 INSERT INTO product_variants (id, product_id, color_name, import_price, sell_price, stock, photo_url, is_active)
 VALUES
   -- KB-0001 Variants
@@ -291,9 +301,17 @@ VALUES
   -- KD-0001 Variants
   ('KD-0001-V1', 'KD-0001', 'ក្បាច់បុរាណទោល (Single Carved)', 60.00, 135.00, 5, 'https://images.unsplash.com/photo-1758995116383-f51775896add?w=800&q=80', 1),
   ('KD-0001-V2', 'KD-0001', 'ក្បាច់ឆ្លាក់ក្បាលនាគ (Twin Dragon Head)', 65.00, 145.00, 5, 'https://images.unsplash.com/photo-1690175867343-2af70ea57537?w=800&q=80', 1),
-  ('KD-0001-V3', 'KD-0001', 'ដាំពេជ្រក្បាច់រង្វង់ (Round Diamond Encrusted)', 70.00, 155.00, 5, 'https://images.unsplash.com/photo-1611598935678-c88dca238fce?w=800&q=80', 1);
+  ('KD-0001-V3', 'KD-0001', 'ដាំពេជ្រក្បាច់រង្វង់ (Round Diamond Encrusted)', 70.00, 155.00, 5, 'https://images.unsplash.com/photo-1611598935678-c88dca238fce?w=800&q=80', 1)
+ON CONFLICT(id) DO UPDATE SET
+  product_id   = excluded.product_id,
+  color_name   = excluded.color_name,
+  import_price = excluded.import_price,
+  sell_price   = excluded.sell_price,
+  stock        = excluded.stock,
+  photo_url    = excluded.photo_url,
+  is_active    = 1;
 
--- 5. Synchronize stock of products that have child variants
+-- 6. Synchronize stock of products that have child variants
 UPDATE products
 SET stock = (
   SELECT COALESCE(SUM(stock), 0)
@@ -301,3 +319,5 @@ SET stock = (
   WHERE product_variants.product_id = products.id AND product_variants.is_active = 1
 )
 WHERE has_variants = 1;
+
+PRAGMA foreign_keys = ON;
