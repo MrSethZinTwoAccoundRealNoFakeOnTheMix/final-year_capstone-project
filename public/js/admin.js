@@ -1956,6 +1956,75 @@
   };
 
   // ─────────────────────────────────────────────────────────────
+  // BACKDROP DISMISS FOR DRAWERS & DIALOGS (Click outside to close)
+  // ─────────────────────────────────────────────────────────────
+  function enableBackdropDismiss(overlayEl, dismissFn) {
+    if (!overlayEl) return;
+    let touchStartedOnBackdrop = false;
+
+    overlayEl.addEventListener('touchstart', (e) => {
+      touchStartedOnBackdrop = (e.target === overlayEl);
+    }, { passive: true });
+
+    overlayEl.addEventListener('mousedown', (e) => {
+      touchStartedOnBackdrop = (e.target === overlayEl);
+    });
+
+    overlayEl.addEventListener('click', (e) => {
+      if (e.target === overlayEl && touchStartedOnBackdrop) {
+        dismissFn();
+      }
+      touchStartedOnBackdrop = false;
+    });
+  }
+
+  // Quick Sell Confirmation Sheet
+  enableBackdropDismiss(qsConfirmSheet, () => window.closeQsConfirm());
+
+  // Quick Sell Style Selection Drawer
+  enableBackdropDismiss(qsVariantDrawer, () => window.closeVariantDrawer());
+
+  // Quick Sell Deduction Log Drawer
+  enableBackdropDismiss(qsLogDrawer, () => window.closeDeductionLog());
+
+  // Confirm Dialog (Delete / Actions)
+  enableBackdropDismiss(confirmDialog, () => {
+    confirmDialog.classList.add('hidden');
+    currentConfirmAction = null;
+  });
+
+  // Product Add / Edit Modal (Smart Safe Backdrop Close: warns if form has unsaved edits)
+  enableBackdropDismiss(productModal, () => {
+    const isDirty = (prodNameInput && prodNameInput.value.trim().length > 0) ||
+                    (prodSellInput && prodSellInput.value.trim().length > 0) ||
+                    (prodPhotoUrlInput && prodPhotoUrlInput.value.trim().length > 0) ||
+                    (variantsRowsContainer && variantsRowsContainer.children.length > 0);
+    if (isDirty) {
+      if (confirm('Discard unsaved product changes?')) {
+        window.closeProductModal();
+      }
+    } else {
+      window.closeProductModal();
+    }
+  });
+
+  // Keyboard Accessibility: Escape key closes active overlay
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (qsConfirmSheet && !qsConfirmSheet.classList.contains('hidden')) {
+        window.closeQsConfirm();
+      } else if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
+        window.closeVariantDrawer();
+      } else if (qsLogDrawer && !qsLogDrawer.classList.contains('hidden')) {
+        window.closeDeductionLog();
+      } else if (confirmDialog && !confirmDialog.classList.contains('hidden')) {
+        confirmDialog.classList.add('hidden');
+        currentConfirmAction = null;
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────
   // ORDERS MANAGEMENT
   // ─────────────────────────────────────────────────────────────
   async function loadOrders(silent = false) {
