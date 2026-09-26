@@ -240,6 +240,7 @@ async function getUserProfile(psid) {
       // Only log warning if BOTH direct lookup and conversation fallback failed
       const err = await res.json().catch(() => ({}));
       logger.warn(`[Messenger] Could not resolve profile for PSID ${psid}:`, err.error?.message || res.status);
+      profileCache.set(psid, null);
       return null;
     }
 
@@ -253,11 +254,14 @@ async function getUserProfile(psid) {
     if (profile.name) {
       profileCache.set(psid, profile);
       logger.info(`[Messenger] Resolved Facebook profile for PSID ${psid}: "${profile.name}"`);
+    } else {
+      profileCache.set(psid, null);
     }
 
     return profile;
   } catch (err) {
     logger.warn(`[Messenger] Network error fetching profile for PSID ${psid}:`, err.message || err);
+    profileCache.set(psid, null);
     return null;
   }
 }

@@ -113,9 +113,9 @@ function deleteProduct(req, res, next) {
 /**
  * Get all orders with line items
  */
-function getOrders(req, res, next) {
+async function getOrders(req, res, next) {
   try {
-    const orders = orderService.getAllOrders();
+    const orders = await orderService.getAllOrders();
     res.json(orders);
   } catch (err) {
     next(err);

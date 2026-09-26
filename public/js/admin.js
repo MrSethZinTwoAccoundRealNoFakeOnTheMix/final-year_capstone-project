@@ -2493,6 +2493,34 @@
         `;
       }
 
+      const filledName = order.customer_name || 'Guest Customer';
+      const fbName = order.facebook_name;
+
+      let nameBadgeHtml = '';
+      if (fbName && fbName.trim().toLowerCase() !== filledName.trim().toLowerCase()) {
+        nameBadgeHtml = `
+          <div class="flex items-center flex-wrap gap-1.5 min-w-0">
+            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
+            <span class="inline-flex items-center space-x-1 text-[10px] text-blue-300 font-medium px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 flex-shrink-0" title="Facebook Messenger Profile: ${escapeHtml(fbName)}">
+              <span>💬</span>
+              <span>FB: ${escapeHtml(fbName)}</span>
+            </span>
+          </div>
+        `;
+      } else if (fbName) {
+        nameBadgeHtml = `
+          <div class="flex items-center flex-wrap gap-1.5 min-w-0">
+            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
+            <span class="inline-flex items-center space-x-0.5 text-[9px] text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0" title="Verified via Facebook Messenger">
+              <span>✓</span>
+              <span>FB Verified</span>
+            </span>
+          </div>
+        `;
+      } else {
+        nameBadgeHtml = `<span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>`;
+      }
+
       return `
         <div class="admin-card p-4">
           <div class="flex items-center justify-between mb-2.5">
@@ -2507,11 +2535,11 @@
           </div>
 
           <div class="bg-black/25 rounded-xl p-2.5 border border-white/5 mb-3 text-xs space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-white">${escapeHtml(order.customer_name || 'Guest Customer')}</span>
+            <div class="flex items-center justify-between gap-2">
+              ${nameBadgeHtml}
               ${
                 order.phone
-                  ? `<a href="tel:${escapeHtml(order.phone)}" class="text-[#c9a84c] hover:underline font-semibold text-[11px] flex items-center space-x-1">
+                  ? `<a href="tel:${escapeHtml(order.phone)}" class="text-[#c9a84c] hover:underline font-semibold text-[11px] flex items-center space-x-1 flex-shrink-0">
                       <span>📞</span><span>${escapeHtml(order.phone)}</span>
                     </a>`
                   : ''

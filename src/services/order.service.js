@@ -222,18 +222,43 @@ function updateDeliveryType(orderId, deliveryType) {
 }
 
 /**
- * Get all orders for admin review.
+ * Helper to attach resolved Facebook profile name to an order object.
  */
-function getAllOrders() {
-  return orderRepository.findAll();
+async function attachFacebookName(order) {
+  if (!order) return order;
+  if (order.psid) {
+    try {
+      const profile = await messengerService.getUserProfile(order.psid);
+      order.facebook_name = profile?.name || null;
+    } catch (e) {
+      order.facebook_name = null;
+    }
+  } else {
+    order.facebook_name = null;
+  }
+  return order;
 }
 
 /**
- * Get single order by ID.
+ * Get all orders for admin review with Facebook profile names attached.
+ */
+async function getAllOrders() {
+  const orders = orderRepository.findAll();
+  await Promise.all(
+    orders.map(async (order) => {
+      await attachFacebookName(order);
+    })
+  );
+  return orders;
+}
+
+/**
+ * Get single order by ID with Facebook name.
  * @param {string} orderId 
  */
-function getOrder(orderId) {
-  return orderRepository.findById(orderId);
+async function getOrder(orderId) {
+  const order = orderRepository.findById(orderId);
+  return attachFacebookName(order);
 }
 
 module.exports = {
