@@ -115,7 +115,11 @@ async function testAll() {
   console.log('\n🎉 ALL INTEGRATION TESTS PASSED 100%!\n');
 }
 
-testAll().catch(err => {
-  console.error('❌ Test failed:', err);
-  process.exit(1);
-});
+testAll()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error('❌ Test failed:', err);
+    process.exit(1);
+  });
