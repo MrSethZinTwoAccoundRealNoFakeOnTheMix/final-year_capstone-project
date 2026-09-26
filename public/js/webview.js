@@ -911,7 +911,7 @@
 
     // 5. Name
     const nameLabel = document.getElementById('sm-focused-name');
-    if (nameLabel) nameLabel.textContent = v.color_name;
+    if (nameLabel) nameLabel.innerHTML = `<span>✨</span> <span>${escapeHtml(v.color_name)}</span>`;
 
     // 6. Highlight focused tile ring
     product.variant_list.forEach((variant, i) => {
@@ -1100,14 +1100,15 @@
         ${dotsHtml}
       </div>
 
-      <!-- Product Info (Compact & Centered) -->
-      <div class="text-center">
-        <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-widest font-bold">${escapeHtml(product.category || 'Jewelry')}</span>
-        <h2 id="style-modal-title" class="text-sm font-extrabold text-white mt-0.5 leading-snug line-clamp-1">${escapeHtml(product.name)}</h2>
-        ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-slate-300 font-medium mt-0.5">${escapeHtml(initialV ? initialV.color_name : '')}</p>` : ''}
-        <div class="flex items-center justify-center space-x-2 mt-1">
-          <span id="sm-price-usd" class="text-lg font-extrabold text-white leading-none">${formatUSD(initPrice)}</span>
-          <span id="sm-price-khr" class="text-xs font-semibold text-[#e5c36a]">${formatKHR(initPrice)}</span>
+      <!-- Product Info (Split Two-Column Luxury Layout) -->
+      <div class="flex items-start justify-between gap-3 pt-0.5">
+        <div class="min-w-0 flex-1">
+          <h2 id="style-modal-title" class="text-sm font-extrabold text-white leading-snug truncate">${escapeHtml(product.name)}</h2>
+          ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-[#f3d489] font-semibold mt-0.5 flex items-center space-x-1 truncate"><span>✨</span> <span>${escapeHtml(initialV ? initialV.color_name : '')}</span></p>` : ''}
+        </div>
+        <div class="text-right flex-shrink-0">
+          <div id="sm-price-usd" class="text-base font-extrabold text-white leading-none">${formatUSD(initPrice)}</div>
+          <div id="sm-price-khr" class="text-[11px] font-semibold text-[#e5c36a] mt-0.5">${formatKHR(initPrice)}</div>
         </div>
       </div>
 
@@ -1345,7 +1346,7 @@
       const { product, currentTrackPos } = styleModalState;
       if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
       const gallery = document.getElementById('sm-gallery');
-      const galleryW = gallery ? gallery.offsetWidth : 300;
+      const galleryW = gallery ? gallery.offsetWidth : 340;
       const baseOffset = (currentTrackPos || 1) * galleryW;
       const track = document.getElementById('sm-gallery-track');
       if (track) {
