@@ -4,7 +4,7 @@
 > **Purpose:** This document allows any AI agent (or the same agent after a usage reset) to
 > pick up exactly where the previous session left off — with full context, zero re-explanation.
 >
-> **Last Updated:** 2026-09-24 (Phase 8 complete — Admin UX redesign, COD/VET/KHQR checkout, Telegram lifecycle, rate limiting)  
+> **Last Updated:** 2026-09-26 (Phase 9 complete — Dynamic categories, SPU/SKU container variants, Quick Sell POS with color drawer & undo restock)  
 > **Project Owner:** Trapi Seth  
 > **Stable Backup Branch:** `phase8-stable` (Commit `52da4fa`)  
 > **GitHub Repo:** https://github.com/MrSethZinTwoAccoundRealNoFakeOnTheMix/final-year_capstone-project.git
@@ -23,6 +23,8 @@
 | **Phase 6** | ✅ COMPLETE | Khmer language toggle (🇰🇭 KM / EN) |
 | **Phase 7** | ✅ COMPLETE | Telegram bot — new order alerts + inline confirm/cancel keyboard |
 | **Phase 8** | ✅ COMPLETE | Admin order UX redesign, COD/KHQR/VET checkout, COMPLETED status, rate limiter & button debounce |
+| **Phase 9** | ✅ COMPLETE | Dynamic categories (name-only), SPU/SKU container variants (`product_variants`), Quick Sell POS with color drawer & undo restock |
+| **Phase 10** | ⏳ UP NEXT | Customer webview color variant selector UX/UI & cart integration |
 
 
 
@@ -119,6 +121,10 @@ jewelry-shop/
 │
 
 
+├── scripts/
+│   ├── setup-messenger-profile.js      ✅ committed
+│   └── test_redesign_verification.js   ✅ Phase 9 DONE (Automated test suite)
+│
 └── src/
     ├── config/
     │   ├── index.js                    ✅ Phase 1 DONE
@@ -129,16 +135,22 @@ jewelry-shop/
     │   ├── seed.js                     ✅ Phase 1 DONE
     │   └── migrations/
     │       ├── 001_init_schema.sql     ✅ Phase 1 DONE
-    │       └── 002_add_indexes.sql     ✅ Phase 1 DONE
+    │       ├── 002_add_indexes.sql     ✅ Phase 1 DONE
+    │       ├── 003_add_payment_method.sql ✅ Phase 8 DONE
+    │       ├── 004_add_is_active_to_products.sql ✅ Phase 8 DONE
+    │       ├── 005_update_orders_schema_phase8.sql ✅ Phase 8 DONE
+    │       └── 006_add_variants_and_categories.sql ✅ Phase 9 DONE
     ├── repositories/
-    │   ├── product.repository.js       ✅ Phase 1 DONE
-    │   └── order.repository.js         ✅ Phase 1 DONE
+    │   ├── product.repository.js       ✅ Phase 1 + Phase 9 (Container SPU/SKU)
+    │   ├── order.repository.js         ✅ Phase 1 DONE
+    │   ├── category.repository.js      ✅ Phase 9 DONE (Dynamic name-only categories)
+    │   └── variant.repository.js       ✅ Phase 9 DONE (Product variants & stock sync)
     │
-    ├── controllers/                    ✅ Phase 2 DONE
+    ├── controllers/                    ✅ Phase 2 + Phase 9 (Upload, Categories, Quick Sell)
     ├── middlewares/                    ✅ Phase 2 DONE
-    ├── routes/                         ✅ Phase 2 DONE
+    ├── routes/                         ✅ Phase 2 + Phase 9
     ├── services/                       ✅ Phase 2 DONE
-    ├── templates/                      ✅ Phase 2 DONE
+    ├── templates/                      ✅ Phase 2 + Phase 6 (Khmer translations)
     └── utils/                          ✅ Phase 2 DONE
     ├── app.js                          ✅ Phase 2 DONE
     └── server.js                       ✅ Phase 2 DONE
@@ -444,16 +456,98 @@ Live integration tested and verified with real Facebook Page Token and real PSID
 
 ---
 
+## Phase 8 — Order UX Redesign, Multi-Delivery Checkout & Telegram Lifecycle (✅ COMPLETE)
+
+- **Delivery / Payment Methods:** Supported `COD` (🛵 Cash on Delivery), `KHQR` (💳 Bakong QR payment), and `VET` (📦 Virak Buntham Express bus delivery).
+- **Database Migrations:** `003_add_payment_method.sql` and `005_update_orders_schema_phase8.sql`.
+- **Order Lifecycle Update:** Added `COMPLETED` state for delivered and settled orders.
+- **Admin Delivery Switcher:** Shop owner can change delivery type dynamically from the order queue card (`PATCH /api/admin/orders/:id/delivery-type`).
+- **Anti-Spam & Debounce:** `src/middlewares/rateLimiter.js` added 1-hour IP rate limit (max 5 orders/hr) and client-side 3-second button debounce to prevent duplicate order submissions.
+- **Telegram Inline Keyboard:** Real-time bot notification allows owner to confirm or cancel orders directly from Telegram with inline buttons.
+
+---
+
+## Phase 9 — Dynamic Categories, SPU/SKU Container Variants & Quick Sell POS (✅ COMPLETE)
+
+### Motivation & Architecture Shift
+The previous "Color Group Tag" concept was abandoned because requiring the merchant to create multiple separate products and type the same text tag desynchronized pricing and caused severe cognitive friction. Real e-commerce platforms (Taobao, Shopee, Shopify) treat the product as a container (SPU) with child variants (SKU) inside.
+
+### 1. Database Schema (`006_add_variants_and_categories.sql`)
+- **`categories` Table:** Replaced hardcoded category enum with dynamic categories (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `name TEXT NOT NULL UNIQUE`). Seeded with: `Hairpin`, `Brooch`, `Bag`, `Decor`, `Earring`, `Necklace`, `Ring`, `Bracelet`.
+- **`products` Table:** Removed CHECK constraint on category, added `has_variants INTEGER NOT NULL DEFAULT 0`. Preserved all existing 1,004 products.
+- **`product_variants` Table:** Dedicated child variant table (`id TEXT PRIMARY KEY`, `product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE`, `color_name TEXT NOT NULL`, `import_price REAL NOT NULL`, `sell_price REAL NOT NULL`, `stock INTEGER NOT NULL DEFAULT 1`, `photo_url TEXT DEFAULT ''`, `is_active INTEGER NOT NULL DEFAULT 1`, `created_at`, `updated_at`).
+
+### 2. Repositories
+- **`src/repositories/category.repository.js`:** `findAll()`, `findByName(name)`, `findById(id)`, `create(name)` (zero prefix needed from owner), `remove(id)` (blocks deletion if active products exist).
+- **`src/repositories/variant.repository.js`:** `findByProductId()`, `findById()`, `replaceForProduct(productId, variants)` in atomic transaction with `syncParentStock()`, `decrementStock()`, `incrementStock()`.
+- **`src/repositories/product.repository.js`:**
+  - `findAllAdmin()`: Attaches `variant_list` in O(N) map.
+  - `generateSku(category)`: Auto-derives 2-letter uppercase prefix in code (e.g. `HP-0001`, `BR-0001`) without asking owner.
+  - `upsert()`: Handles SPU container info, default stock `1`, and `has_variants`.
+
+### 3. Controllers & Routes
+- `POST /api/admin/upload-image`: Instant image processor & uploader via `sharp` (800px WebP) for parent cover and child variant photos.
+- `GET|POST|DELETE /api/admin/categories`: Name-only dynamic categories management.
+- `POST /api/admin/products`: SPU/SKU container upsert handling parent info + child `color_variants` array in one payload, auto-calculates total stock.
+- `POST /api/admin/products/:id/deduct`: Quick Sell deduction. Supports standalone products or specific variants via `{ variant_id }`.
+- `POST /api/admin/products/:id/restock`: Quick Sell restock/undo for standalone products or variants.
+
+### 4. Admin Frontend Features
+- **Single-Screen Product Modal:** "Color Variations" toggle switch. When enabled, reveals inline variant rows inside the same modal.
+- **Auto-Fill Pricing:** Top-level Cost and Sell price inputs pre-fill newly added variant rows so owner doesn't re-type identical prices.
+- **Default Quantity:** All products and variants default to stock `1` (not 5).
+- **Individual Colorway Photos:** Each variant row includes a photo upload button with immediate visual preview and background upload to `/api/admin/upload-image`.
+- **Zero-Prefix Category Creation:** Inline `+ New` button opens quick-add box requiring name only.
+- **Quick Sell POS Tab (`public/admin.html`, `public/js/admin.js`, `public/css/admin.css`):**
+  - Sticky category filter chips ("All" + dynamic categories).
+  - Standalone products show direct `− Deduct 1` button.
+  - Multi-color items show `🎨 {N} Colors` badge and total stock; tapping card/button opens `#qs-variant-drawer`.
+  - Variant drawer displays each colorway with photo, color name, price, stock, and deduct button.
+  - Tapping deduct auto-closes drawer and opens `#qs-confirm-sheet` (with elevated z-index `z-[65]`).
+  - Session deduction tracker bar (`#qs-deduction-bar`) logs deductions with 1-tap Undo/Restock toast and drawer log.
+  - Reusable bottom sheet `#confirm-dialog` (`z-[70]`).
+
+### 5. Key Bug Fixes in Phase 9
+- **Unquoted Variant SKU ReferenceError:** In `admin.js`, variant buttons rendered with unquoted string IDs (e.g. `onclick="window.qsOpenConfirm('HP-0001', HP-0001-V1)"`), which threw `ReferenceError: HP is not defined`. Fixed by properly quoting `'${v.id}'` and matching with `String(v.id) === String(variantId)`.
+- **Drawer Overshadowing Popup:** Variant drawer stayed open behind `#qs-confirm-sheet` with equal z-index. Fixed by auto-closing the variant drawer when opening the confirm sheet and elevating confirm sheet z-index to `z-[65]`.
+- **Variant ID Preservation on Form Edit:** Product form previously parsed variant IDs through `Number()`, converting string IDs (`HP-0001-V1`) to `NaN`. Fixed by preserving string IDs on edit.
+
+### 6. Automated Verification Test Suite
+- `scripts/test_redesign_verification.js`: Automated end-to-end regression test suite verifying category creation, standalone product creation, variant container creation, variant deduction, parent stock sync, and restock/undo via controller. Passed 100%.
+
+---
+
+## Phase 10 — Customer Webview Variant Support (⏳ NEXT IMMEDIATE TASK)
+
+Customer storefront UX/UI was intentionally deferred during Phase 9 to finalize the database and admin panel first.
+
+### What Needs to be Done in Phase 10:
+1. **Catalog Display:**
+   - In `public/index.html` and `public/js/webview.js`, products with `has_variants = 1` should display a `🎨 {N} Colors` badge.
+2. **Color Selection UI:**
+   - When a customer taps on a multi-color product (or taps "Add to Bag"), show a colorway picker (modal or drawer).
+   - Display color options with their specific photos, color names, and prices.
+3. **Cart Integration:**
+   - Adding a color variant to the cart should store `{ product_id, variant_id, color_name, photo_url, unit_price }`.
+   - Prevent adding out-of-stock color variants.
+4. **Order Submission:**
+   - Ensure `order_items` records the chosen variant in `variants` (e.g. `"Color: Crimson Red"`).
+
+---
+
 ## Key Files for Reference
 
 | File | Purpose |
 |:---|:---|
-| `messenger-spike/server.js` | Working prototype (568 lines) — source of truth for business logic |
-| `messenger-spike/index.html` | Working customer webview — migrate to Phase 3 |
-| `messenger-spike/admin.html` | Working admin panel — migrate to Phase 4 |
-| `PRODUCTION_ARCHITECTURE_BLUEPRINT.md` | Original architecture document |
+| `src/repositories/category.repository.js` | Dynamic category queries (name-only) |
+| `src/repositories/variant.repository.js` | Child variant operations & atomic parent stock synchronization |
+| `src/repositories/product.repository.js` | Container SPU product operations & auto SKU prefix generation |
 | `src/repositories/order.repository.js` | 5-state order lifecycle with atomic transactions |
-| `src/repositories/product.repository.js` | Atomic stock decrement/increment |
+| `src/controllers/admin.controller.js` | SPU/SKU upsert, image upload, Quick Sell deduct/restock |
+| `public/admin.html` | Owner admin dashboard with Quick Sell tab and single-screen modal |
+| `public/js/admin.js` | Admin logic (single-screen variant builder, auto-fill prices, Quick Sell POS) |
+| `scripts/test_redesign_verification.js` | Automated regression test suite for categories, products, variants, and Quick Sell |
+| `PRODUCTION_ARCHITECTURE_BLUEPRINT.md` | Original architecture document |
 
 ---
 
@@ -462,12 +556,12 @@ Live integration tested and verified with real Facebook Page Token and real PSID
 - **Local dev `.env`:** `NODE_ENV=development` (enables `sig=demo-bypass` for testing)
 - **Production server `.env`:** `NODE_ENV=production` (bypass NEVER active)
 - **The real `.env` is NOT committed to git** (correctly gitignored)
-- `npm run migrate` before first run on any new machine
-- `npm run seed` to populate sample products (idempotent, safe to re-run)
+- `npm run migrate` before first run on any new machine (runs migration 006)
+- `node scripts/test_redesign_verification.js` to run the regression test suite
 
 ---
 
-*If you are an AI agent reading this: ALL 7 PHASES ARE COMPLETE. The app is ready for homelab deployment to Proxmox LXC @ 192.168.100.232. See `PRODUCTION_ARCHITECTURE_BLUEPRINT.md` for deployment steps.*
+*If you are an AI agent reading this: PHASES 1 THROUGH 9 ARE COMPLETE AND LIVE-TESTED. Proceed to Phase 10 (Customer Webview Variant Support).*
 
 
 
