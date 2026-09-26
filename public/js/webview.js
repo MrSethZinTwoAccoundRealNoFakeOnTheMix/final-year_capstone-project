@@ -35,6 +35,7 @@
       catBrooch: '🧷 Brooches',
       catRing: '💍 Rings',
       catBracelet: '✨ Bracelets',
+      exploreAll: 'Explore All',
       rateDisplay: '1 USD = ៛4,100',
       piecesCount: '{n} piece{s} available',
       inStock: 'In Stock',
@@ -126,6 +127,7 @@
       catBrooch: '🧷 កន្លាស់អាវ',
       catRing: '💍 ចិញ្ចៀន',
       catBracelet: '✨ កងដៃ',
+      exploreAll: 'មើលទាំងអស់',
       rateDisplay: '១ ដុល្លារ = ៛៤,១០០',
       piecesCount: 'មាន {n} មុខសម្រាប់ជ្រើសរើស',
       inStock: 'មានក្នុងស្តុក',
@@ -204,6 +206,36 @@
       text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
     }
     return text;
+  }
+
+  // Category Configuration & Bilingual Formatting
+  const CATEGORY_DEFINITIONS = {
+    'កាបូប': { emoji: '👜', en: 'Bags', km: 'កាបូប' },
+    'ស្នាតសក់': { emoji: '✨', en: 'Hairpins', km: 'ស្នាតសក់' },
+    'កន្លាស់អាវ': { emoji: '🧷', en: 'Brooches', km: 'កន្លាស់អាវ' },
+    'ចិញ្ចៀន': { emoji: '💍', en: 'Rings', km: 'ចិញ្ចៀន' },
+    'កងដៃ': { emoji: '✨', en: 'Bracelets', km: 'កងដៃ' },
+    Bag: { emoji: '👜', en: 'Bags', km: 'កាបូប' },
+    Hairpin: { emoji: '✨', en: 'Hairpins', km: 'ស្នាតសក់' },
+    Brooch: { emoji: '🧷', en: 'Brooches', km: 'កន្លាស់អាវ' },
+    Ring: { emoji: '💍', en: 'Rings', km: 'ចិញ្ចៀន' },
+    Bracelet: { emoji: '✨', en: 'Bracelets', km: 'កងដៃ' },
+    Necklace: { emoji: '📿', en: 'Necklaces', km: 'ខ្សែក' },
+    Earring: { emoji: '💎', en: 'Earrings', km: 'ក្រវិល' },
+  };
+
+  function getCategoryDisplay(cat, options = {}) {
+    const withEmoji = options.withEmoji !== false;
+    if (!cat) return 'Jewelry';
+    if (cat === 'ALL') {
+      return t('catAll') || (currentLang === 'km' ? 'គ្រឿងអលង្ការទាំងអស់' : 'All Pieces');
+    }
+    const def = CATEGORY_DEFINITIONS[cat];
+    if (def) {
+      const label = currentLang === 'en' ? def.en : def.km;
+      return withEmoji ? `${def.emoji} ${label}` : label;
+    }
+    return withEmoji ? `✦ ${escapeHtml(cat)}` : escapeHtml(cat);
   }
 
   // State
@@ -608,25 +640,11 @@
   function renderCategoryPills() {
     if (!categoryPillsContainer) return;
 
-    const catMap = {
-      ALL: t('catAll') || 'All Pieces',
-      'កាបូប': t('catBag') || '👜 Bags',
-      'ស្នាតសក់': t('catHairpin') || '✨ Hairpins',
-      'កន្លាស់អាវ': t('catBrooch') || '🧷 Brooches',
-      'ចិញ្ចៀន': t('catRing') || '💍 Rings',
-      'កងដៃ': t('catBracelet') || '✨ Bracelets',
-      Bag: t('catBag') || '👜 Bags',
-      Hairpin: t('catHairpin') || '✨ Hairpins',
-      Brooch: t('catBrooch') || '🧷 Brooches',
-      Ring: t('catRing') || '💍 Rings',
-      Bracelet: t('catBracelet') || '✨ Bracelets',
-    };
-
     const displayCategories = ['ALL', ...categoriesList];
 
     categoryPillsContainer.innerHTML = displayCategories.map((cat) => {
       const isActive = cat === currentCategory;
-      const label = catMap[cat] || `✦ ${escapeHtml(cat)}`;
+      const label = getCategoryDisplay(cat, { withEmoji: true });
       return `
         <button class="category-pill ${isActive ? 'active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
           data-category="${escapeHtml(cat)}"
@@ -765,11 +783,7 @@
           <!-- Details -->
           <div class="p-2 pb-0.5">
             <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
-              ${(function() {
-                const label = catMap[product.category];
-                if (label) return label.replace(/^[^\w\s\u1780-\u17FF]+\s*/, '');
-                return product.category || 'Jewelry';
-              })()}
+              ${escapeHtml(getCategoryDisplay(product.category, { withEmoji: false }))}
             </span>
             <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
               ${escapeHtml(product.name)}
@@ -865,17 +879,12 @@
       catMap.get(cat).push(p);
     }
 
-    const catIconMap = {
-      Ring: '💍',
-      Necklace: '📿',
-      Bracelet: '✨',
-      Earring: '💎',
-    };
-
     let html = '';
     for (const [catName, items] of catMap.entries()) {
       if (items.length === 0) continue;
-      const icon = catIconMap[catName] || '✦';
+      const def = CATEGORY_DEFINITIONS[catName];
+      const icon = def ? def.emoji : '✦';
+      const label = getCategoryDisplay(catName, { withEmoji: false });
       const previewItems = items.slice(0, 4); // Featured 4 items per section
 
       html += `
@@ -884,13 +893,13 @@
             <div class="flex items-center space-x-2">
               <span class="text-base">${icon}</span>
               <h3 class="text-sm font-bold text-white tracking-wide">
-                ${escapeHtml(catName)}
+                ${escapeHtml(label)}
                 <span class="text-[11px] font-normal text-slate-400 ml-1">(${items.length})</span>
               </h3>
             </div>
             <button type="button" onclick="window.selectCategory('${escapeHtml(catName)}')"
               class="section-explore-link">
-              <span>Explore All</span>
+              <span>${t('exploreAll') || 'Explore All'}</span>
               <span class="text-xs">→</span>
             </button>
           </div>
