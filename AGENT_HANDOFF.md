@@ -24,7 +24,9 @@
 | **Phase 7** | ✅ COMPLETE | Telegram bot — new order alerts + inline confirm/cancel keyboard |
 | **Phase 8** | ✅ COMPLETE | Admin order UX redesign, COD/KHQR/VET checkout, COMPLETED status, rate limiter & button debounce |
 | **Phase 9** | ✅ COMPLETE | Dynamic categories (name-only), SPU/SKU container variants (`product_variants`), Quick Sell POS with color drawer & undo restock |
-| **Phase 10** | ⏳ UP NEXT | Customer webview color variant selector UX/UI & cart integration |
+| **Phase 10** | ✅ COMPLETE | Admin Inventory Redesign, Visual-first cards (96px), Staged Delta Stock adjustments (Option A) with batch commit |
+| **Phase 11** | ✅ COMPLETE | Customer Storefront Redesign: Visual mini-swatches (Option B), Curated Section Stack (Approach B), Live Search, Style Bottom Sheet Modal & Variant Checkout |
+| **Phase 12** | 🟢 READY | Live Homelab Testing & Future Refinements |
 
 
 
@@ -525,21 +527,74 @@ The previous "Color Group Tag" concept was abandoned because requiring the merch
 
 ---
 
-## Phase 10 — Customer Webview Style Variant Support (⏳ NEXT IMMEDIATE TASK)
+## Phase 10 — Admin Inventory Redesign & Option A Staged Stock Adjustments (✅ COMPLETE)
 
-Customer storefront UX/UI was intentionally deferred during Phase 9 to finalize the database and admin panel first.
+### 1. Visual-First Inventory Card Layout
+- **Visual Priority:** Since jewelry is identified visually rather than by name or barcode, inventory cards were enlarged to feature 96px high-resolution square photos with hover scale and click-to-lightbox zoom.
+- **Dynamic Category Filtering & Live Search:** Sticky category chips (derived from `/api/categories`) and a real-time SKU/name search bar.
+- **Multi-Style Accordion:** Expandable child row preview displaying each style's thumbnail, price, and stock.
 
-### What Needs to be Done in Phase 10:
-1. **Catalog Display:**
-   - In `public/index.html` and `public/js/webview.js`, products with `has_variants = 1` should display a `✨ {N} Styles` badge.
-2. **Style Selection UI:**
-   - When a customer taps on a multi-style product (or taps "Add to Bag"), show a style picker (bottom sheet or modal drawer).
-   - Display style options with their specific photos, style names, and prices.
-3. **Cart Integration:**
-   - Adding a style variant to the cart should store `{ product_id, variant_id, color_name, photo_url, unit_price }`.
-   - Prevent adding out-of-stock styles.
-4. **Order Submission:**
-   - Ensure `order_items` records the chosen style in `variants` (e.g. `"Style: Style 1"` or `"Style: Small Gem"`).
+### 2. Option A Staged Delta Stock Adjustments
+- **The Problem:** Shop owners feared losing track of stock if `+` or `−` buttons were tapped accidentally or rapidly during a busy shift, corrupting inventory without an audit trail.
+- **The Solution (Option A):**
+  - Tapping `+` or `−` steppers on any product or variant **stages changes locally** in UI memory.
+  - The badge visually reflects the staged adjustment: e.g. `2 → 3 (+1)` in amber, with an inline `[ ✕ ]` instant revert button.
+  - A sticky floating action bar (`[ 📝 Save Changes ({N}) ✓ ]`) appears at the bottom.
+  - Tapping "Save Changes" shows a review dialog with before-and-after counts, then executes an **atomic batch commit** against the backend.
+  - Backend endpoints (`POST /api/admin/products/:id/restock` and `/deduct`) updated to accept `{ qty, variant_id }`.
+- **Git Checkpoint Tag:** `checkpoint-before-inventory-redesign`.
+
+---
+
+## Phase 11 — Customer Storefront Redesign: Visual Swatches, Curated Sections & Style Drawer (✅ COMPLETE)
+
+### 1. Visual-First Style Swatches (Option B)
+- **Mini Photo Swatches (24px × 24px):** Product cards display a row of mini circular image thumbnails directly below the title.
+- **Instant In-Card Preview:** Tapping any swatch swaps the card's main photo and updates the price directly on the card without opening a modal.
+- **Smart Dynamic Pricing:** Displays a single price if variants share the same price (`$45.00`), or dynamic price range (`$45.00 – $52.00`) if prices differ.
+
+### 2. Luxury Style Selection Bottom Sheet Modal (`#style-modal`)
+- Tapping a product card or `[ ✨ Select Style ]` slides up an elegant drawer:
+  - High-res photo preview updating dynamically as styles are selected.
+  - 4-column visual grid of style photo tiles with style names and price badges. Active style is highlighted with a gold border ✨.
+  - In-stock, low-stock (`Only X left`), and dimmed `Sold Out` badges.
+  - Quantity stepper `[ − 1 + ]` respecting available stock.
+  - Sticky CTA: `Add Style 2 to Bag • $52.00`.
+
+### 3. Curated Section Stack Layout (Approach B)
+- **"All Collections" View:** Instead of a jumbled product grid, products are organized into clean boutique shelves (`💍 Rings (8 pieces)` with an `[ Explore All → ]` link, followed by `📿 Necklaces (5 pieces)`).
+- **Full-Size 2-Column Cards:** Keeps photos large and sharp on mobile screens.
+- **Category Tabs:** Tapping any category tab (or `Explore All →`) seamlessly focuses the page into the full 2-column collection for that category.
+- **Dynamic Category Navigation:** Loaded dynamically from `/api/categories`.
+
+### 4. Minimalist Live Search Engine
+- Integrated search bar at the top: `🔍 Search collection, style, or SKU...`
+- Real-time filtering matching product name, category, SKU (`RG-0001`), or style name.
+- Instant `[ ✕ ]` clear button to quickly return to the curated collections.
+
+### 5. Backend Stock Synchronization & Order Placement
+- **Public Catalog API (`GET /api/products`):** Attaches active `variant_list` while strictly hiding `import_price`.
+- **Order Items Schema:** Auto-migration adds `variant_id TEXT DEFAULT NULL` to `order_items`.
+- **Atomic Order Lifecycle:**
+  - `placeOrder`: Accepts `variantId`, soft-checks against variant stock, sets variant unit price and style photo in `order_items`.
+  - `confirmOrder`: Atomically decrements variant stock (or parent product stock) and syncs parent stock.
+  - `cancelOrder`: Atomically restores variant stock and syncs parent stock.
+- **Git Checkpoint Tag:** `checkpoint-before-customer-redesign`.
+
+---
+
+## Key Problems Encountered & Root-Cause Solutions
+
+### 1. Telegram 409 Conflict (`terminated by other getUpdates request`)
+- **Symptom:** Homelab server logs showed repeated `[ERROR] [Telegram] Polling error: ETELEGRAM ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running`.
+- **Root Cause:** When `node src/server.js` was run as a local background daemon during browser testing, both the local dev machine and the homelab PM2 instance were polling Telegram simultaneously using the same `TELEGRAM_BOT_TOKEN`. Furthermore, local dev was intercepting Telegram order confirmation callbacks meant for the homelab database.
+- **Fix:** Terminated and killed the local background node server process.
+- **Golden Rule:** Never run `node src/server.js` locally with Telegram bot polling enabled at the same time as the homelab PM2 production server!
+
+### 2. Playwright Azure CDN 404
+- **Symptom:** `browser_subagent` failed with HTTP 404 from `https://playwright.azureedge.net/builds/driver/playwright-1.57.0-win32_x64.zip`.
+- **Root Cause:** Microsoft Azure CDN driver repository had an upstream 404 on the specific build URL for this Windows environment.
+- **Workaround:** Verified frontend DOM rendering and HTTP status via curl/node test assertions, and verified end-to-end functionality via user testing on the live homelab domain.
 
 ---
 
@@ -547,29 +602,32 @@ Customer storefront UX/UI was intentionally deferred during Phase 9 to finalize 
 
 | File | Purpose |
 |:---|:---|
-| `src/repositories/category.repository.js` | Dynamic category queries (name-only) |
+| `public/index.html` | Customer storefront HTML (search bar, dynamic categories, curated sections, style modal) |
+| `public/js/webview.js` | Customer storefront logic (mini-swatches, curated sections, search, style modal, cart) |
+| `public/css/webview.css` | Customer storefront luxury styling (swatch thumbnails, style tiles, section headers) |
+| `src/repositories/product.repository.js` | SPU container operations, `findAll()` with `variant_list` |
 | `src/repositories/variant.repository.js` | Child variant operations & atomic parent stock synchronization |
-| `src/repositories/product.repository.js` | Container SPU product operations & auto SKU prefix generation |
-| `src/repositories/order.repository.js` | 5-state order lifecycle with atomic transactions |
-| `src/controllers/admin.controller.js` | SPU/SKU upsert, image upload, Quick Sell deduct/restock |
-| `public/admin.html` | Owner admin dashboard with Quick Sell tab and single-screen modal |
-| `public/js/admin.js` | Admin logic (single-screen variant builder, auto-fill prices, Quick Sell POS) |
-| `scripts/test_redesign_verification.js` | Automated regression test suite for categories, products, variants, and Quick Sell |
-| `PRODUCTION_ARCHITECTURE_BLUEPRINT.md` | Original architecture document |
+| `src/repositories/order.repository.js` | 5-state order lifecycle with variant stock decrements and restoration |
+| `src/services/order.service.js` | Order placement with variant consolidation and soft stock checks |
+| `scripts/test_customer_storefront.js` | Automated integration test verifying catalog variants and variant order lifecycle |
+| `scripts/test_redesign_verification.js` | Automated regression test suite for admin categories, products, variants, and Quick Sell |
+| `CUSTOMER_STOREFRONT_PLAN.md` | Customer storefront redesign architecture plan and tracking |
 
 ---
 
-## Environment Notes
+## Environment & Deployment Workflow
 
-- **Local dev `.env`:** `NODE_ENV=development` (enables `sig=demo-bypass` for testing)
-- **Production server `.env`:** `NODE_ENV=production` (bypass NEVER active)
-- **The real `.env` is NOT committed to git** (correctly gitignored)
-- `npm run migrate` before first run on any new machine (runs migration 006)
-- `node scripts/test_redesign_verification.js` to run the regression test suite
+- **Homelab Host:** Ubuntu 24.04 via PM2 (`pm2 reload jewelry-shop`)
+- **Deployment Command:** `git pull origin master && pm2 reload jewelry-shop`
+- **Database Migrations:** SQLite auto-migrates safely on server boot (`is_active` on products, `variant_id` on order_items).
+- **Test Suites:**
+  - `node scripts/test_customer_storefront.js` (Customer catalog & order lifecycle)
+  - `node scripts/test_redesign_verification.js` (Admin SPU/SKU & Quick Sell)
 
 ---
 
-*If you are an AI agent reading this: PHASES 1 THROUGH 9 ARE COMPLETE AND LIVE-TESTED. Proceed to Phase 10 (Customer Webview Variant Support).*
+*If you are an AI agent reading this: ALL PHASES THROUGH PHASE 11 ARE COMPLETE, TESTED, AND LIVE ON MASTER.*
+
 
 
 
