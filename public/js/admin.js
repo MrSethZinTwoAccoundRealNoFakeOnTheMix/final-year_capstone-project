@@ -196,6 +196,10 @@
   // Quick Sell Elements
   const qsSearchInput = document.getElementById('qs-search-input');
   const qsSearchClear = document.getElementById('qs-search-clear');
+  const qsSelectModeBtn = document.getElementById('qs-select-mode-btn');
+  const qsSelectModeIcon = document.getElementById('qs-select-mode-icon');
+  const qsSelectModeText = document.getElementById('qs-select-mode-text');
+  const qsSelectBanner = document.getElementById('qs-select-banner');
   const qsCategoryChips = document.getElementById('qs-category-chips');
   const qsDeductionBar = document.getElementById('qs-deduction-bar');
   const qsDeductionCount = document.getElementById('qs-deduction-count');
@@ -1158,13 +1162,72 @@
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // QUICK SELL DUAL MODE (1-Tap Quick Sell vs Multi-Select Basket)
+  // ─────────────────────────────────────────────────────────────
+  let isQsSelectMode = false;
+
+  window.setQsSelectMode = function (active) {
+    isQsSelectMode = !!active;
+
+    if (qsSelectModeBtn) {
+      if (isQsSelectMode) {
+        qsSelectModeBtn.className = 'flex-shrink-0 px-3 py-2 rounded-xl bg-[#c9a84c] text-black border border-[#c9a84c] font-bold text-xs flex items-center space-x-1.5 shadow-md transition';
+        if (qsSelectModeIcon) qsSelectModeIcon.textContent = '✓';
+        if (qsSelectModeText) qsSelectModeText.textContent = 'Done';
+      } else {
+        qsSelectModeBtn.className = 'flex-shrink-0 px-3 py-2 rounded-xl border border-white/15 bg-[#171928] hover:border-[#c9a84c]/60 text-slate-300 text-xs font-semibold flex items-center space-x-1.5 transition';
+        if (qsSelectModeIcon) qsSelectModeIcon.textContent = '☑';
+        if (qsSelectModeText) qsSelectModeText.textContent = 'Select';
+      }
+    }
+
+    if (qsSelectBanner) {
+      if (isQsSelectMode) {
+        qsSelectBanner.classList.remove('hidden');
+      } else {
+        qsSelectBanner.classList.add('hidden');
+      }
+    }
+
+    // If exiting select mode, clear basket and hide batch tray
+    if (!isQsSelectMode) {
+      qsBasket.clear();
+      updateQsBatchBar();
+    }
+
+    renderQsGrid();
+
+    // If variant drawer is currently open, refresh subtitle & cards
+    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
+      const curProductId = qsVariantDrawer.dataset.productId;
+      if (curProductId) {
+        const prod = productsList.find((p) => p.id === curProductId);
+        if (prod) {
+          qsVariantDrawerSub.textContent = isQsSelectMode
+            ? `Total stock: ${prod.stock} · Tap styles to select into batch`
+            : `Total stock: ${prod.stock} · Tap style to deduct 1 · Hold to select`;
+          renderVariantDrawerContent(prod);
+        }
+      }
+    }
+  };
+
+  window.toggleQsSelectMode = function () {
+    window.setQsSelectMode(!isQsSelectMode);
+  };
+
+  window.exitQsSelectMode = function () {
+    window.setQsSelectMode(false);
+  };
+
   function getBasketItemKey(productId, variantId = null) {
     return variantId ? `${productId}__${variantId}` : productId;
   }
 
   function updateQsBatchBar() {
     if (!qsBatchBar || !qsBatchCount || !qsBatchTotal) return;
-    if (activeTab !== 'quicksell') {
+    if (activeTab !== 'quicksell' || !isQsSelectMode) {
       qsBatchBar.classList.add('hidden');
       return;
     }
@@ -1253,6 +1316,137 @@
     }
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // TOUCH GESTURE ENGINE (Hold to select + 1-Tap Quick Sell)
+  // ─────────────────────────────────────────────────────────────
+  function setupQuickSellGestures(container, isVariantList = false) {
+    if (!container) return;
+
+    let holdTimer = null;
+    let startX = 0;
+    let startY = 0;
+    let isHoldTriggered = false;
+
+    function clearTimer() {
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+    }
+
+    // Touch events for mobile
+    container.addEventListener('touchstart', (e) => {
+      const card = e.target.closest('.qs-card');
+      if (!card) return;
+      if (e.target.closest('button')) return; // Ignore counter stepper buttons
+
+      isHoldTriggered = false;
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+
+      clearTimer();
+      holdTimer = setTimeout(() => {
+        isHoldTriggered = true;
+        triggerCardHold(card, isVariantList);
+      }, 420);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!holdTimer) return;
+      const t = e.touches[0];
+      // If finger moved > 10px, user is scrolling: cancel hold immediately
+      if (Math.hypot(t.clientX - startX, t.clientY - startY) > 10) {
+        clearTimer();
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+      clearTimer();
+      if (isHoldTriggered) {
+        if (e.cancelable) e.preventDefault();
+      }
+    });
+
+    container.addEventListener('touchcancel', () => {
+      clearTimer();
+    });
+
+    // Suppress context menu on cards during long-press
+    container.addEventListener('contextmenu', (e) => {
+      if (e.target.closest('.qs-card')) {
+        e.preventDefault();
+      }
+    });
+
+    // Standard click handling
+    container.addEventListener('click', (e) => {
+      if (isHoldTriggered) {
+        isHoldTriggered = false;
+        return;
+      }
+      const card = e.target.closest('.qs-card');
+      if (!card) return;
+      if (e.target.closest('button')) return; // Allow button clicks (+ / -) to bubble cleanly
+
+      triggerCardClick(card, isVariantList);
+    });
+  }
+
+  function triggerCardHold(card, isVariantList) {
+    const productId = card.dataset.productId;
+    const variantId = card.dataset.variantId || null;
+    const hasVariants = card.dataset.hasVariants === 'true';
+
+    // Haptic vibration feedback on supported mobile devices
+    if (navigator.vibrate) {
+      try { navigator.vibrate(40); } catch (_) {}
+    }
+
+    // Micro pop animation
+    card.classList.add('qs-card-popping');
+    setTimeout(() => card.classList.remove('qs-card-popping'), 250);
+
+    // If product has variants and held on main grid, open drawer to pick specific style
+    if (!isVariantList && hasVariants) {
+      window.qsOpenVariantDrawer(productId);
+      return;
+    }
+
+    // Auto-enter Select Mode if not already active
+    if (!isQsSelectMode) {
+      window.setQsSelectMode(true);
+      showToast('Multi-select mode activated', 'info');
+    }
+
+    // Add or increment in basket
+    window.qsModifyBasketItem(productId, variantId, 1);
+  }
+
+  function triggerCardClick(card, isVariantList) {
+    const productId = card.dataset.productId;
+    const variantId = card.dataset.variantId || null;
+    const hasVariants = card.dataset.hasVariants === 'true';
+
+    if (isQsSelectMode) {
+      // MULTI-SELECT MODE ACTIVE
+      if (!isVariantList && hasVariants) {
+        window.qsOpenVariantDrawer(productId);
+      } else {
+        window.qsModifyBasketItem(productId, variantId, 1);
+      }
+    } else {
+      // NORMAL 1-TAP QUICK SELL MODE
+      if (!isVariantList && hasVariants) {
+        window.qsOpenVariantDrawer(productId);
+      } else if (isVariantList) {
+        window.qsOpenSingleConfirm(productId, variantId);
+      } else {
+        window.qsOpenSingleConfirm(productId, null);
+      }
+    }
+  }
+
   function renderQsGrid() {
     if (!qsGrid) return;
 
@@ -1302,11 +1496,11 @@
 
       if (hasVars) {
         return `
-          <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+          <div class="admin-card qs-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
             isSelected
               ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
               : 'border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
-          }" onclick="window.qsOpenVariantDrawer('${product.id}')">
+          }" data-product-id="${product.id}" data-has-variants="true">
             <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
               
@@ -1339,11 +1533,11 @@
 
       // Standalone single product (no variants)
       return `
-        <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+        <div class="admin-card qs-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
           isSelected
             ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'border-white/10 hover:border-white/20 active:scale-98 shadow'
-        }" onclick="window.qsModifyBasketItem('${product.id}', null, 1)">
+        }" data-product-id="${product.id}" data-has-variants="false">
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
             
@@ -1371,7 +1565,7 @@
             <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
               <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
               
-              <!-- Quick Steppers when selected -->
+              <!-- Quick Steppers when selected, or mode action indicator -->
               ${isSelected ? `
                 <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
                   <button type="button" onclick="window.qsModifyBasketItem('${product.id}', null, -1, event)"
@@ -1384,8 +1578,8 @@
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
-                  +
+                <span class="w-5 h-5 rounded-md ${isQsSelectMode ? 'bg-[#c9a84c]/20 text-[#f3d489]' : 'bg-white/10 text-slate-300'} flex items-center justify-center text-xs font-bold">
+                  ${isQsSelectMode ? '☑' : '⚡'}
                 </span>
               `}
             </div>
@@ -1408,13 +1602,13 @@
       const isSelected = basketQty > 0;
 
       return `
-        <div class="admin-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
+        <div class="admin-card qs-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
           isOut
             ? 'opacity-40 cursor-not-allowed border-white/5'
             : isSelected
             ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
-        }" ${isOut ? '' : `onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', 1)"`}>
+        }" data-product-id="${product.id}" data-variant-id="${v.id}" data-is-out="${isOut}">
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             
@@ -1451,8 +1645,8 @@
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
-                  ${isOut ? '✕' : '+'}
+                <span class="w-5 h-5 rounded-md ${isQsSelectMode ? 'bg-[#c9a84c]/20 text-[#f3d489]' : 'bg-white/10 text-slate-300'} flex items-center justify-center text-xs font-bold">
+                  ${isOut ? '✕' : (isQsSelectMode ? '☑' : '⚡')}
                 </span>
               `}
             </div>
@@ -1468,7 +1662,9 @@
 
     qsVariantDrawer.dataset.productId = productId;
     qsVariantDrawerTitle.textContent = product.name;
-    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap styles to select`;
+    qsVariantDrawerSub.textContent = isQsSelectMode
+      ? `Total stock: ${product.stock} · Tap styles to select into batch`
+      : `Total stock: ${product.stock} · Tap style to deduct 1 · Hold to select`;
 
     renderVariantDrawerContent(product);
     qsVariantDrawer.classList.remove('hidden');
@@ -1478,7 +1674,87 @@
     if (qsVariantDrawer) qsVariantDrawer.classList.add('hidden');
   };
 
-  // Quick Sell Confirmation Sheet (Single Item & Multi-Item Batch)
+  // ─────────────────────────────────────────────────────────────
+  // QUICK SELL CONFIRMATION SHEETS (Single 1-Tap & Multi-Batch)
+  // ─────────────────────────────────────────────────────────────
+
+  // Single Item 1-Tap Quick Sell Confirmation
+  window.qsOpenSingleConfirm = function (productId, variantId = null) {
+    const product = productsList.find((p) => p.id === productId);
+    if (!product || !qsConfirmSheet) return;
+
+    window.closeVariantDrawer();
+
+    let variant = null;
+    if (variantId && product.variant_list) {
+      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
+    }
+
+    const title = variant ? `${product.name} (${variant.color_name})` : product.name;
+    const price = variant ? Number(variant.sell_price) : Number(product.sell_price);
+    const imgUrl = (variant && variant.photo_url) || product.photo_url || DEFAULT_IMAGE;
+
+    if (qsConfirmTitle) qsConfirmTitle.innerHTML = `<span>⚡ Quick Sell Confirmation</span>`;
+    if (qsConfirmBatchList) qsConfirmBatchList.classList.add('hidden');
+    if (qsConfirmSingle) {
+      qsConfirmSingle.classList.remove('hidden');
+      if (qsConfirmImg) qsConfirmImg.src = imgUrl;
+      if (qsConfirmCategory) qsConfirmCategory.textContent = product.category;
+      if (qsConfirmName) qsConfirmName.textContent = title;
+      if (qsConfirmPrice) qsConfirmPrice.textContent = formatUSD(price);
+    }
+
+    if (qsConfirmTotalBadge) {
+      qsConfirmTotalBadge.textContent = `1 item · ${formatUSD(price)}`;
+    }
+
+    if (qsConfirmYesBtn) {
+      qsConfirmYesBtn.textContent = '− Deduct 1 from Stock';
+      qsConfirmYesBtn.onclick = () => executeSingleDeduct(product, variant);
+    }
+
+    qsConfirmSheet.classList.remove('hidden');
+  };
+
+  async function executeSingleDeduct(product, variant = null) {
+    window.closeQsConfirm();
+    try {
+      const res = await authFetch(`/api/admin/products/${product.id}/deduct`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant_id: variant ? variant.id : undefined }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const title = variant ? `${product.name} (${variant.color_name})` : product.name;
+        const price = variant ? Number(variant.sell_price) : Number(product.sell_price);
+
+        const logEntry = {
+          id: 'deduct-' + Date.now(),
+          productId: product.id,
+          variantId: variant ? variant.id : null,
+          name: title,
+          price,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        sessionDeductions.unshift(logEntry);
+        updateQsDeductionBar();
+
+        showToast(
+          `Deducted 1 from ${title}! (${data.remaining} left)`,
+          'success',
+          () => undoDeduction(logEntry.id)
+        );
+        loadProducts(true);
+      } else {
+        showToast(data.message || 'Deduction failed.', 'error');
+      }
+    } catch (err) {
+      showToast('Error deducting stock: ' + err.message, 'error');
+    }
+  }
+
+  // Multi-Item Batch Deduction Confirmation
   let activeBatchToDeduct = [];
 
   window.qsOpenBatchConfirm = function () {
@@ -1592,8 +1868,9 @@
         () => undoDeduction(logEntry.id)
       );
 
-      // Clear basket for completed batch
+      // Clear basket for completed batch and exit select mode
       qsBasket.clear();
+      window.setQsSelectMode(false);
       updateQsBatchBar();
       loadProducts(true);
     }
@@ -1602,6 +1879,10 @@
       showToast(`Could not deduct remaining stock for ${failedItem}.`, 'error');
     }
   }
+
+  // Initialize Gesture Listeners on Quick Sell Grids
+  setupQuickSellGestures(qsGrid, false);
+  setupQuickSellGestures(qsVariantList, true);
 
   async function undoDeduction(logId) {
     const idx = sessionDeductions.findIndex((d) => String(d.id) === String(logId));
