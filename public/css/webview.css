@@ -323,3 +323,323 @@ body {
   text-decoration: underline;
 }
 
+/* ── Swipeable Style Gallery ─────────────────────────────────────────────── */
+.sm-gallery {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #121324;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  touch-action: pan-x;
+  user-select: none;
+}
+
+.sm-gallery-track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+.sm-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sm-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  draggable: false;
+}
+
+/* Arrow nav buttons */
+.sm-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s ease;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.sm-arrow:active {
+  background: rgba(201, 168, 76, 0.4);
+}
+
+.sm-arrow-left { left: 8px; }
+.sm-arrow-right { right: 8px; }
+
+/* Dot indicators */
+.sm-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 10;
+}
+
+.sm-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.35);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sm-dot-active {
+  background: #c9a84c;
+  width: 14px;
+}
+
+/* Stock badge variants */
+.sm-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.sm-badge-red {
+  background: rgba(69, 10, 10, 0.92);
+  color: #fca5a5;
+  border: 1px solid rgba(153, 27, 27, 0.7);
+}
+
+.sm-badge-amber {
+  background: rgba(69, 35, 5, 0.92);
+  color: #fbbf24;
+  border: 1px solid rgba(146, 64, 14, 0.7);
+}
+
+.sm-badge-green {
+  background: rgba(2, 44, 34, 0.88);
+  color: #6ee7b7;
+  border: 1px solid rgba(6, 95, 70, 0.7);
+}
+
+/* ── Multi-Select Style Tiles ───────────────────────────────────────────── */
+.sm-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 380px) {
+  .sm-tiles-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.sm-style-tile {
+  position: relative;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: #121324;
+  overflow: visible;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sm-style-tile:active {
+  transform: scale(0.97);
+}
+
+.sm-style-tile.sm-tile-focused {
+  border-color: rgba(201, 168, 76, 0.35);
+}
+
+.sm-style-tile.sm-tile-selected {
+  border-color: #c9a84c;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+}
+
+.sm-style-tile.sm-tile-sold {
+  opacity: 0.42;
+  filter: grayscale(0.75);
+  cursor: not-allowed;
+}
+
+.sm-tile-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.sm-tile-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sold out overlay on tile */
+.sm-tile-sold-label {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.04em;
+}
+
+/* Gold checkmark overlay (hidden by default, visible when selected) */
+.sm-tile-check {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #c9a84c;
+  color: #11121d;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.sm-tile-check.sm-check-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Tile info row (name + price) */
+.sm-tile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 2px 2px;
+}
+
+.sm-tile-name {
+  font-size: 8px;
+  font-weight: 700;
+  color: #f8fafc;
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
+}
+
+.sm-tile-price {
+  font-size: 8px;
+  font-weight: 600;
+  color: #f3d489;
+  text-align: center;
+  font-family: 'Inter', monospace;
+}
+
+/* Per-tile quantity stepper (revealed on select) */
+.sm-tile-qty {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 4px;
+  background: rgba(201, 168, 76, 0.12);
+  border-top: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 0 0 8px 8px;
+}
+
+.sm-tile-qty.sm-tile-qty-visible {
+  display: flex;
+}
+
+.sm-tile-qty-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
+}
+
+.sm-tile-qty-btn:active {
+  background: rgba(201, 168, 76, 0.4);
+}
+
+.sm-tile-qty-val {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f3d489;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ── Single-product Qty Row (no variants) ───────────────────────────────── */
+.sm-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sm-qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.sm-qty-btn:active {
+  background: rgba(201, 168, 76, 0.35);
+}

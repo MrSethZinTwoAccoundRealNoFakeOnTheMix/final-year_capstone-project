@@ -26,7 +26,8 @@
 | **Phase 9** | ✅ COMPLETE | Dynamic categories (name-only), SPU/SKU container variants (`product_variants`), Quick Sell POS with color drawer & undo restock |
 | **Phase 10** | ✅ COMPLETE | Admin Inventory Redesign, Visual-first cards (96px), Staged Delta Stock adjustments (Option A) with batch commit |
 | **Phase 11** | ✅ COMPLETE | Customer Storefront Redesign: Visual mini-swatches (Option B), Curated Section Stack (Approach B), Live Search, Style Bottom Sheet Modal & Variant Checkout |
-| **Phase 12** | 🟢 READY | Live Homelab Testing & Future Refinements |
+| **Phase 12** | 🟡 IN PROGRESS | Customer style modal redesign: swipeable gallery + multi-select tiles |
+
 
 
 

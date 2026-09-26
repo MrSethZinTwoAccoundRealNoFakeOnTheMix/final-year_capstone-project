@@ -41,7 +41,7 @@
   </script>
 
   <!-- Custom Mobile Luxury Stylesheet -->
-  <link rel="stylesheet" href="/css/webview.css?v=1.0.3">
+  <link rel="stylesheet" href="/css/webview.css?v=1.1.0">
 </head>
 
 <body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
@@ -203,71 +203,25 @@
         <div class="drag-handle mx-auto mb-0"></div>
         <button onclick="window.closeStyleModal()"
           class="absolute right-4 top-2.5 w-7 h-7 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition">
-          ✕
+          &#x2715;
         </button>
       </div>
 
-      <!-- Scrollable content -->
+      <!-- Scrollable content — populated dynamically by buildStyleModalDOM() -->
       <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-        <!-- Main High-Res Preview Image -->
-        <div class="relative w-full aspect-square rounded-2xl bg-slate-900 overflow-hidden border border-white/10 shadow-lg">
-          <img id="style-modal-img" src="" alt="" class="w-full h-full object-cover transition-all duration-300">
-          <div id="style-modal-stock-badge" class="absolute top-3 left-3"></div>
-          <div class="absolute top-3 right-3">
-            <span id="style-modal-sku" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm"></span>
-          </div>
-        </div>
-
-        <!-- Title & Category & Price -->
-        <div>
-          <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-wider font-bold"></span>
-          <h2 id="style-modal-title" class="text-base font-extrabold text-white mt-0.5 leading-snug"></h2>
-          
-          <div class="flex items-baseline space-x-2 mt-1.5">
-            <span id="style-modal-usd" class="text-xl font-extrabold text-white leading-none">$0.00</span>
-            <span id="style-modal-khr" class="text-xs font-semibold text-[#e5c36a]">៛0</span>
-          </div>
-          <p id="style-modal-desc" class="text-xs text-slate-400 mt-2 leading-relaxed hidden"></p>
-        </div>
-
-        <!-- Visual Style Swatches (Tiles) -->
-        <div id="style-modal-swatches-container">
-          <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-2 flex items-center justify-between">
-            <span>Available Styles:</span>
-            <span id="style-modal-selected-label" class="text-[#f3d489] font-semibold"></span>
-          </label>
-          <div id="style-modal-swatches" class="grid grid-cols-4 gap-2.5">
-            <!-- Dynamically populated style tiles -->
-          </div>
-        </div>
-
-        <!-- Quantity Stepper -->
-        <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-          <span class="text-xs font-semibold text-slate-300">Quantity</span>
-          <div class="flex items-center space-x-3">
-            <button type="button" onclick="window.changeStyleModalQty(-1)"
-              class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition">
-              −
-            </button>
-            <span id="style-modal-qty" class="text-xs font-extrabold text-white w-5 text-center">1</span>
-            <button type="button" onclick="window.changeStyleModalQty(1)"
-              class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition">
-              +
-            </button>
-          </div>
-        </div>
+        <!-- JS injects swipeable gallery + multi-select tiles here -->
       </div>
 
-      <!-- Sticky Bottom Sheet Footer / Action CTA -->
+      <!-- Sticky Bottom CTA -->
       <div class="p-4 border-t border-white/10 bg-[#171829] flex-shrink-0">
         <button id="style-modal-add-btn" type="button" onclick="window.confirmAddStyleToCart()"
-          class="btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2">
-          <span>Add to Bag</span>
-          <span class="text-sm">🛍️</span>
+          class="btn-gold-outline w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2">
+          <span>Select a style above to add to bag</span>
         </button>
       </div>
     </div>
   </div>
+
 
   <!-- Slide-up Bottom Sheet Modal (Cart & Checkout) -->
   <div id="cart-modal"
@@ -590,7 +544,8 @@
     class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
   <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js?v=1.0.3"></script>
+  <script src="/js/webview.js?v=1.1.0"></script>
+
 </body>
 
 </html>

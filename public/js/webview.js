@@ -297,10 +297,14 @@
   let searchQuery = '';
   let categoriesList = [];
   let cart = [];
+  // ── Style Modal State (multi-select redesign) ──
   let styleModalState = {
     product: null,
-    selectedVariant: null,
-    qty: 1,
+    selectedVariants: new Map(), // variantId → { variant, qty }
+    focusedVariantIndex: 0,      // index in variant_list for swipe gallery
+    swipeStartX: 0,
+    swipeCurrentX: 0,
+    isSwiping: false,
   };
 
   const CART_STORAGE_KEY = `luxe_cart_${psid || 'guest'}`;
@@ -330,21 +334,9 @@
   const barCartUsd = document.getElementById('bar-cart-usd');
   const barCartKhr = document.getElementById('bar-cart-khr');
 
-  // Style Selection Modal Elements
+  // Style Selection Modal (outer container only; content built dynamically by buildStyleModalDOM)
   const styleModal = document.getElementById('style-modal');
-  const styleModalImg = document.getElementById('style-modal-img');
-  const styleModalStockBadge = document.getElementById('style-modal-stock-badge');
-  const styleModalSku = document.getElementById('style-modal-sku');
-  const styleModalCategory = document.getElementById('style-modal-category');
-  const styleModalTitle = document.getElementById('style-modal-title');
-  const styleModalUsd = document.getElementById('style-modal-usd');
-  const styleModalKhr = document.getElementById('style-modal-khr');
-  const styleModalDesc = document.getElementById('style-modal-desc');
-  const styleModalSwatchesContainer = document.getElementById('style-modal-swatches-container');
-  const styleModalSelectedLabel = document.getElementById('style-modal-selected-label');
-  const styleModalSwatches = document.getElementById('style-modal-swatches');
-  const styleModalQty = document.getElementById('style-modal-qty');
-  const styleModalAddBtn = document.getElementById('style-modal-add-btn');
+
 
   // Cart & Checkout Elements
   const cartModal = document.getElementById('cart-modal');
@@ -892,197 +884,529 @@
     catalogSections.innerHTML = html;
   }
 
-  // ─── Style Selection Modal Logic ──────────────────────────────────────────
+  // ─── Style Selection Modal Logic (Swipeable Gallery + Multi-Select) ─────────
 
   window.openStyleModal = function (productId, defaultVariantId) {
     const product = productsList.find((p) => p.id === productId);
     if (!product) return;
 
     const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
-    let selectedVariant = null;
 
-    if (hasVariants) {
-      if (defaultVariantId) {
-        selectedVariant = product.variant_list.find((v) => v.id === defaultVariantId) || product.variant_list[0];
-      } else {
-        selectedVariant = product.variant_list.find((v) => v.stock > 0) || product.variant_list[0];
-      }
-    }
-
+    // Reset state for this product
     styleModalState = {
       product,
-      selectedVariant,
-      qty: 1,
+      selectedVariants: new Map(),
+      focusedVariantIndex: 0,
+      swipeStartX: 0,
+      swipeCurrentX: 0,
+      isSwiping: false,
     };
 
-    updateStyleModalUI();
+    // Find default focused index
+    if (hasVariants) {
+      let defaultIdx = 0;
+      if (defaultVariantId) {
+        const idx = product.variant_list.findIndex((v) => v.id === defaultVariantId);
+        if (idx >= 0) defaultIdx = idx;
+      } else {
+        const firstAvail = product.variant_list.findIndex((v) => v.stock > 0);
+        if (firstAvail >= 0) defaultIdx = firstAvail;
+      }
+      styleModalState.focusedVariantIndex = defaultIdx;
+    }
+
+    buildStyleModalDOM();
     if (styleModal) styleModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   };
 
   window.closeStyleModal = function () {
     if (styleModal) styleModal.classList.add('hidden');
+    document.body.style.overflow = '';
   };
 
-  window.changeStyleModalQty = function (delta) {
-    const { product, selectedVariant } = styleModalState;
-    if (!product) return;
-    const maxStock = selectedVariant ? selectedVariant.stock : product.stock;
-    const nextQty = styleModalState.qty + delta;
-
-    if (nextQty >= 1 && nextQty <= Math.max(1, maxStock)) {
-      styleModalState.qty = nextQty;
-      if (styleModalQty) styleModalQty.textContent = styleModalState.qty;
-    } else if (nextQty > maxStock) {
-      showToast(t('stockLimit', { n: maxStock }), 'warning');
-    }
-  };
-
-  window.selectModalStyleVariant = function (variantId) {
+  // ── Gallery swipe helpers ──────────────────────────────────────────────────
+  function galleryGoTo(idx) {
     const { product } = styleModalState;
     if (!product || !product.variant_list) return;
+    const total = product.variant_list.length;
+    // Loop
+    styleModalState.focusedVariantIndex = ((idx % total) + total) % total;
+    renderGallerySlide();
+    renderStyleTiles();
+    renderModalAddBtn();
+  }
 
-    const variant = product.variant_list.find((v) => v.id === variantId);
-    if (!variant) return;
-
-    styleModalState.selectedVariant = variant;
-    styleModalState.qty = 1;
-    updateStyleModalUI();
-  };
-
-  function updateStyleModalUI() {
-    const { product, selectedVariant, qty } = styleModalState;
+  function renderGallerySlide() {
+    const { product, focusedVariantIndex } = styleModalState;
     if (!product) return;
-
     const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
-    const activePhoto = (selectedVariant && selectedVariant.photo_url) || product.photo_url || DEFAULT_IMAGE;
-    const activePrice = selectedVariant ? Number(selectedVariant.sell_price) : Number(product.sell_price);
-    const activeStock = selectedVariant ? selectedVariant.stock : product.stock;
-    const isSoldOut = activeStock <= 0;
 
-    if (styleModalImg) {
-      styleModalImg.src = activePhoto;
-      styleModalImg.alt = escapeHtml(product.name);
-    }
-    if (styleModalSku) {
-      styleModalSku.textContent = selectedVariant ? selectedVariant.id : product.id;
-    }
-    if (styleModalCategory) {
-      styleModalCategory.textContent = product.category || 'Jewelry';
-    }
-    if (styleModalTitle) {
-      styleModalTitle.textContent = product.name;
-    }
-    if (styleModalUsd) {
-      styleModalUsd.textContent = formatUSD(activePrice);
-    }
-    if (styleModalKhr) {
-      styleModalKhr.textContent = formatKHR(activePrice);
-    }
-    if (styleModalQty) {
-      styleModalQty.textContent = qty;
-    }
+    const container = document.getElementById('sm-gallery-track');
+    if (!container) return;
 
-    // Stock Badge
-    if (styleModalStockBadge) {
-      if (isSoldOut) {
-        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-950/90 text-rose-300 border border-rose-800/80 backdrop-blur-sm">${t('soldOut')}</span>`;
-      } else if (activeStock <= 3) {
-        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-950/90 text-amber-300 border border-amber-800/80 backdrop-blur-sm">${t('onlyLeft', { n: activeStock })}</span>`;
+    if (hasVariants) {
+      const v = product.variant_list[focusedVariantIndex];
+      const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
+      const stock = v.stock;
+      // Animate slide transition using CSS
+      container.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      container.style.transform = `translateX(-${focusedVariantIndex * 100}%)`;
+
+      // Update top badge & SKU
+      const badge = document.getElementById('sm-stock-badge');
+      const skuEl = document.getElementById('sm-sku');
+      if (badge) {
+        if (stock <= 0) {
+          badge.innerHTML = `<span class="sm-badge sm-badge-red">${t('soldOut')}</span>`;
+        } else if (stock <= 3) {
+          badge.innerHTML = `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: stock })}</span>`;
+        } else {
+          badge.innerHTML = `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
+        }
+      }
+      if (skuEl) skuEl.textContent = v.id;
+
+      // Update dots
+      const dots = document.querySelectorAll('.sm-dot');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('sm-dot-active', i === focusedVariantIndex);
+      });
+
+      // Update price label in header area
+      const priceUsd = document.getElementById('sm-price-usd');
+      const priceKhr = document.getElementById('sm-price-khr');
+      if (priceUsd) priceUsd.textContent = formatUSD(v.sell_price);
+      if (priceKhr) priceKhr.textContent = formatKHR(v.sell_price);
+
+      // Update style name label
+      const nameLabel = document.getElementById('sm-focused-name');
+      if (nameLabel) nameLabel.textContent = v.color_name;
+    } else {
+      // Single product — no variants, just show photo
+      const photo = product.photo_url || DEFAULT_IMAGE;
+      container.style.transition = 'none';
+      container.style.transform = 'translateX(0)';
+    }
+  }
+
+  // ── Build the full modal DOM (called once per open) ─────────────────────
+  function buildStyleModalDOM() {
+    const { product, focusedVariantIndex } = styleModalState;
+    if (!product) return;
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+    const variants = hasVariants ? product.variant_list : [];
+
+    // ── Gallery images (one slide per variant) ──
+    const gallerySlides = hasVariants
+      ? variants.map((v, i) => {
+          const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
+          return `<div class="sm-slide"><img src="${photo}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+        }).join('')
+      : `<div class="sm-slide"><img src="${product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+
+    const initialV = hasVariants ? variants[focusedVariantIndex] : null;
+    const initStock = initialV ? initialV.stock : product.stock;
+    const initPrice = initialV ? Number(initialV.sell_price) : Number(product.sell_price);
+
+    const stockBadgeHtml = initStock <= 0
+      ? `<span class="sm-badge sm-badge-red">${t('soldOut')}</span>`
+      : initStock <= 3
+      ? `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: initStock })}</span>`
+      : `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
+
+    // ── Pagination dots ──
+    const dotsHtml = hasVariants && variants.length > 1
+      ? `<div class="sm-dots">${variants.map((_, i) => `<span class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}"></span>`).join('')}</div>`
+      : '';
+
+    // ── Nav arrows (only if >1 style) ──
+    const arrowsHtml = hasVariants && variants.length > 1 ? `
+      <button class="sm-arrow sm-arrow-left" onclick="galleryGoTo(${focusedVariantIndex} - 1)" aria-label="Previous">‹</button>
+      <button class="sm-arrow sm-arrow-right" onclick="galleryGoTo(${focusedVariantIndex} + 1)" aria-label="Next">›</button>
+    ` : '';
+
+    // ── Style tiles (multi-select) ──
+    const tilesHtml = hasVariants
+      ? `<div id="sm-tiles" class="sm-tiles-grid">${variants.map((v) => renderStyleTileHTML(v)).join('')}</div>`
+      : '';
+
+    // ── Global quantity stepper (only for single-variant/no-variant products) ──
+    const qtyStepperHtml = !hasVariants ? `
+      <div class="sm-qty-row">
+        <span class="text-xs font-semibold text-slate-300">Quantity</span>
+        <div class="flex items-center space-x-3">
+          <button type="button" onclick="window.smChangeQty(-1)" class="sm-qty-btn">−</button>
+          <span id="sm-qty" class="text-xs font-extrabold text-white w-5 text-center">1</span>
+          <button type="button" onclick="window.smChangeQty(1)" class="sm-qty-btn">+</button>
+        </div>
+      </div>
+    ` : '';
+
+    // ── Assemble into the modal scrollable content ──
+    const scrollEl = document.querySelector('#style-modal .modal-sheet > div.overflow-y-auto');
+    if (!scrollEl) return;
+
+    scrollEl.innerHTML = `
+      <!-- Swipeable Gallery -->
+      <div class="sm-gallery" id="sm-gallery"
+        data-product-id="${product.id}"
+        ontouchstart="window.smTouchStart(event)"
+        ontouchmove="window.smTouchMove(event)"
+        ontouchend="window.smTouchEnd(event)">
+
+        <div class="sm-gallery-track" id="sm-gallery-track"
+          style="transform: translateX(-${focusedVariantIndex * 100}%); transition: none;">
+          ${gallerySlides}
+        </div>
+
+        <!-- Stock + SKU overlay -->
+        <div id="sm-stock-badge" class="absolute top-3 left-3">${stockBadgeHtml}</div>
+        <div class="absolute top-3 right-3">
+          <span id="sm-sku" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm">${initialV ? initialV.id : product.id}</span>
+        </div>
+
+        ${arrowsHtml}
+        ${dotsHtml}
+      </div>
+
+      <!-- Product Info -->
+      <div>
+        <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-wider font-bold">${escapeHtml(product.category || 'Jewelry')}</span>
+        <h2 id="style-modal-title" class="text-base font-extrabold text-white mt-0.5 leading-snug">${escapeHtml(product.name)}</h2>
+        ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-slate-400 mt-0.5">${escapeHtml(initialV ? initialV.color_name : '')}</p>` : ''}
+        <div class="flex items-baseline space-x-2 mt-1.5">
+          <span id="sm-price-usd" class="text-xl font-extrabold text-white leading-none">${formatUSD(initPrice)}</span>
+          <span id="sm-price-khr" class="text-xs font-semibold text-[#e5c36a]">${formatKHR(initPrice)}</span>
+        </div>
+      </div>
+
+      ${hasVariants ? `
+        <!-- Multi-select style tiles -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Select Styles:</label>
+            <span id="sm-selection-count" class="text-[10px] text-[#f3d489] font-semibold"></span>
+          </div>
+          ${tilesHtml}
+          <p class="text-[10px] text-slate-500 mt-2 text-center">Tap a style to select · Tap again to deselect</p>
+        </div>
+      ` : ''}
+
+      ${qtyStepperHtml}
+    `;
+
+    // Now update the add button
+    renderModalAddBtn();
+  }
+
+  function renderStyleTileHTML(v) {
+    const isOut = v.stock <= 0;
+    return `
+      <div class="sm-style-tile ${isOut ? 'sm-tile-sold' : ''}" id="sm-tile-${v.id}"
+        onclick="window.smToggleTile('${v.id}')">
+        <div class="sm-tile-img-wrap">
+          <img src="${v.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(v.color_name)}" loading="lazy"
+            class="w-full h-full object-cover"
+            onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+          <div class="sm-tile-check" id="sm-check-${v.id}">✓</div>
+          ${isOut ? '<div class="sm-tile-sold-label">Sold Out</div>' : ''}
+        </div>
+        <div class="sm-tile-info">
+          <span class="sm-tile-name">${escapeHtml(v.color_name)}</span>
+          <span class="sm-tile-price">${formatUSD(v.sell_price)}</span>
+        </div>
+        <!-- Per-tile qty stepper (shown when selected) -->
+        <div class="sm-tile-qty" id="sm-tile-qty-${v.id}">
+          <button class="sm-tile-qty-btn" onclick="event.stopPropagation(); window.smTileQty('${v.id}', -1)">−</button>
+          <span id="sm-tile-qty-val-${v.id}" class="sm-tile-qty-val">1</span>
+          <button class="sm-tile-qty-btn" onclick="event.stopPropagation(); window.smTileQty('${v.id}', 1)">+</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderStyleTiles() {
+    const { product, selectedVariants } = styleModalState;
+    if (!product || !product.variant_list) return;
+    product.variant_list.forEach((v) => {
+      const tile = document.getElementById(`sm-tile-${v.id}`);
+      if (!tile) return;
+      const isSel = selectedVariants.has(v.id);
+      tile.classList.toggle('sm-tile-selected', isSel);
+      const checkEl = document.getElementById(`sm-check-${v.id}`);
+      if (checkEl) checkEl.classList.toggle('sm-check-visible', isSel);
+      const qtyEl = document.getElementById(`sm-tile-qty-${v.id}`);
+      if (qtyEl) qtyEl.classList.toggle('sm-tile-qty-visible', isSel);
+      if (isSel) {
+        const qtyVal = document.getElementById(`sm-tile-qty-val-${v.id}`);
+        if (qtyVal) qtyVal.textContent = selectedVariants.get(v.id).qty;
+      }
+    });
+    // Highlight focused variant's tile with a subtle ring
+    const focusedV = product.variant_list[styleModalState.focusedVariantIndex];
+    product.variant_list.forEach((v, i) => {
+      const tile = document.getElementById(`sm-tile-${v.id}`);
+      if (!tile) return;
+      tile.classList.toggle('sm-tile-focused', i === styleModalState.focusedVariantIndex);
+    });
+  }
+
+  function renderModalAddBtn() {
+    const { product, selectedVariants } = styleModalState;
+    if (!product) return;
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+    const btn = document.getElementById('style-modal-add-btn');
+    if (!btn) return;
+
+    if (hasVariants) {
+      if (selectedVariants.size === 0) {
+        btn.disabled = false;
+        btn.className = 'btn-gold-outline w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2';
+        btn.innerHTML = '<span>Select a style above to add to bag</span>';
       } else {
-        styleModalStockBadge.innerHTML = `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 backdrop-blur-sm">${t('inStock')}</span>`;
+        const totalQty = [...selectedVariants.values()].reduce((s, e) => s + e.qty, 0);
+        const totalPrice = [...selectedVariants.values()].reduce((s, e) => s + e.qty * Number(e.variant.sell_price), 0);
+        btn.disabled = false;
+        btn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
+        const itemWord = totalQty === 1 ? 'item' : 'items';
+        btn.innerHTML = `<span>Add ${totalQty} ${itemWord} to Bag • ${formatUSD(totalPrice)}</span><span class="text-sm">🛍️</span>`;
+      }
+    } else {
+      // No-variant product: use sm-qty
+      const qty = parseInt(document.getElementById('sm-qty')?.textContent || '1', 10) || 1;
+      const price = Number(product.sell_price);
+      if (product.stock <= 0) {
+        btn.disabled = true;
+        btn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-500 cursor-not-allowed';
+        btn.innerHTML = `<span>${t('soldOut')}</span>`;
+      } else {
+        btn.disabled = false;
+        btn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
+        btn.innerHTML = `<span>${t('addToBag')} • ${formatUSD(price * qty)}</span><span class="text-sm">🛍️</span>`;
       }
     }
 
-    // Style Swatches in modal
-    if (styleModalSwatchesContainer) {
-      if (hasVariants) {
-        styleModalSwatchesContainer.classList.remove('hidden');
-        if (styleModalSelectedLabel) {
-          styleModalSelectedLabel.textContent = selectedVariant ? selectedVariant.color_name : '';
-        }
-        if (styleModalSwatches) {
-          styleModalSwatches.innerHTML = product.variant_list.map((v) => {
-            const isSelected = selectedVariant && selectedVariant.id === v.id;
-            const isVOut = v.stock <= 0;
-            return `
-              <div class="style-tile ${isSelected ? 'active' : ''} ${isVOut ? 'sold-out' : ''}"
-                onclick="window.selectModalStyleVariant('${v.id}')">
-                <img src="${v.photo_url || activePhoto}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover"
-                  onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
-                <div class="style-tile-badge">
-                  <span>${escapeHtml(v.color_name)}</span>
-                  <div class="text-[#f3d489] text-[8px] font-mono">${formatUSD(v.sell_price)}</div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
+    // Update selection count label
+    const countEl = document.getElementById('sm-selection-count');
+    if (countEl) {
+      if (selectedVariants.size === 0) {
+        countEl.textContent = 'None selected';
       } else {
-        styleModalSwatchesContainer.classList.add('hidden');
-      }
-    }
-
-    // Modal Add Button
-    if (styleModalAddBtn) {
-      if (isSoldOut) {
-        styleModalAddBtn.disabled = true;
-        styleModalAddBtn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-500 cursor-not-allowed shadow-none';
-        styleModalAddBtn.innerHTML = `<span>${t('soldOut')}</span>`;
-      } else {
-        styleModalAddBtn.disabled = false;
-        styleModalAddBtn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
-        const label = selectedVariant
-          ? `Add ${escapeHtml(selectedVariant.color_name)} • ${formatUSD(activePrice * qty)}`
-          : `${t('addToBag')} • ${formatUSD(activePrice * qty)}`;
-        styleModalAddBtn.innerHTML = `<span>${label}</span><span class="text-sm">🛍️</span>`;
+        countEl.textContent = `${selectedVariants.size} style${selectedVariants.size > 1 ? 's' : ''} selected`;
       }
     }
   }
 
-  window.confirmAddStyleToCart = function () {
-    const { product, selectedVariant, qty } = styleModalState;
-    if (!product) return;
-
-    const availableStock = selectedVariant ? selectedVariant.stock : product.stock;
-    if (availableStock <= 0) {
+  // ── Tile toggle (select/deselect) ─────────────────────────────────────────
+  window.smToggleTile = function (variantId) {
+    const { product, selectedVariants } = styleModalState;
+    if (!product || !product.variant_list) return;
+    const v = product.variant_list.find((x) => x.id === variantId);
+    if (!v) return;
+    if (v.stock <= 0) {
       showToast(t('soldOut'), 'warning');
       return;
     }
 
-    const itemKey = selectedVariant ? `${product.id}_${selectedVariant.id}` : product.id;
-    const existingIndex = cart.findIndex((it) => it.itemKey === itemKey);
-    const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
+    // Also focus on this tile's image in the gallery
+    const idx = product.variant_list.indexOf(v);
+    if (idx >= 0) galleryGoTo(idx);
 
-    if (currentQtyInCart + qty > availableStock) {
-      showToast(t('stockLimit', { n: availableStock }), 'warning');
+    if (selectedVariants.has(variantId)) {
+      selectedVariants.delete(variantId);
+    } else {
+      selectedVariants.set(variantId, { variant: v, qty: 1 });
+    }
+    renderStyleTiles();
+    renderModalAddBtn();
+  };
+
+  // ── Per-tile qty stepper ───────────────────────────────────────────────────
+  window.smTileQty = function (variantId, delta) {
+    const { selectedVariants } = styleModalState;
+    if (!selectedVariants.has(variantId)) return;
+    const entry = selectedVariants.get(variantId);
+    const maxStock = entry.variant.stock;
+    const next = entry.qty + delta;
+    if (next < 1) {
+      // Deselect if qty goes to 0
+      selectedVariants.delete(variantId);
+    } else if (next > maxStock) {
+      showToast(t('stockLimit', { n: maxStock }), 'warning');
+      return;
+    } else {
+      entry.qty = next;
+    }
+    renderStyleTiles();
+    renderModalAddBtn();
+  };
+
+  // ── Single product qty stepper ─────────────────────────────────────────────
+  window.smChangeQty = function (delta) {
+    const { product } = styleModalState;
+    if (!product) return;
+    const qtyEl = document.getElementById('sm-qty');
+    if (!qtyEl) return;
+    const curr = parseInt(qtyEl.textContent, 10) || 1;
+    const next = curr + delta;
+    if (next < 1) return;
+    if (next > product.stock) {
+      showToast(t('stockLimit', { n: product.stock }), 'warning');
       return;
     }
+    qtyEl.textContent = next;
+    renderModalAddBtn();
+  };
 
-    const unitPrice = selectedVariant ? Number(selectedVariant.sell_price) : Number(product.sell_price);
-    const photoUrl = (selectedVariant && selectedVariant.photo_url) || product.photo_url || DEFAULT_IMAGE;
-    const displayName = selectedVariant ? `${product.name} (${selectedVariant.color_name})` : product.name;
+  // ── Touch swipe handlers ───────────────────────────────────────────────────
+  window.smTouchStart = function (e) {
+    styleModalState.swipeStartX = e.touches[0].clientX;
+    styleModalState.swipeCurrentX = e.touches[0].clientX;
+    styleModalState.isSwiping = true;
+    const track = document.getElementById('sm-gallery-track');
+    if (track) track.style.transition = 'none';
+  };
 
-    if (existingIndex >= 0) {
-      cart[existingIndex].quantity += qty;
-    } else {
-      cart.push({
-        itemKey,
-        productId: product.id,
-        variantId: selectedVariant ? selectedVariant.id : null,
-        variantName: selectedVariant ? selectedVariant.color_name : null,
-        name: displayName,
-        baseName: product.name,
-        price: unitPrice,
-        photo_url: photoUrl,
-        stock: availableStock,
-        quantity: qty,
-      });
+  window.smTouchMove = function (e) {
+    if (!styleModalState.isSwiping) return;
+    styleModalState.swipeCurrentX = e.touches[0].clientX;
+    const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
+    const { product, focusedVariantIndex } = styleModalState;
+    if (!product || !product.variant_list) return;
+    const gallery = document.getElementById('sm-gallery');
+    const galleryW = gallery ? gallery.offsetWidth : window.innerWidth;
+    const baseOffset = focusedVariantIndex * galleryW;
+    const track = document.getElementById('sm-gallery-track');
+    if (track) {
+      track.style.transform = `translateX(${-baseOffset + dx}px)`;
     }
+  };
 
-    saveCartToStorage();
-    updateCartUI();
-    window.closeStyleModal();
-    showToast(t('addedToBag', { name: displayName }), 'success');
+  window.smTouchEnd = function (e) {
+    if (!styleModalState.isSwiping) return;
+    styleModalState.isSwiping = false;
+    const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
+    const threshold = 45;
+    const { product, focusedVariantIndex } = styleModalState;
+    if (!product || !product.variant_list) return;
+    const track = document.getElementById('sm-gallery-track');
+    if (track) track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+    if (dx < -threshold) {
+      galleryGoTo(focusedVariantIndex + 1);
+    } else if (dx > threshold) {
+      galleryGoTo(focusedVariantIndex - 1);
+    } else {
+      // Snap back
+      if (track) {
+        const gallery = document.getElementById('sm-gallery');
+        const galleryW = gallery ? gallery.offsetWidth : window.innerWidth;
+        track.style.transform = `translateX(-${focusedVariantIndex * galleryW}px)`;
+      }
+    }
+  };
+
+  // Keep global galleryGoTo accessible
+  window.galleryGoTo = galleryGoTo;
+
+  window.confirmAddStyleToCart = function () {
+    const { product, selectedVariants } = styleModalState;
+    if (!product) return;
+
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+
+    if (hasVariants) {
+      // Multi-select path
+      if (selectedVariants.size === 0) {
+        showToast('Please select at least one style.', 'warning');
+        return;
+      }
+
+      let addedNames = [];
+      let blocked = false;
+
+      for (const [variantId, { variant, qty }] of selectedVariants.entries()) {
+        const availableStock = variant.stock;
+        const itemKey = `${product.id}_${variantId}`;
+        const existingIndex = cart.findIndex((it) => it.itemKey === itemKey);
+        const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
+
+        if (currentQtyInCart + qty > availableStock) {
+          showToast(t('stockLimit', { n: availableStock }), 'warning');
+          blocked = true;
+          break;
+        }
+
+        const unitPrice = Number(variant.sell_price);
+        const photoUrl = variant.photo_url || product.photo_url || DEFAULT_IMAGE;
+        const displayName = `${product.name} (${variant.color_name})`;
+
+        if (existingIndex >= 0) {
+          cart[existingIndex].quantity += qty;
+        } else {
+          cart.push({
+            itemKey,
+            productId: product.id,
+            variantId,
+            variantName: variant.color_name,
+            name: displayName,
+            baseName: product.name,
+            price: unitPrice,
+            photo_url: photoUrl,
+            stock: availableStock,
+            quantity: qty,
+          });
+        }
+        addedNames.push(variant.color_name);
+      }
+
+      if (!blocked) {
+        saveCartToStorage();
+        updateCartUI();
+        window.closeStyleModal();
+        const summary = addedNames.length === 1
+          ? t('addedToBag', { name: `${product.name} (${addedNames[0]})` })
+          : `Added ${addedNames.length} styles of ${product.name} to bag!`;
+        showToast(summary, 'success');
+      }
+    } else {
+      // Single / no-variant path
+      if (product.stock <= 0) {
+        showToast(t('soldOut'), 'warning');
+        return;
+      }
+      const qtyEl = document.getElementById('sm-qty');
+      const qty = parseInt(qtyEl?.textContent || '1', 10) || 1;
+      const itemKey = product.id;
+      const existingIndex = cart.findIndex((it) => it.itemKey === itemKey);
+      const currentQtyInCart = existingIndex >= 0 ? cart[existingIndex].quantity : 0;
+
+      if (currentQtyInCart + qty > product.stock) {
+        showToast(t('stockLimit', { n: product.stock }), 'warning');
+        return;
+      }
+
+      if (existingIndex >= 0) {
+        cart[existingIndex].quantity += qty;
+      } else {
+        cart.push({
+          itemKey,
+          productId: product.id,
+          variantId: null,
+          variantName: null,
+          name: product.name,
+          baseName: product.name,
+          price: Number(product.sell_price),
+          photo_url: product.photo_url || DEFAULT_IMAGE,
+          stock: product.stock,
+          quantity: qty,
+        });
+      }
+      saveCartToStorage();
+      updateCartUI();
+      window.closeStyleModal();
+      showToast(t('addedToBag', { name: product.name }), 'success');
+    }
   };
 
   // Cart Management
