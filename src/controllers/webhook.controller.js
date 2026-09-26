@@ -51,6 +51,9 @@ async function handleEvent(req, res) {
         continue;
       }
 
+      // Pre-warm user profile in server RAM cache in the background (0ms delay when opening webview)
+      messengerService.getUserProfile(senderPsid).catch(() => {});
+
       // Check text, postback, or quick reply action
       const userText = webhookEvent.message && webhookEvent.message.text
         ? webhookEvent.message.text.toLowerCase().trim()

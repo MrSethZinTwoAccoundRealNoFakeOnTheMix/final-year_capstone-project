@@ -224,7 +224,9 @@
   })();
 
   let customerProfile = {
-    name: null,
+    name: (function () {
+      try { return psid ? localStorage.getItem(`luxe_cust_name_${psid}`) : null; } catch (e) { return null; }
+    })(),
     phone: null,
     address: null,
   };
@@ -509,6 +511,7 @@
         isVerified = true;
         if (data.customerName) {
           customerProfile.name = data.customerName;
+          try { if (psid) localStorage.setItem(`luxe_cust_name_${psid}`, data.customerName); } catch (e) {}
         }
         if (data.phone) customerProfile.phone = data.phone;
         if (data.address) customerProfile.address = data.address;
@@ -1911,6 +1914,7 @@
 
   // Initial Boot
   applyLanguage();
+  autoFillCustomerDetails();
   verifyIdentity();
   loadCatalog();
   loadCartFromStorage();
