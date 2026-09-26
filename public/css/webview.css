@@ -295,13 +295,15 @@ body {
 .sm-gallery {
   position: relative;
   width: 100%;
+  max-width: 200px;
   aspect-ratio: 1 / 1;
-  border-radius: 16px;
+  margin: 0 auto;
+  border-radius: 14px;
   overflow: hidden;
   background: #121324;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-  touch-action: pan-x;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  touch-action: pan-y;
   user-select: none;
 }
 
@@ -323,7 +325,8 @@ body {
   height: 100%;
   object-fit: cover;
   pointer-events: none;
-  draggable: false;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 /* Arrow nav buttons */
@@ -332,26 +335,32 @@ body {
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(18, 19, 36, 0.8);
+  border: 1px solid rgba(201, 168, 76, 0.45);
   color: #fff;
-  font-size: 18px;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: background 0.15s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.18s ease;
   cursor: pointer;
-  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.sm-arrow:hover {
+  background: rgba(201, 168, 76, 0.3);
+  border-color: #f3d489;
 }
 
 .sm-arrow:active {
-  background: rgba(201, 168, 76, 0.4);
+  transform: translateY(-50%) scale(0.9);
+  background: rgba(201, 168, 76, 0.5);
 }
 
 .sm-arrow-left { left: 8px; }
@@ -364,17 +373,26 @@ body {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  align-items: center;
   gap: 5px;
   z-index: 10;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .sm-dot {
   width: 5px;
   height: 5px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.4);
   transition: all 0.2s ease;
   flex-shrink: 0;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .sm-dot-active {

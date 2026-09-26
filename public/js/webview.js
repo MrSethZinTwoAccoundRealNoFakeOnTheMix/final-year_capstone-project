@@ -838,9 +838,13 @@
       product,
       selectedVariants: new Map(),
       focusedVariantIndex: 0,
+      currentTrackPos: 1,
+      isAnimating: false,
       swipeStartX: 0,
+      swipeStartY: 0,
       swipeCurrentX: 0,
       isSwiping: false,
+      isScrollLocked: false,
     };
 
     // Find default focused index
@@ -854,6 +858,7 @@
         if (firstAvail >= 0) defaultIdx = firstAvail;
       }
       styleModalState.focusedVariantIndex = defaultIdx;
+      styleModalState.currentTrackPos = product.variant_list.length > 1 ? defaultIdx + 1 : 0;
     }
 
     buildStyleModalDOM();
@@ -866,70 +871,124 @@
     document.body.style.overflow = '';
   };
 
-  // ── Gallery swipe helpers ──────────────────────────────────────────────────
-  function galleryGoTo(idx) {
+  // ── Gallery Infinite Carousel Helpers ─────────────────────────────────────
+  function updateGalleryDetails(focusedIdx) {
     const { product } = styleModalState;
-    if (!product || !product.variant_list) return;
-    const total = product.variant_list.length;
-    // Loop
-    styleModalState.focusedVariantIndex = ((idx % total) + total) % total;
-    renderGallerySlide();
-    renderStyleTiles();
-    renderModalAddBtn();
-  }
-
-  function renderGallerySlide() {
-    const { product, focusedVariantIndex } = styleModalState;
     if (!product) return;
     const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
+    if (!hasVariants) return;
 
-    const container = document.getElementById('sm-gallery-track');
-    if (!container) return;
+    const v = product.variant_list[focusedIdx];
+    if (!v) return;
 
-    if (hasVariants) {
-      const v = product.variant_list[focusedVariantIndex];
-      const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
-      const stock = v.stock;
-      // Animate slide transition using CSS
-      container.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-      container.style.transform = `translateX(-${focusedVariantIndex * 100}%)`;
-
-      // Update top badge & SKU
-      const badge = document.getElementById('sm-stock-badge');
-      const skuEl = document.getElementById('sm-sku');
-      if (badge) {
-        if (stock <= 0) {
-          badge.innerHTML = `<span class="sm-badge sm-badge-red">${t('soldOut')}</span>`;
-        } else if (stock <= 3) {
-          badge.innerHTML = `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: stock })}</span>`;
-        } else {
-          badge.innerHTML = `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
-        }
+    // 1. Stock badge
+    const badge = document.getElementById('sm-stock-badge');
+    if (badge) {
+      if (v.stock <= 0) {
+        badge.innerHTML = `<span class="sm-badge sm-badge-red">${t('soldOut')}</span>`;
+      } else if (v.stock <= 3) {
+        badge.innerHTML = `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: v.stock })}</span>`;
+      } else {
+        badge.innerHTML = `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
       }
-      if (skuEl) skuEl.textContent = v.id;
-
-      // Update dots
-      const dots = document.querySelectorAll('.sm-dot');
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('sm-dot-active', i === focusedVariantIndex);
-      });
-
-      // Update price label in header area
-      const priceUsd = document.getElementById('sm-price-usd');
-      const priceKhr = document.getElementById('sm-price-khr');
-      if (priceUsd) priceUsd.textContent = formatUSD(v.sell_price);
-      if (priceKhr) priceKhr.textContent = formatKHR(v.sell_price);
-
-      // Update style name label
-      const nameLabel = document.getElementById('sm-focused-name');
-      if (nameLabel) nameLabel.textContent = v.color_name;
-    } else {
-      // Single product — no variants, just show photo
-      const photo = product.photo_url || DEFAULT_IMAGE;
-      container.style.transition = 'none';
-      container.style.transform = 'translateX(0)';
     }
+
+    // 2. SKU
+    const skuEl = document.getElementById('sm-sku');
+    if (skuEl) skuEl.textContent = v.id;
+
+    // 3. Dots
+    const dots = document.querySelectorAll('.sm-dot');
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('sm-dot-active', i === focusedIdx);
+    });
+
+    // 4. Prices
+    const priceUsd = document.getElementById('sm-price-usd');
+    const priceKhr = document.getElementById('sm-price-khr');
+    if (priceUsd) priceUsd.textContent = formatUSD(v.sell_price);
+    if (priceKhr) priceKhr.textContent = formatKHR(v.sell_price);
+
+    // 5. Name
+    const nameLabel = document.getElementById('sm-focused-name');
+    if (nameLabel) nameLabel.textContent = v.color_name;
+
+    // 6. Highlight focused tile ring
+    product.variant_list.forEach((variant, i) => {
+      const tile = document.getElementById(`sm-tile-${variant.id}`);
+      if (tile) tile.classList.toggle('sm-tile-focused', i === focusedIdx);
+    });
   }
+
+  function galleryGoTo(targetIdx) {
+    const { product } = styleModalState;
+    if (!product || !Array.isArray(product.variant_list)) return;
+    const N = product.variant_list.length;
+    if (N < 2) return;
+    const track = document.getElementById('sm-gallery-track');
+    if (!track) return;
+
+    styleModalState.isAnimating = true;
+    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
+
+    styleModalState.focusedVariantIndex = targetIdx;
+    styleModalState.currentTrackPos = targetIdx + 1;
+    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+    track.style.transform = `translateX(-${(targetIdx + 1) * 100}%)`;
+    updateGalleryDetails(targetIdx);
+  }
+
+  window.galleryGoTo = galleryGoTo;
+
+  window.smGalleryNext = function (e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const { product, isAnimating } = styleModalState;
+    if (!product || !Array.isArray(product.variant_list)) return;
+    const N = product.variant_list.length;
+    if (N < 2 || isAnimating) return;
+
+    const track = document.getElementById('sm-gallery-track');
+    if (!track) return;
+
+    styleModalState.isAnimating = true;
+    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
+
+    styleModalState.currentTrackPos += 1;
+    const nextPos = styleModalState.currentTrackPos;
+
+    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+    track.style.transform = `translateX(-${nextPos * 100}%)`;
+
+    // Seamless loop logical index: if beyond real slides, it's slide 0
+    const logicalIdx = nextPos > N ? 0 : nextPos - 1;
+    styleModalState.focusedVariantIndex = logicalIdx;
+    updateGalleryDetails(logicalIdx);
+  };
+
+  window.smGalleryPrev = function (e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const { product, isAnimating } = styleModalState;
+    if (!product || !Array.isArray(product.variant_list)) return;
+    const N = product.variant_list.length;
+    if (N < 2 || isAnimating) return;
+
+    const track = document.getElementById('sm-gallery-track');
+    if (!track) return;
+
+    styleModalState.isAnimating = true;
+    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
+
+    styleModalState.currentTrackPos -= 1;
+    const prevPos = styleModalState.currentTrackPos;
+
+    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+    track.style.transform = `translateX(-${prevPos * 100}%)`;
+
+    // Seamless loop logical index: if before real slides, it's slide N-1
+    const logicalIdx = prevPos < 1 ? N - 1 : prevPos - 1;
+    styleModalState.focusedVariantIndex = logicalIdx;
+    updateGalleryDetails(logicalIdx);
+  };
 
   // ── Build the full modal DOM (called once per open) ─────────────────────
   function buildStyleModalDOM() {
@@ -937,14 +996,36 @@
     if (!product) return;
     const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
     const variants = hasVariants ? product.variant_list : [];
+    const N = variants.length;
 
-    // ── Gallery images (one slide per variant) ──
-    const gallerySlides = hasVariants
-      ? variants.map((v, i) => {
+    // ── Gallery images with infinite clones when N > 1 ──
+    let gallerySlides = '';
+    let initialTransform = 'translateX(0)';
+
+    if (hasVariants) {
+      if (N > 1) {
+        const lastV = variants[N - 1];
+        const firstV = variants[0];
+        const cloneLast = `<div class="sm-slide" data-clone="last"><img src="${lastV.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(lastV.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+        const cloneFirst = `<div class="sm-slide" data-clone="first"><img src="${firstV.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(firstV.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+        const realSlides = variants.map((v, i) => {
           const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
-          return `<div class="sm-slide"><img src="${photo}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-        }).join('')
-      : `<div class="sm-slide"><img src="${product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+          return `<div class="sm-slide" data-index="${i}"><img src="${photo}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+        }).join('');
+        gallerySlides = cloneLast + realSlides + cloneFirst;
+        styleModalState.currentTrackPos = focusedVariantIndex + 1;
+        initialTransform = `translateX(-${(focusedVariantIndex + 1) * 100}%)`;
+      } else {
+        const v = variants[0];
+        gallerySlides = `<div class="sm-slide" data-index="0"><img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+        styleModalState.currentTrackPos = 0;
+        initialTransform = 'translateX(0)';
+      }
+    } else {
+      gallerySlides = `<div class="sm-slide" data-index="0"><img src="${product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
+      styleModalState.currentTrackPos = 0;
+      initialTransform = 'translateX(0)';
+    }
 
     const initialV = hasVariants ? variants[focusedVariantIndex] : null;
     const initStock = initialV ? initialV.stock : product.stock;
@@ -957,14 +1038,22 @@
       : `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
 
     // ── Pagination dots ──
-    const dotsHtml = hasVariants && variants.length > 1
-      ? `<div class="sm-dots">${variants.map((_, i) => `<span class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}"></span>`).join('')}</div>`
+    const dotsHtml = hasVariants && N > 1
+      ? `<div class="sm-dots">${variants.map((_, i) => `<button type="button" class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}" onclick="window.galleryGoTo(${i})" aria-label="Style ${i + 1}"></button>`).join('')}</div>`
       : '';
 
-    // ── Nav arrows (only if >1 style) ──
-    const arrowsHtml = hasVariants && variants.length > 1 ? `
-      <button class="sm-arrow sm-arrow-left" onclick="galleryGoTo(${focusedVariantIndex} - 1)" aria-label="Previous">‹</button>
-      <button class="sm-arrow sm-arrow-right" onclick="galleryGoTo(${focusedVariantIndex} + 1)" aria-label="Next">›</button>
+    // ── Nav arrows (modern luxury glass buttons with SVG chevrons) ──
+    const arrowsHtml = hasVariants && N > 1 ? `
+      <button type="button" class="sm-arrow sm-arrow-left" onclick="window.smGalleryPrev(event)" aria-label="Previous style">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button type="button" class="sm-arrow sm-arrow-right" onclick="window.smGalleryNext(event)" aria-label="Next style">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     ` : '';
 
     // ── Style tiles (multi-select) ──
@@ -989,7 +1078,7 @@
     if (!scrollEl) return;
 
     scrollEl.innerHTML = `
-      <!-- Swipeable Gallery -->
+      <!-- Swipeable Gallery (Compact 200px) -->
       <div class="sm-gallery" id="sm-gallery"
         data-product-id="${product.id}"
         ontouchstart="window.smTouchStart(event)"
@@ -997,27 +1086,27 @@
         ontouchend="window.smTouchEnd(event)">
 
         <div class="sm-gallery-track" id="sm-gallery-track"
-          style="transform: translateX(-${focusedVariantIndex * 100}%); transition: none;">
+          style="transform: ${initialTransform}; transition: none;">
           ${gallerySlides}
         </div>
 
         <!-- Stock + SKU overlay -->
-        <div id="sm-stock-badge" class="absolute top-3 left-3">${stockBadgeHtml}</div>
-        <div class="absolute top-3 right-3">
-          <span id="sm-sku" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm">${initialV ? initialV.id : product.id}</span>
+        <div id="sm-stock-badge" class="absolute top-2.5 left-2.5">${stockBadgeHtml}</div>
+        <div class="absolute top-2.5 right-2.5">
+          <span id="sm-sku" class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm">${initialV ? initialV.id : product.id}</span>
         </div>
 
         ${arrowsHtml}
         ${dotsHtml}
       </div>
 
-      <!-- Product Info -->
-      <div>
-        <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-wider font-bold">${escapeHtml(product.category || 'Jewelry')}</span>
-        <h2 id="style-modal-title" class="text-base font-extrabold text-white mt-0.5 leading-snug">${escapeHtml(product.name)}</h2>
-        ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-slate-400 mt-0.5">${escapeHtml(initialV ? initialV.color_name : '')}</p>` : ''}
-        <div class="flex items-baseline space-x-2 mt-1.5">
-          <span id="sm-price-usd" class="text-xl font-extrabold text-white leading-none">${formatUSD(initPrice)}</span>
+      <!-- Product Info (Compact & Centered) -->
+      <div class="text-center">
+        <span id="style-modal-category" class="text-[10px] text-[#c9a84c] uppercase tracking-widest font-bold">${escapeHtml(product.category || 'Jewelry')}</span>
+        <h2 id="style-modal-title" class="text-sm font-extrabold text-white mt-0.5 leading-snug line-clamp-1">${escapeHtml(product.name)}</h2>
+        ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-slate-300 font-medium mt-0.5">${escapeHtml(initialV ? initialV.color_name : '')}</p>` : ''}
+        <div class="flex items-center justify-center space-x-2 mt-1">
+          <span id="sm-price-usd" class="text-lg font-extrabold text-white leading-none">${formatUSD(initPrice)}</span>
           <span id="sm-price-khr" class="text-xs font-semibold text-[#e5c36a]">${formatKHR(initPrice)}</span>
         </div>
       </div>
@@ -1037,7 +1126,34 @@
       ${qtyStepperHtml}
     `;
 
-    // Now update the add button
+    // Seamless loop transitionend listener
+    const track = document.getElementById('sm-gallery-track');
+    if (track && hasVariants && N > 1) {
+      track.addEventListener('transitionend', (e) => {
+        if (e.target !== track || e.propertyName !== 'transform') return;
+        const { product, currentTrackPos } = styleModalState;
+        if (!product || !Array.isArray(product.variant_list)) return;
+        const total = product.variant_list.length;
+        if (total < 2) return;
+
+        if (currentTrackPos >= total + 1) {
+          // Wrapped past the end to cloned first slide -> silently jump to real first slide
+          track.style.transition = 'none';
+          styleModalState.currentTrackPos = 1;
+          track.style.transform = 'translateX(-100%)';
+          void track.offsetHeight;
+        } else if (currentTrackPos <= 0) {
+          // Wrapped before the start to cloned last slide -> silently jump to real last slide
+          track.style.transition = 'none';
+          styleModalState.currentTrackPos = total;
+          track.style.transform = `translateX(-${total * 100}%)`;
+          void track.offsetHeight;
+        }
+        styleModalState.isAnimating = false;
+      });
+    }
+
+    renderStyleTiles();
     renderModalAddBtn();
   }
 
@@ -1200,27 +1316,41 @@
     renderModalAddBtn();
   };
 
-  // ── Touch swipe handlers ───────────────────────────────────────────────────
+  // ── Touch swipe handlers (with seamless looping) ──────────────────────────
   window.smTouchStart = function (e) {
+    if (!e.touches || e.touches.length === 0) return;
     styleModalState.swipeStartX = e.touches[0].clientX;
+    styleModalState.swipeStartY = e.touches[0].clientY;
     styleModalState.swipeCurrentX = e.touches[0].clientX;
     styleModalState.isSwiping = true;
+    styleModalState.isScrollLocked = false;
     const track = document.getElementById('sm-gallery-track');
     if (track) track.style.transition = 'none';
   };
 
   window.smTouchMove = function (e) {
-    if (!styleModalState.isSwiping) return;
+    if (!styleModalState.isSwiping || !e.touches || e.touches.length === 0) return;
     styleModalState.swipeCurrentX = e.touches[0].clientX;
     const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
-    const { product, focusedVariantIndex } = styleModalState;
-    if (!product || !product.variant_list) return;
-    const gallery = document.getElementById('sm-gallery');
-    const galleryW = gallery ? gallery.offsetWidth : window.innerWidth;
-    const baseOffset = focusedVariantIndex * galleryW;
-    const track = document.getElementById('sm-gallery-track');
-    if (track) {
-      track.style.transform = `translateX(${-baseOffset + dx}px)`;
+    const dy = e.touches[0].clientY - styleModalState.swipeStartY;
+
+    if (!styleModalState.isScrollLocked) {
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+        styleModalState.isScrollLocked = true;
+      }
+    }
+
+    if (styleModalState.isScrollLocked) {
+      if (e.cancelable) e.preventDefault();
+      const { product, currentTrackPos } = styleModalState;
+      if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
+      const gallery = document.getElementById('sm-gallery');
+      const galleryW = gallery ? gallery.offsetWidth : 200;
+      const baseOffset = (currentTrackPos || 1) * galleryW;
+      const track = document.getElementById('sm-gallery-track');
+      if (track) {
+        track.style.transform = `translateX(${-baseOffset + dx}px)`;
+      }
     }
   };
 
@@ -1228,27 +1358,25 @@
     if (!styleModalState.isSwiping) return;
     styleModalState.isSwiping = false;
     const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
-    const threshold = 45;
-    const { product, focusedVariantIndex } = styleModalState;
-    if (!product || !product.variant_list) return;
-    const track = document.getElementById('sm-gallery-track');
-    if (track) track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+    const threshold = 35;
+    const { product, currentTrackPos } = styleModalState;
+    if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
+
     if (dx < -threshold) {
-      galleryGoTo(focusedVariantIndex + 1);
+      // Swiped right-to-left -> Next slide
+      window.smGalleryNext();
     } else if (dx > threshold) {
-      galleryGoTo(focusedVariantIndex - 1);
+      // Swiped left-to-right -> Prev slide
+      window.smGalleryPrev();
     } else {
-      // Snap back
+      // Snap back to current slide
+      const track = document.getElementById('sm-gallery-track');
       if (track) {
-        const gallery = document.getElementById('sm-gallery');
-        const galleryW = gallery ? gallery.offsetWidth : window.innerWidth;
-        track.style.transform = `translateX(-${focusedVariantIndex * galleryW}px)`;
+        track.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+        track.style.transform = `translateX(-${(currentTrackPos || 1) * 100}%)`;
       }
     }
   };
-
-  // Keep global galleryGoTo accessible
-  window.galleryGoTo = galleryGoTo;
 
   window.confirmAddStyleToCart = function () {
     const { product, selectedVariants } = styleModalState;
