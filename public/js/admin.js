@@ -1250,16 +1250,7 @@
   }
 
   window.clearQsBasket = function () {
-    qsBasket.clear();
-    updateQsBatchBar();
-    renderQsGrid();
-    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
-      const curProductId = qsVariantDrawer.dataset.productId;
-      if (curProductId) {
-        const prod = productsList.find((p) => p.id === curProductId);
-        if (prod) renderVariantDrawerContent(prod);
-      }
-    }
+    window.setQsSelectMode(false);
   };
 
   window.qsModifyBasketItem = function (productId, variantId = null, delta = 1, event = null) {
@@ -1305,6 +1296,13 @@
         maxStock,
         qty: newQty,
       });
+    }
+
+    // Telegram-style Auto Exit:
+    // If all items are unselected (basket becomes empty), automatically exit selection mode!
+    if (isQsSelectMode && qsBasket.size === 0) {
+      window.setQsSelectMode(false);
+      return;
     }
 
     updateQsBatchBar();
@@ -1433,7 +1431,15 @@
       if (!isVariantList && hasVariants) {
         window.qsOpenVariantDrawer(productId);
       } else {
-        window.qsModifyBasketItem(productId, variantId, 1);
+        const key = getBasketItemKey(productId, variantId);
+        const existing = qsBasket.get(key);
+        if (existing) {
+          // Telegram-style: Tapping an already selected item unselects it!
+          window.qsModifyBasketItem(productId, variantId, -existing.qty);
+        } else {
+          // Tapping an unselected item selects it (+1)
+          window.qsModifyBasketItem(productId, variantId, 1);
+        }
       }
     } else {
       // NORMAL 1-TAP QUICK SELL MODE
