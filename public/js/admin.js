@@ -193,32 +193,24 @@
   const confirmDialogNo = document.getElementById('confirm-dialog-no');
   const confirmDialogYes = document.getElementById('confirm-dialog-yes');
 
-  // Quick Sell Elements
+  // Quick Sell POS Elements
   const qsSearchInput = document.getElementById('qs-search-input');
   const qsSearchClear = document.getElementById('qs-search-clear');
-  const qsSelectModeBtn = document.getElementById('qs-select-mode-btn');
-  const qsSelectModeIcon = document.getElementById('qs-select-mode-icon');
-  const qsSelectModeText = document.getElementById('qs-select-mode-text');
-  const qsSelectBanner = document.getElementById('qs-select-banner');
   const qsCategoryChips = document.getElementById('qs-category-chips');
   const qsDeductionBar = document.getElementById('qs-deduction-bar');
   const qsDeductionCount = document.getElementById('qs-deduction-count');
   const qsGrid = document.getElementById('qs-grid');
-  const qsBatchBar = document.getElementById('qs-batch-bar');
-  const qsBatchCount = document.getElementById('qs-batch-count');
-  const qsBatchTotal = document.getElementById('qs-batch-total');
+  const qsCartBar = document.getElementById('qs-cart-bar');
+  const qsCartCount = document.getElementById('qs-cart-count');
+  const qsCartTotal = document.getElementById('qs-cart-total');
+  const qsCartDrawer = document.getElementById('qs-cart-drawer');
+  const qsCartDrawerTitle = document.getElementById('qs-cart-drawer-title');
+  const qsCartDrawerBadge = document.getElementById('qs-cart-drawer-badge');
+  const qsCartItemList = document.getElementById('qs-cart-item-list');
+  const qsCartTotalBadge = document.getElementById('qs-cart-total-badge');
+  const qsCartConfirmBtn = document.getElementById('qs-cart-confirm-btn');
   const qsLogDrawer = document.getElementById('qs-log-drawer');
   const qsLogList = document.getElementById('qs-log-list');
-  const qsConfirmSheet = document.getElementById('qs-confirm-sheet');
-  const qsConfirmTitle = document.getElementById('qs-confirm-title');
-  const qsConfirmSingle = document.getElementById('qs-confirm-single');
-  const qsConfirmBatchList = document.getElementById('qs-confirm-batch-list');
-  const qsConfirmTotalBadge = document.getElementById('qs-confirm-total-badge');
-  const qsConfirmImg = document.getElementById('qs-confirm-img');
-  const qsConfirmCategory = document.getElementById('qs-confirm-category');
-  const qsConfirmName = document.getElementById('qs-confirm-name');
-  const qsConfirmPrice = document.getElementById('qs-confirm-price');
-  const qsConfirmYesBtn = document.getElementById('qs-confirm-yes-btn');
   const qsVariantDrawer = document.getElementById('qs-variant-drawer');
   const qsVariantDrawerTitle = document.getElementById('qs-variant-drawer-title');
   const qsVariantDrawerSub = document.getElementById('qs-variant-drawer-sub');
@@ -450,9 +442,9 @@
         if (activeTab === 'quicksell') {
           renderQsCategories();
           renderQsGrid();
-          updateQsBatchBar();
-        } else if (qsBatchBar) {
-          qsBatchBar.classList.add('hidden');
+          updatePosCartBar();
+        } else if (qsCartBar) {
+          qsCartBar.classList.add('hidden');
         }
       }
       tabContentOverview.classList.toggle('hidden', activeTab !== 'overview');
@@ -1163,97 +1155,165 @@
   }
 
   // ─────────────────────────────────────────────────────────────
-  // QUICK SELL DUAL MODE (1-Tap Quick Sell vs Multi-Select Basket)
+  // QUICK SELL POS CART (Persistent in LocalStorage)
   // ─────────────────────────────────────────────────────────────
-  let isQsSelectMode = false;
+  const POS_CART_STORAGE_KEY = 'luxe_pos_cart';
+  const posCart = new Map();
 
-  window.setQsSelectMode = function (active) {
-    isQsSelectMode = !!active;
-
-    if (qsSelectModeBtn) {
-      if (isQsSelectMode) {
-        qsSelectModeBtn.className = 'flex-shrink-0 px-3 py-2 rounded-xl bg-[#c9a84c] text-black border border-[#c9a84c] font-bold text-xs flex items-center space-x-1.5 shadow-md transition';
-        if (qsSelectModeIcon) qsSelectModeIcon.textContent = '✓';
-        if (qsSelectModeText) qsSelectModeText.textContent = 'Done';
-      } else {
-        qsSelectModeBtn.className = 'flex-shrink-0 px-3 py-2 rounded-xl border border-white/15 bg-[#171928] hover:border-[#c9a84c]/60 text-slate-300 text-xs font-semibold flex items-center space-x-1.5 transition';
-        if (qsSelectModeIcon) qsSelectModeIcon.textContent = '☑';
-        if (qsSelectModeText) qsSelectModeText.textContent = 'Select';
-      }
-    }
-
-    if (qsSelectBanner) {
-      if (isQsSelectMode) {
-        qsSelectBanner.classList.remove('hidden');
-      } else {
-        qsSelectBanner.classList.add('hidden');
-      }
-    }
-
-    // If exiting select mode, clear basket and hide batch tray
-    if (!isQsSelectMode) {
-      qsBasket.clear();
-      updateQsBatchBar();
-    }
-
-    renderQsGrid();
-
-    // If variant drawer is currently open, refresh subtitle & cards
-    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
-      const curProductId = qsVariantDrawer.dataset.productId;
-      if (curProductId) {
-        const prod = productsList.find((p) => p.id === curProductId);
-        if (prod) {
-          qsVariantDrawerSub.textContent = isQsSelectMode
-            ? `Total stock: ${prod.stock} · Tap styles to select into batch`
-            : `Total stock: ${prod.stock} · Tap style to deduct 1 · Hold to select`;
-          renderVariantDrawerContent(prod);
+  function loadPosCartFromStorage() {
+    try {
+      const raw = localStorage.getItem(POS_CART_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          posCart.clear();
+          parsed.forEach(([key, item]) => {
+            if (key && item && item.productId) {
+              posCart.set(key, item);
+            }
+          });
         }
       }
+    } catch (e) {
+      console.warn('Failed to parse saved pos cart:', e);
     }
-  };
+  }
 
-  window.toggleQsSelectMode = function () {
-    window.setQsSelectMode(!isQsSelectMode);
-  };
+  function savePosCartToStorage() {
+    try {
+      if (posCart.size === 0) {
+        localStorage.removeItem(POS_CART_STORAGE_KEY);
+      } else {
+        localStorage.setItem(POS_CART_STORAGE_KEY, JSON.stringify(Array.from(posCart.entries())));
+      }
+    } catch (e) {
+      console.warn('Failed to save pos cart:', e);
+    }
+  }
 
-  window.exitQsSelectMode = function () {
-    window.setQsSelectMode(false);
-  };
+  // Load existing cart from LocalStorage on initial load
+  loadPosCartFromStorage();
 
-  function getBasketItemKey(productId, variantId = null) {
+  function getCartItemKey(productId, variantId = null) {
     return variantId ? `${productId}__${variantId}` : productId;
   }
 
-  function updateQsBatchBar() {
-    if (!qsBatchBar || !qsBatchCount || !qsBatchTotal) return;
-    if (activeTab !== 'quicksell' || !isQsSelectMode) {
-      qsBatchBar.classList.add('hidden');
+  function updatePosCartBar() {
+    if (!qsCartBar || !qsCartCount || !qsCartTotal) return;
+    if (activeTab !== 'quicksell') {
+      qsCartBar.classList.add('hidden');
       return;
     }
 
     let totalItems = 0;
     let totalDollars = 0;
 
-    qsBasket.forEach((item) => {
+    posCart.forEach((item) => {
       totalItems += item.qty;
       totalDollars += item.qty * item.unitPrice;
     });
 
     if (totalItems > 0) {
-      qsBatchCount.textContent = totalItems;
-      qsBatchTotal.textContent = formatUSD(totalDollars);
-      qsBatchBar.classList.remove('hidden');
+      qsCartCount.textContent = totalItems;
+      qsCartTotal.textContent = `${formatUSD(totalDollars)} (${formatKHR(totalDollars)})`;
+      qsCartBar.classList.remove('hidden');
     } else {
-      qsBatchBar.classList.add('hidden');
+      qsCartBar.classList.add('hidden');
     }
   }
 
-  window.clearQsBasket = function () {
-    window.setQsSelectMode(false);
+  window.openQsCartDrawer = function () {
+    if (posCart.size === 0) {
+      showToast('Your cart is empty. Tap products to add them!', 'info');
+      return;
+    }
+    renderCartDrawerList();
+    if (qsCartDrawer) qsCartDrawer.classList.remove('hidden');
   };
 
-  window.qsModifyBasketItem = function (productId, variantId = null, delta = 1, event = null) {
+  window.closeQsCartDrawer = function () {
+    if (qsCartDrawer) qsCartDrawer.classList.add('hidden');
+  };
+
+  window.clearQsCart = function () {
+    posCart.clear();
+    savePosCartToStorage();
+    window.closeQsCartDrawer();
+    updatePosCartBar();
+    renderQsGrid();
+    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
+      const curProductId = qsVariantDrawer.dataset.productId;
+      if (curProductId) {
+        const prod = productsList.find((p) => p.id === curProductId);
+        if (prod) renderVariantDrawerContent(prod);
+      }
+    }
+    showToast('Cart cleared', 'info');
+  };
+
+  function renderCartDrawerList() {
+    if (!qsCartItemList) return;
+
+    let totalItems = 0;
+    let totalDollars = 0;
+    const items = Array.from(posCart.values());
+
+    if (items.length === 0) {
+      window.closeQsCartDrawer();
+      updatePosCartBar();
+      renderQsGrid();
+      return;
+    }
+
+    qsCartItemList.innerHTML = items.map((item) => {
+      totalItems += item.qty;
+      totalDollars += item.qty * item.unitPrice;
+
+      return `
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-2.5 flex items-center justify-between text-xs transition">
+          <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+            <img src="${item.photoUrl}" class="w-12 h-12 rounded-xl object-cover bg-black/40 border border-white/10 flex-shrink-0">
+            <div class="min-w-0 pr-2">
+              <p class="font-bold text-white truncate text-xs leading-tight">${escapeHtml(item.name)}</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">${item.category} · ${formatUSD(item.unitPrice)} each</p>
+              <p class="text-[11px] font-extrabold text-[#c9a84c] mt-0.5">${formatUSD(item.qty * item.unitPrice)}</p>
+            </div>
+          </div>
+
+          <!-- Stepper & Remove button -->
+          <div class="flex items-center space-x-1.5 flex-shrink-0">
+            <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-0.5 space-x-1">
+              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -1)"
+                class="w-6 h-6 rounded-lg bg-white/10 hover:bg-rose-950/60 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+                −
+              </button>
+              <span class="w-6 text-center font-extrabold text-white text-xs">${item.qty}</span>
+              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, 1)"
+                class="w-6 h-6 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+                +
+              </button>
+            </div>
+            <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -${item.qty})"
+              class="w-7 h-7 rounded-xl bg-white/5 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition" title="Remove">
+              ✕
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (qsCartDrawerBadge) {
+      qsCartDrawerBadge.textContent = `${totalItems} item${totalItems === 1 ? '' : 's'}`;
+    }
+    if (qsCartTotalBadge) {
+      qsCartTotalBadge.textContent = `${formatUSD(totalDollars)} (${formatKHR(totalDollars)})`;
+    }
+    if (qsCartConfirmBtn) {
+      qsCartConfirmBtn.textContent = `✓ Confirm Sale (${totalItems} items · ${formatUSD(totalDollars)})`;
+    }
+  }
+
+  window.modifyPosCartQty = function (productId, variantId = null, delta = 1, event = null) {
     if (event) event.stopPropagation();
 
     const product = productsList.find((p) => p.id === productId);
@@ -1264,7 +1324,7 @@
       variant = product.variant_list.find((v) => String(v.id) === String(variantId));
     }
 
-    const key = getBasketItemKey(productId, variantId);
+    const key = getCartItemKey(productId, variantId);
     const maxStock = variant ? Number(variant.stock) : Number(product.stock);
 
     if (maxStock <= 0 && delta > 0) {
@@ -1272,7 +1332,7 @@
       return;
     }
 
-    const existing = qsBasket.get(key);
+    const existing = posCart.get(key);
     let newQty = (existing ? existing.qty : 0) + delta;
 
     if (newQty > maxStock) {
@@ -1281,14 +1341,12 @@
     }
 
     if (newQty <= 0) {
-      qsBasket.delete(key);
+      posCart.delete(key);
     } else {
-      qsBasket.set(key, {
+      posCart.set(key, {
         key,
         productId,
         variantId: variant ? variant.id : null,
-        product,
-        variant,
         name: variant ? `${product.name} (${variant.color_name})` : product.name,
         category: product.category,
         unitPrice: variant ? Number(variant.sell_price) : Number(product.sell_price),
@@ -1298,160 +1356,20 @@
       });
     }
 
-    // Telegram-style Auto Exit:
-    // If all items are unselected (basket becomes empty), automatically exit selection mode!
-    if (isQsSelectMode && qsBasket.size === 0) {
-      window.setQsSelectMode(false);
-      return;
-    }
-
-    updateQsBatchBar();
+    savePosCartToStorage();
+    updatePosCartBar();
     renderQsGrid();
 
-    // If variant drawer is currently open, refresh it so counters update live
+    // If variant drawer is currently open, refresh it so badges update
     if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden') && qsVariantDrawer.dataset.productId === productId) {
       renderVariantDrawerContent(product);
     }
+
+    // If cart drawer is currently open, re-render its list
+    if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
+      renderCartDrawerList();
+    }
   };
-
-  // ─────────────────────────────────────────────────────────────
-  // TOUCH GESTURE ENGINE (Hold to select + 1-Tap Quick Sell)
-  // ─────────────────────────────────────────────────────────────
-  function setupQuickSellGestures(container, isVariantList = false) {
-    if (!container) return;
-
-    let holdTimer = null;
-    let startX = 0;
-    let startY = 0;
-    let isHoldTriggered = false;
-
-    function clearTimer() {
-      if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-      }
-    }
-
-    // Touch events for mobile
-    container.addEventListener('touchstart', (e) => {
-      const card = e.target.closest('.qs-card');
-      if (!card) return;
-      if (e.target.closest('button')) return; // Ignore counter stepper buttons
-
-      isHoldTriggered = false;
-      const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
-
-      clearTimer();
-      holdTimer = setTimeout(() => {
-        isHoldTriggered = true;
-        triggerCardHold(card, isVariantList);
-      }, 420);
-    }, { passive: true });
-
-    container.addEventListener('touchmove', (e) => {
-      if (!holdTimer) return;
-      const t = e.touches[0];
-      // If finger moved > 10px, user is scrolling: cancel hold immediately
-      if (Math.hypot(t.clientX - startX, t.clientY - startY) > 10) {
-        clearTimer();
-      }
-    }, { passive: true });
-
-    container.addEventListener('touchend', (e) => {
-      clearTimer();
-      if (isHoldTriggered) {
-        if (e.cancelable) e.preventDefault();
-      }
-    });
-
-    container.addEventListener('touchcancel', () => {
-      clearTimer();
-    });
-
-    // Suppress context menu on cards during long-press
-    container.addEventListener('contextmenu', (e) => {
-      if (e.target.closest('.qs-card')) {
-        e.preventDefault();
-      }
-    });
-
-    // Standard click handling
-    container.addEventListener('click', (e) => {
-      if (isHoldTriggered) {
-        isHoldTriggered = false;
-        return;
-      }
-      const card = e.target.closest('.qs-card');
-      if (!card) return;
-      if (e.target.closest('button')) return; // Allow button clicks (+ / -) to bubble cleanly
-
-      triggerCardClick(card, isVariantList);
-    });
-  }
-
-  function triggerCardHold(card, isVariantList) {
-    const productId = card.dataset.productId;
-    const variantId = card.dataset.variantId || null;
-    const hasVariants = card.dataset.hasVariants === 'true';
-
-    // Haptic vibration feedback on supported mobile devices
-    if (navigator.vibrate) {
-      try { navigator.vibrate(40); } catch (_) {}
-    }
-
-    // Micro pop animation
-    card.classList.add('qs-card-popping');
-    setTimeout(() => card.classList.remove('qs-card-popping'), 250);
-
-    // If product has variants and held on main grid, open drawer to pick specific style
-    if (!isVariantList && hasVariants) {
-      window.qsOpenVariantDrawer(productId);
-      return;
-    }
-
-    // Auto-enter Select Mode if not already active
-    if (!isQsSelectMode) {
-      window.setQsSelectMode(true);
-      showToast('Multi-select mode activated', 'info');
-    }
-
-    // Add or increment in basket
-    window.qsModifyBasketItem(productId, variantId, 1);
-  }
-
-  function triggerCardClick(card, isVariantList) {
-    const productId = card.dataset.productId;
-    const variantId = card.dataset.variantId || null;
-    const hasVariants = card.dataset.hasVariants === 'true';
-
-    if (isQsSelectMode) {
-      // MULTI-SELECT MODE ACTIVE
-      if (!isVariantList && hasVariants) {
-        window.qsOpenVariantDrawer(productId);
-      } else {
-        const key = getBasketItemKey(productId, variantId);
-        const existing = qsBasket.get(key);
-        if (existing) {
-          // Telegram-style: Tapping an already selected item unselects it!
-          window.qsModifyBasketItem(productId, variantId, -existing.qty);
-        } else {
-          // Tapping an unselected item selects it (+1)
-          window.qsModifyBasketItem(productId, variantId, 1);
-        }
-      }
-    } else {
-      // NORMAL 1-TAP QUICK SELL MODE
-      if (!isVariantList && hasVariants) {
-        window.qsOpenVariantDrawer(productId);
-      } else if (isVariantList) {
-        window.qsOpenSingleConfirm(productId, variantId);
-      } else {
-        window.qsOpenSingleConfirm(productId, null);
-      }
-    }
-  }
 
   function renderQsGrid() {
     if (!qsGrid) return;
@@ -1484,29 +1402,29 @@
       const varCount = product.variant_list ? product.variant_list.length : 0;
       const isLow = product.stock <= 2;
 
-      // Count total units of this product (or its variants) currently in basket
-      let basketQty = 0;
+      // Count total units of this product (or its variants) currently in cart
+      let cartQty = 0;
       if (hasVars) {
         if (product.variant_list) {
           product.variant_list.forEach((v) => {
-            const item = qsBasket.get(getBasketItemKey(product.id, v.id));
-            if (item) basketQty += item.qty;
+            const item = posCart.get(getCartItemKey(product.id, v.id));
+            if (item) cartQty += item.qty;
           });
         }
       } else {
-        const item = qsBasket.get(getBasketItemKey(product.id));
-        if (item) basketQty = item.qty;
+        const item = posCart.get(getCartItemKey(product.id));
+        if (item) cartQty = item.qty;
       }
 
-      const isSelected = basketQty > 0;
+      const isInCart = cartQty > 0;
 
       if (hasVars) {
         return `
-          <div class="admin-card qs-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
-            isSelected
+          <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+            isInCart
               ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
               : 'border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
-          }" data-product-id="${product.id}" data-has-variants="true">
+          }" onclick="window.qsOpenVariantDrawer('${product.id}')">
             <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
               
@@ -1515,10 +1433,10 @@
                 ✨ ${varCount}
               </span>
 
-              <!-- Active Basket Counter Pill -->
-              ${isSelected ? `
-                <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
-                  ✕${basketQty}
+              <!-- In-Cart Badge -->
+              ${isInCart ? `
+                <span class="absolute top-1.5 left-1.5 min-w-[22px] h-5 px-1.5 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                  🛒 ${cartQty}
                 </span>
               ` : ''}
             </div>
@@ -1539,11 +1457,11 @@
 
       // Standalone single product (no variants)
       return `
-        <div class="admin-card qs-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
-          isSelected
+        <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+          isInCart
             ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'border-white/10 hover:border-white/20 active:scale-98 shadow'
-        }" data-product-id="${product.id}" data-has-variants="false">
+        }" onclick="window.modifyPosCartQty('${product.id}', null, 1)">
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
             
@@ -1554,10 +1472,10 @@
               ${product.stock} stk
             </span>
 
-            <!-- Active Basket Counter Pill -->
-            ${isSelected ? `
-              <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
-                ✕${basketQty}
+            <!-- In-Cart Badge -->
+            ${isInCart ? `
+              <span class="absolute top-1.5 left-1.5 min-w-[22px] h-5 px-1.5 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                🛒 ${cartQty}
               </span>
             ` : ''}
           </div>
@@ -1571,21 +1489,21 @@
             <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
               <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
               
-              <!-- Quick Steppers when selected, or mode action indicator -->
-              ${isSelected ? `
+              <!-- Quick Steppers when in cart -->
+              ${isInCart ? `
                 <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
-                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', null, -1, event)"
+                  <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, -1, event)"
                     class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
                     −
                   </button>
-                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', null, 1, event)"
+                  <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, 1, event)"
                     class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
                     +
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md ${isQsSelectMode ? 'bg-[#c9a84c]/20 text-[#f3d489]' : 'bg-white/10 text-slate-300'} flex items-center justify-center text-xs font-bold">
-                  ${isQsSelectMode ? '☑' : '⚡'}
+                <span class="w-5 h-5 rounded-md bg-white/10 hover:bg-[#c9a84c]/20 hover:text-[#f3d489] text-slate-300 flex items-center justify-center text-xs font-bold">
+                  +
                 </span>
               `}
             </div>
@@ -1602,19 +1520,19 @@
 
     qsVariantList.innerHTML = variants.map((v) => {
       const isOut = v.stock <= 0;
-      const key = getBasketItemKey(product.id, v.id);
-      const basketItem = qsBasket.get(key);
-      const basketQty = basketItem ? basketItem.qty : 0;
-      const isSelected = basketQty > 0;
+      const key = getCartItemKey(product.id, v.id);
+      const cartItem = posCart.get(key);
+      const cartQty = cartItem ? cartItem.qty : 0;
+      const isInCart = cartQty > 0;
 
       return `
-        <div class="admin-card qs-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
+        <div class="admin-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
           isOut
             ? 'opacity-40 cursor-not-allowed border-white/5'
-            : isSelected
+            : isInCart
             ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
-        }" data-product-id="${product.id}" data-variant-id="${v.id}" data-is-out="${isOut}">
+        }" ${isOut ? '' : `onclick="window.modifyPosCartQty('${product.id}', '${v.id}', 1)"`}>
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             
@@ -1625,10 +1543,10 @@
               ${v.stock} stk
             </span>
 
-            <!-- Counter Pill -->
-            ${isSelected ? `
-              <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
-                ✕${basketQty}
+            <!-- In-Cart Badge -->
+            ${isInCart ? `
+              <span class="absolute top-1.5 left-1.5 min-w-[22px] h-5 px-1.5 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                🛒 ${cartQty}
               </span>
             ` : ''}
           </div>
@@ -1639,20 +1557,20 @@
             <div class="flex items-center justify-between mt-1 pt-1 border-t border-white/5">
               <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(v.sell_price)}</span>
               
-              ${isSelected && !isOut ? `
+              ${isInCart && !isOut ? `
                 <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
-                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', -1, event)"
+                  <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', -1, event)"
                     class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
                     −
                   </button>
-                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', 1, event)"
+                  <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', 1, event)"
                     class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
                     +
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md ${isQsSelectMode ? 'bg-[#c9a84c]/20 text-[#f3d489]' : 'bg-white/10 text-slate-300'} flex items-center justify-center text-xs font-bold">
-                  ${isOut ? '✕' : (isQsSelectMode ? '☑' : '⚡')}
+                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
+                  ${isOut ? '✕' : '+'}
                 </span>
               `}
             </div>
@@ -1668,9 +1586,7 @@
 
     qsVariantDrawer.dataset.productId = productId;
     qsVariantDrawerTitle.textContent = product.name;
-    qsVariantDrawerSub.textContent = isQsSelectMode
-      ? `Total stock: ${product.stock} · Tap styles to select into batch`
-      : `Total stock: ${product.stock} · Tap style to deduct 1 · Hold to select`;
+    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap styles to add to cart`;
 
     renderVariantDrawerContent(product);
     qsVariantDrawer.classList.remove('hidden');
@@ -1681,150 +1597,18 @@
   };
 
   // ─────────────────────────────────────────────────────────────
-  // QUICK SELL CONFIRMATION SHEETS (Single 1-Tap & Multi-Batch)
+  // POS CHECKOUT & ATOMIC STOCK DEDUCTION
   // ─────────────────────────────────────────────────────────────
+  window.executePosCheckout = async function () {
+    if (posCart.size === 0) return;
 
-  // Single Item 1-Tap Quick Sell Confirmation
-  window.qsOpenSingleConfirm = function (productId, variantId = null) {
-    const product = productsList.find((p) => p.id === productId);
-    if (!product || !qsConfirmSheet) return;
-
-    window.closeVariantDrawer();
-
-    let variant = null;
-    if (variantId && product.variant_list) {
-      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
-    }
-
-    const title = variant ? `${product.name} (${variant.color_name})` : product.name;
-    const price = variant ? Number(variant.sell_price) : Number(product.sell_price);
-    const imgUrl = (variant && variant.photo_url) || product.photo_url || DEFAULT_IMAGE;
-
-    if (qsConfirmTitle) qsConfirmTitle.innerHTML = `<span>⚡ Quick Sell Confirmation</span>`;
-    if (qsConfirmBatchList) qsConfirmBatchList.classList.add('hidden');
-    if (qsConfirmSingle) {
-      qsConfirmSingle.classList.remove('hidden');
-      if (qsConfirmImg) qsConfirmImg.src = imgUrl;
-      if (qsConfirmCategory) qsConfirmCategory.textContent = product.category;
-      if (qsConfirmName) qsConfirmName.textContent = title;
-      if (qsConfirmPrice) qsConfirmPrice.textContent = formatUSD(price);
-    }
-
-    if (qsConfirmTotalBadge) {
-      qsConfirmTotalBadge.textContent = `1 item · ${formatUSD(price)}`;
-    }
-
-    if (qsConfirmYesBtn) {
-      qsConfirmYesBtn.textContent = '− Deduct 1 from Stock';
-      qsConfirmYesBtn.onclick = () => executeSingleDeduct(product, variant);
-    }
-
-    qsConfirmSheet.classList.remove('hidden');
-  };
-
-  async function executeSingleDeduct(product, variant = null) {
-    window.closeQsConfirm();
-    try {
-      const res = await authFetch(`/api/admin/products/${product.id}/deduct`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variant_id: variant ? variant.id : undefined }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        const title = variant ? `${product.name} (${variant.color_name})` : product.name;
-        const price = variant ? Number(variant.sell_price) : Number(product.sell_price);
-
-        const logEntry = {
-          id: 'deduct-' + Date.now(),
-          productId: product.id,
-          variantId: variant ? variant.id : null,
-          name: title,
-          price,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        sessionDeductions.unshift(logEntry);
-        updateQsDeductionBar();
-
-        showToast(
-          `Deducted 1 from ${title}! (${data.remaining} left)`,
-          'success',
-          () => undoDeduction(logEntry.id)
-        );
-        loadProducts(true);
-      } else {
-        showToast(data.message || 'Deduction failed.', 'error');
-      }
-    } catch (err) {
-      showToast('Error deducting stock: ' + err.message, 'error');
-    }
-  }
-
-  // Multi-Item Batch Deduction Confirmation
-  let activeBatchToDeduct = [];
-
-  window.qsOpenBatchConfirm = function () {
-    if (qsBasket.size === 0) return;
-
-    const items = Array.from(qsBasket.values());
-    activeBatchToDeduct = items;
-
-    if (qsConfirmTitle) qsConfirmTitle.innerHTML = `<span>📦 Confirm Batch Deduction (${items.length} styles)</span>`;
-    if (qsConfirmSingle) qsConfirmSingle.classList.add('hidden');
-    if (qsConfirmBatchList) {
-      qsConfirmBatchList.classList.remove('hidden');
-      qsConfirmBatchList.innerHTML = items.map((item) => `
-        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs">
-          <div class="flex items-center space-x-2.5 min-w-0">
-            <img src="${item.photoUrl}" class="w-10 h-10 rounded-lg object-cover bg-black/40 border border-white/10 flex-shrink-0">
-            <div class="min-w-0">
-              <p class="font-bold text-white truncate text-[11px]">${escapeHtml(item.name)}</p>
-              <p class="text-[10px] text-slate-400">${item.category} · ${formatUSD(item.unitPrice)} each</p>
-            </div>
-          </div>
-          <div class="text-right flex-shrink-0 ml-2">
-            <span class="px-2 py-0.5 rounded-full bg-[#c9a84c]/20 text-[#f3d489] font-bold text-[10px]">
-              ✕ ${item.qty}
-            </span>
-            <p class="text-[11px] font-extrabold text-white mt-0.5">${formatUSD(item.qty * item.unitPrice)}</p>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    let totalDollars = 0;
-    let totalQty = 0;
-    items.forEach((it) => {
-      totalDollars += it.qty * it.unitPrice;
-      totalQty += it.qty;
-    });
-
-    if (qsConfirmTotalBadge) {
-      qsConfirmTotalBadge.textContent = `${totalQty} items · ${formatUSD(totalDollars)}`;
-    }
-    if (qsConfirmYesBtn) {
-      qsConfirmYesBtn.textContent = `− Deduct All (${totalQty} items)`;
-      qsConfirmYesBtn.onclick = executeBatchDeduct;
-    }
-
-    if (qsConfirmSheet) qsConfirmSheet.classList.remove('hidden');
-  };
-
-  window.closeQsConfirm = function () {
-    if (qsConfirmSheet) qsConfirmSheet.classList.add('hidden');
-  };
-
-  async function executeBatchDeduct() {
-    window.closeQsConfirm();
-    if (!activeBatchToDeduct || activeBatchToDeduct.length === 0) return;
-
-    const items = [...activeBatchToDeduct];
-    activeBatchToDeduct = [];
+    const items = Array.from(posCart.values());
+    window.closeQsCartDrawer();
 
     const executedDeductions = [];
     let failedItem = null;
 
-    // Execute atomic deductions for each unit
+    // Atomically deduct each unit
     for (const item of items) {
       for (let i = 0; i < item.qty; i++) {
         try {
@@ -1855,7 +1639,7 @@
 
     if (executedDeductions.length > 0) {
       const logEntry = {
-        id: 'batch-' + Date.now(),
+        id: 'sale-' + Date.now(),
         isBatch: true,
         items: executedDeductions,
         name: executedDeductions.length === 1 
@@ -1869,26 +1653,22 @@
       updateQsDeductionBar();
 
       showToast(
-        `Deducted ${executedDeductions.length} item(s)!`,
+        `✨ Sale recorded! Deducted ${executedDeductions.length} item(s).`,
         'success',
         () => undoDeduction(logEntry.id)
       );
 
-      // Clear basket for completed batch and exit select mode
-      qsBasket.clear();
-      window.setQsSelectMode(false);
-      updateQsBatchBar();
+      // Clear cart from memory and LocalStorage now that sale is complete
+      posCart.clear();
+      savePosCartToStorage();
+      updatePosCartBar();
       loadProducts(true);
     }
 
     if (failedItem) {
       showToast(`Could not deduct remaining stock for ${failedItem}.`, 'error');
     }
-  }
-
-  // Initialize Gesture Listeners on Quick Sell Grids
-  setupQuickSellGestures(qsGrid, false);
-  setupQuickSellGestures(qsVariantList, true);
+  };
 
   async function undoDeduction(logId) {
     const idx = sessionDeductions.findIndex((d) => String(d.id) === String(logId));
@@ -1984,8 +1764,8 @@
     });
   }
 
-  // Quick Sell Confirmation Sheet
-  enableBackdropDismiss(qsConfirmSheet, () => window.closeQsConfirm());
+  // Quick Sell POS Cart Drawer
+  enableBackdropDismiss(qsCartDrawer, () => window.closeQsCartDrawer());
 
   // Quick Sell Style Selection Drawer
   enableBackdropDismiss(qsVariantDrawer, () => window.closeVariantDrawer());
@@ -2017,8 +1797,8 @@
   // Keyboard Accessibility: Escape key closes active overlay
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      if (qsConfirmSheet && !qsConfirmSheet.classList.contains('hidden')) {
-        window.closeQsConfirm();
+      if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
+        window.closeQsCartDrawer();
       } else if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
         window.closeVariantDrawer();
       } else if (qsLogDrawer && !qsLogDrawer.classList.contains('hidden')) {
