@@ -277,62 +277,64 @@ function quickSellDeduct(req, res, next) {
   try {
     const { id } = req.params;
     const variantId = req.body && req.body.variant_id;
+    const qty = Math.max(1, Number(req.body && req.body.qty) || 1);
 
     if (variantId) {
       const variant = variantRepository.findById(variantId);
       if (!variant || !variant.is_active) {
         return res.status(404).json({ error: 'Variant not found.' });
       }
-      if (variant.stock <= 0) {
-        return res.status(409).json({ error: 'Out of stock.' });
+      if (variant.stock < qty) {
+        return res.status(409).json({ error: 'Insufficient stock.' });
       }
-      const result = variantRepository.decrementStock(variantId, 1);
+      const result = variantRepository.decrementStock(variantId, qty);
       if (result.changes === 0) {
-        return res.status(409).json({ error: 'Out of stock.' });
+        return res.status(409).json({ error: 'Insufficient stock.' });
       }
-      return res.json({ success: true, remaining: variant.stock - 1, variant_id: variantId });
+      return res.json({ success: true, remaining: variant.stock - qty, variant_id: variantId });
     }
 
     const product = productRepository.findById(id);
     if (!product || !product.is_active) {
       return res.status(404).json({ error: 'Product not found.' });
     }
-    if (product.stock <= 0) {
-      return res.status(409).json({ error: 'Out of stock.' });
+    if (product.stock < qty) {
+      return res.status(409).json({ error: 'Insufficient stock.' });
     }
-    const result = productRepository.decrementStock(id, 1);
+    const result = productRepository.decrementStock(id, qty);
     if (result.changes === 0) {
-      return res.status(409).json({ error: 'Out of stock.' });
+      return res.status(409).json({ error: 'Insufficient stock.' });
     }
-    res.json({ success: true, remaining: product.stock - 1 });
+    res.json({ success: true, remaining: product.stock - qty });
   } catch (err) {
     next(err);
   }
 }
 
 /**
- * Quick Sell: Restock 1 unit (undo a Quick Sell deduction)
+ * Quick Sell: Restock units (supports simple products & specific variants)
  */
 function quickSellRestock(req, res, next) {
   try {
     const { id } = req.params;
     const variantId = req.body && req.body.variant_id;
+    const qty = Math.max(1, Number(req.body && req.body.qty) || 1);
 
     if (variantId) {
       const variant = variantRepository.findById(variantId);
       if (!variant || !variant.is_active) {
         return res.status(404).json({ error: 'Variant not found.' });
       }
-      variantRepository.incrementStock(variantId, 1);
-      return res.json({ success: true, remaining: variant.stock + 1, variant_id: variantId });
+      variantRepository.incrementStock(variantId, qty);
+      return res.json({ success: true, remaining: variant.stock + qty, variant_id: variantId });
     }
 
     const product = productRepository.findById(id);
     if (!product || !product.is_active) {
       return res.status(404).json({ error: 'Product not found.' });
     }
-    productRepository.incrementStock(id, 1);
-    res.json({ success: true, remaining: product.stock + 1 });
+    productRepository.incrementStock(id, qty);
+    res.json({ success: true, remaining: product.stock + qty });
   } catch (err) {
     next(err);
   }

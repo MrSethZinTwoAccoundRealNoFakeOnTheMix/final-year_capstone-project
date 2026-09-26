@@ -164,6 +164,11 @@
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxTitle = document.getElementById('lightbox-title');
   const lightboxSub = document.getElementById('lightbox-sub');
+  const invStagedBar = document.getElementById('inv-staged-bar');
+  const invStagedCount = document.getElementById('inv-staged-count');
+  const invStagedPreview = document.getElementById('inv-staged-preview');
+  const invSaveBtn = document.getElementById('inv-save-btn');
+  const invStagedChanges = new Map(); // Key: changeKey -> { key, productId, variantId, productName, styleName, originalStock, newStock, delta }
   const productModal = document.getElementById('product-modal');
   const productForm = document.getElementById('product-form');
   const prodIdInput = document.getElementById('prod-id');
@@ -451,6 +456,9 @@
       if (activeTab === 'inventory') {
         renderInvCategories();
         renderProducts();
+        updateInvStagedBar();
+      } else if (invStagedBar) {
+        invStagedBar.classList.add('hidden');
       }
       if (tabContentQuicksell) {
         tabContentQuicksell.classList.toggle('hidden', activeTab !== 'quicksell');
@@ -1109,8 +1117,38 @@
     renderProducts();
   };
 
-  // Fast inline stock adjustment (+ Restock or − Deduct)
-  window.quickAdjustStock = async function (productId, variantId = null, delta = 1, event = null) {
+  // ─────────────────────────────────────────────────────────────
+  // STAGED INVENTORY STOCK ADJUSTMENT (Option A: Review Before Save)
+  // ─────────────────────────────────────────────────────────────
+
+  function getInvChangeKey(productId, variantId = null) {
+    return variantId ? `${productId}__${variantId}` : productId;
+  }
+
+  function updateInvStagedBar() {
+    if (!invStagedBar || !invStagedCount) return;
+    if (activeTab !== 'inventory' || invStagedChanges.size === 0) {
+      invStagedBar.classList.add('hidden');
+      return;
+    }
+
+    const count = invStagedChanges.size;
+    invStagedCount.textContent = count;
+
+    const items = Array.from(invStagedChanges.values());
+    if (items.length === 1) {
+      const it = items[0];
+      const name = it.styleName ? `${it.productName} (${it.styleName})` : it.productName;
+      invStagedPreview.textContent = `${name}: ${it.originalStock} → ${it.newStock} (${it.delta > 0 ? '+' : ''}${it.delta})`;
+    } else {
+      invStagedPreview.textContent = `${count} items modified · Tap Save to commit`;
+    }
+
+    invStagedBar.classList.remove('hidden');
+  }
+
+  // Stage a stock change (+1 or −1) locally without mutating the database
+  window.stageInvStockChange = function (productId, variantId = null, delta = 1, event = null) {
     if (event) event.stopPropagation();
 
     const product = productsList.find((p) => p.id === productId);
@@ -1121,44 +1159,108 @@
       variant = product.variant_list.find((v) => String(v.id) === String(variantId));
     }
 
-    const curStock = variant ? Number(variant.stock) : Number(product.stock);
-    if (delta < 0 && curStock <= 0) {
-      showToast('Stock is already 0.', 'warning');
+    const key = getInvChangeKey(productId, variantId);
+    const originalStock = variant ? Number(variant.stock) : Number(product.stock);
+
+    const existing = invStagedChanges.get(key);
+    const currentStagedStock = existing ? existing.newStock : originalStock;
+    const targetStock = currentStagedStock + delta;
+
+    if (targetStock < 0) {
+      showToast('Stock cannot be negative.', 'warning');
       return;
     }
 
-    const endpoint = delta > 0
-      ? `/api/admin/products/${productId}/restock`
-      : `/api/admin/products/${productId}/deduct`;
-
-    try {
-      const res = await authFetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variant_id: variant ? variant.id : undefined }),
+    if (targetStock === originalStock) {
+      // Reverted back to ground truth
+      invStagedChanges.delete(key);
+    } else {
+      invStagedChanges.set(key, {
+        key,
+        productId,
+        variantId: variant ? variant.id : null,
+        productName: product.name,
+        styleName: variant ? variant.color_name : null,
+        originalStock,
+        newStock: targetStock,
+        delta: targetStock - originalStock,
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        if (variant) {
-          variant.stock = data.remaining;
-          product.stock = product.variant_list.reduce((sum, v) => sum + Number(v.stock), 0);
+    }
+
+    updateInvStagedBar();
+    renderProducts();
+  };
+
+  // Revert a single staged change back to original stock
+  window.revertInvChange = function (productId, variantId = null, event = null) {
+    if (event) event.stopPropagation();
+    const key = getInvChangeKey(productId, variantId);
+    invStagedChanges.delete(key);
+    updateInvStagedBar();
+    renderProducts();
+  };
+
+  // Reset all staged changes
+  window.resetAllInvChanges = function () {
+    invStagedChanges.clear();
+    updateInvStagedBar();
+    renderProducts();
+    showToast('All staged stock changes reset.', 'info');
+  };
+
+  // Commit all staged inventory adjustments to the server
+  window.commitAllInvChanges = async function () {
+    if (invStagedChanges.size === 0) return;
+
+    const changes = Array.from(invStagedChanges.values());
+    if (invSaveBtn) {
+      invSaveBtn.disabled = true;
+      invSaveBtn.innerHTML = `<span>Saving...</span>`;
+    }
+
+    let successCount = 0;
+    const failedList = [];
+
+    for (const ch of changes) {
+      const isRestock = ch.delta > 0;
+      const absQty = Math.abs(ch.delta);
+      const endpoint = isRestock
+        ? `/api/admin/products/${ch.productId}/restock`
+        : `/api/admin/products/${ch.productId}/deduct`;
+
+      try {
+        const res = await authFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            variant_id: ch.variantId || undefined,
+            qty: absQty,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          successCount++;
         } else {
-          product.stock = data.remaining;
+          failedList.push(ch.productName);
         }
-
-        renderProducts();
-        if (activeTab === 'quicksell') renderQsGrid();
-
-        const title = variant ? `${product.name} (${variant.color_name})` : product.name;
-        showToast(
-          `${delta > 0 ? 'Restocked +1' : 'Deducted 1'} · ${title} (${data.remaining} in stock)`,
-          'success'
-        );
-      } else {
-        showToast(data.message || data.error || 'Stock adjustment failed.', 'error');
+      } catch (err) {
+        failedList.push(ch.productName);
       }
-    } catch (err) {
-      showToast('Error adjusting stock: ' + err.message, 'error');
+    }
+
+    invStagedChanges.clear();
+    updateInvStagedBar();
+    if (invSaveBtn) {
+      invSaveBtn.disabled = false;
+      invSaveBtn.innerHTML = `<span>Save Changes ✓</span>`;
+    }
+
+    await loadProducts(true);
+
+    if (failedList.length === 0) {
+      showToast(`✨ Saved ${successCount} stock adjustment(s) successfully!`, 'success');
+    } else {
+      showToast(`Saved ${successCount} adjustments. Failed: ${failedList.join(', ')}`, 'warning');
     }
   };
 
@@ -1210,8 +1312,25 @@
       const varCount = product.variant_list ? product.variant_list.length : 0;
       const isExpanded = expandedStylesSet.has(product.id);
 
+      // Check if standalone product is staged
+      const staged = invStagedChanges.get(getInvChangeKey(product.id));
+      const displayStock = staged ? staged.newStock : product.stock;
+
+      // Check if any variant is staged for parent calculation
+      let parentDisplayStock = product.stock;
+      let hasAnyStyleStaged = false;
+      if (hasVars && product.variant_list) {
+        parentDisplayStock = product.variant_list.reduce((sum, v) => {
+          const st = invStagedChanges.get(getInvChangeKey(product.id, v.id));
+          if (st) hasAnyStyleStaged = true;
+          return sum + (st ? st.newStock : Number(v.stock));
+        }, 0);
+      }
+
       return `
-        <div class="admin-card p-3 flex flex-col space-y-3 border border-white/10 transition hover:border-white/20">
+        <div class="admin-card p-3 flex flex-col space-y-3 border ${
+          staged || hasAnyStyleStaged ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30' : 'border-white/10'
+        } transition hover:border-white/20">
           <!-- Top Row: Large Image + Details & Actions -->
           <div class="flex items-start space-x-3.5 min-w-0">
             <!-- Large Image with Tap-To-Zoom -->
@@ -1261,11 +1380,25 @@
           ${hasVars ? `
             <div class="pt-2 border-t border-white/5 flex flex-col space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-300 font-medium">
-                  Total Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
-                </span>
+                <div class="flex items-center space-x-1.5">
+                  ${hasAnyStyleStaged ? `
+                    <span class="text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
+                      Total: ${product.stock} → ${parentDisplayStock}
+                    </span>
+                  ` : `
+                    <span class="text-slate-300 font-medium">
+                      Total Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+                    </span>
+                  `}
+                </div>
                 <button type="button" onclick="window.toggleInvStyles('${product.id}', event)"
-                  class="px-2.5 py-1 rounded-lg ${isExpanded ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/40' : 'bg-white/10 text-slate-200 border-white/10'} border text-[11px] font-bold flex items-center space-x-1 transition active:scale-95">
+                  class="px-2.5 py-1 rounded-lg ${
+                    hasAnyStyleStaged
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : isExpanded
+                      ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/40'
+                      : 'bg-white/10 text-slate-200 border-white/10'
+                  } border text-[11px] font-bold flex items-center space-x-1 transition active:scale-95">
                   <span>✨ ${varCount} Styles</span>
                   <span class="text-[10px]">${isExpanded ? '▲ Hide' : '▼ View'}</span>
                 </button>
@@ -1274,56 +1407,85 @@
               <!-- Accordion Content -->
               ${isExpanded ? `
                 <div class="mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 space-y-2.5">
-                  ${(product.variant_list || []).map((v) => `
-                    <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-b-0">
-                      <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-                        <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}"
-                          onclick="window.openImageLightbox('${v.photo_url || product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)} (${escapeHtml(v.color_name)})', '${formatUSD(v.sell_price)} · ${v.stock} in stock')"
-                          class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer hover:scale-105 transition"
-                          title="Tap to zoom">
-                        <div class="min-w-0 pr-2">
-                          <p class="font-bold text-white text-xs truncate leading-tight">${escapeHtml(v.color_name)}</p>
-                          <p class="text-[11px] text-[#c9a84c] font-extrabold mt-0.5">${formatUSD(v.sell_price)}</p>
+                  ${(product.variant_list || []).map((v) => {
+                    const vStaged = invStagedChanges.get(getInvChangeKey(product.id, v.id));
+                    const vDisplayStock = vStaged ? vStaged.newStock : v.stock;
+
+                    return `
+                      <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-b-0">
+                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                          <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}"
+                            onclick="window.openImageLightbox('${v.photo_url || product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)} (${escapeHtml(v.color_name)})', '${formatUSD(v.sell_price)} · ${v.stock} in stock')"
+                            class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer hover:scale-105 transition"
+                            title="Tap to zoom">
+                          <div class="min-w-0 pr-2">
+                            <p class="font-bold text-white text-xs truncate leading-tight">${escapeHtml(v.color_name)}</p>
+                            <div class="flex items-center space-x-1 mt-0.5">
+                              <span class="text-[11px] text-[#c9a84c] font-extrabold">${formatUSD(v.sell_price)}</span>
+                              ${vStaged ? `
+                                <span class="text-amber-300 font-black text-[10px] bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
+                                  ${vStaged.originalStock} → ${vStaged.newStock} (${vStaged.delta > 0 ? '+' : ''}${vStaged.delta})
+                                </span>
+                                <button type="button" onclick="window.revertInvChange('${product.id}', '${v.id}', event)" class="text-slate-400 hover:text-rose-300 text-[10px] font-bold" title="Revert">✕</button>
+                              ` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Stepper for Style (stages changes) -->
+                        <div class="flex items-center space-x-1 bg-black/50 border ${vStaged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-white/10'} rounded-xl p-0.5 flex-shrink-0">
+                          <button type="button" onclick="window.stageInvStockChange('${product.id}', '${v.id}', -1, event)"
+                            class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                            title="Decrease count">
+                            −
+                          </button>
+                          <span class="min-w-[24px] text-center font-extrabold ${vStaged ? 'text-amber-300' : 'text-[#f3d489]'} text-xs select-none">
+                            ${vDisplayStock}
+                          </span>
+                          <button type="button" onclick="window.stageInvStockChange('${product.id}', '${v.id}', 1, event)"
+                            class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
+                            title="Increase count">
+                            +
+                          </button>
                         </div>
                       </div>
-
-                      <div class="flex items-center space-x-1 bg-black/50 border border-white/10 rounded-xl p-0.5 flex-shrink-0">
-                        <button type="button" onclick="window.quickAdjustStock('${product.id}', '${v.id}', -1, event)"
-                          class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
-                          title="Deduct 1 unit">
-                          −
-                        </button>
-                        <span class="min-w-[24px] text-center font-extrabold text-[#f3d489] text-xs select-none">
-                          ${v.stock}
-                        </span>
-                        <button type="button" onclick="window.quickAdjustStock('${product.id}', '${v.id}', 1, event)"
-                          class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
-                          title="Restock 1 unit">
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </div>
               ` : ''}
             </div>
           ` : `
             <div class="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-              <span class="text-slate-300 font-medium">
-                In Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
-              </span>
-              <div class="flex items-center space-x-1 bg-black/40 border border-white/10 rounded-xl p-0.5">
-                <button type="button" onclick="window.quickAdjustStock('${product.id}', null, -1, event)"
+              <div class="flex items-center space-x-1.5">
+                ${staged ? `
+                  <span class="text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
+                    ${staged.originalStock} → ${staged.newStock} (${staged.delta > 0 ? '+' : ''}${staged.delta})
+                  </span>
+                  <button type="button" onclick="window.revertInvChange('${product.id}', null, event)"
+                    class="w-5 h-5 rounded-md bg-white/10 hover:bg-rose-900/60 hover:text-rose-200 text-slate-400 text-[10px] font-bold flex items-center justify-center transition"
+                    title="Revert to ${staged.originalStock}">
+                    ✕
+                  </button>
+                ` : `
+                  <span class="text-slate-300 font-medium">
+                    In Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+                  </span>
+                `}
+              </div>
+
+              <!-- Stepper for Standalone Product (stages changes) -->
+              <div class="flex items-center space-x-1 bg-black/40 border ${staged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-white/10'} rounded-xl p-0.5">
+                <button type="button" onclick="window.stageInvStockChange('${product.id}', null, -1, event)"
                   class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
-                  title="Deduct 1 unit">
+                  title="Decrease count">
                   −
                 </button>
-                <span class="min-w-[28px] text-center font-extrabold text-[#f3d489] text-xs select-none">
-                  ${product.stock}
+                <span class="min-w-[28px] text-center font-extrabold ${staged ? 'text-amber-300' : 'text-[#f3d489]'} text-xs select-none">
+                  ${displayStock}
                 </span>
-                <button type="button" onclick="window.quickAdjustStock('${product.id}', null, 1, event)"
+                <button type="button" onclick="window.stageInvStockChange('${product.id}', null, 1, event)"
                   class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
-                  title="Restock 1 unit">
+                  title="Increase count">
                   +
                 </button>
               </div>

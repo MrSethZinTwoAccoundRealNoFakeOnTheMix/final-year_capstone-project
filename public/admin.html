@@ -502,6 +502,29 @@
     </div>
   </div>
 
+  <!-- ─── Inventory: Floating Staged Stock Changes Bar ───────────────────── -->
+  <div id="inv-staged-bar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-[#171928]/95 backdrop-blur-md border border-amber-500/60 rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform">
+    <div class="flex items-center space-x-2.5 min-w-0">
+      <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base">
+        📝
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-white leading-tight">
+          <span id="inv-staged-count" class="text-amber-400 font-black">0</span> changes staged
+        </p>
+        <p class="text-[10px] text-slate-300 truncate" id="inv-staged-preview">Tap Save to commit</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-1.5 flex-shrink-0">
+      <button type="button" onclick="window.resetAllInvChanges()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-rose-950/60 hover:text-rose-200 text-slate-300 text-xs font-semibold transition active:scale-95">
+        Reset
+      </button>
+      <button type="button" id="inv-save-btn" onclick="window.commitAllInvChanges()" class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition active:scale-95">
+        <span>Save Changes ✓</span>
+      </button>
+    </div>
+  </div>
+
   <!-- ─── Image Lightbox Zoom Modal (High-Res Detail Preview) ────────── -->
   <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[75] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4" onclick="window.closeImageLightbox()">
     <div class="relative max-w-lg w-full flex flex-col items-center" onclick="event.stopPropagation()">
