@@ -1282,19 +1282,19 @@
 
           <!-- Stepper & Remove button -->
           <div class="flex items-center space-x-1.5 flex-shrink-0">
-            <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-0.5 space-x-1">
-              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -1)"
-                class="w-6 h-6 rounded-lg bg-white/10 hover:bg-rose-950/60 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+            <div class="flex items-center bg-black/50 border border-white/10 rounded-xl p-0.5 space-x-1">
+              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -1, event)"
+                class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-950/60 hover:text-rose-300 text-white flex items-center justify-center text-sm font-black active:scale-90 transition">
                 −
               </button>
-              <span class="w-6 text-center font-extrabold text-white text-xs">${item.qty}</span>
-              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, 1)"
-                class="w-6 h-6 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+              <span class="min-w-[24px] text-center font-extrabold text-white text-xs select-none">${item.qty}</span>
+              <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, 1, event)"
+                class="w-7 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition">
                 +
               </button>
             </div>
-            <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -${item.qty})"
-              class="w-7 h-7 rounded-xl bg-white/5 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition" title="Remove">
+            <button type="button" onclick="window.modifyPosCartQty('${item.productId}', ${item.variantId ? `'${item.variantId}'` : 'null'}, -${item.qty}, event)"
+              class="w-7 h-7 rounded-xl bg-white/5 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition active:scale-90" title="Remove">
               ✕
             </button>
           </div>
@@ -1313,6 +1313,69 @@
     }
   }
 
+  // Toggle item in cart: 1st tap selects 1, 2nd tap auto-unselects (removes)
+  window.togglePosCartItem = function (productId, variantId = null, event = null) {
+    if (event) event.stopPropagation();
+
+    const product = productsList.find((p) => p.id === productId);
+    if (!product) return;
+
+    let variant = null;
+    if (variantId && product.variant_list) {
+      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
+    }
+
+    const key = getCartItemKey(productId, variantId);
+    const existing = posCart.get(key);
+
+    // If already in cart, tapping card/image toggles it off (auto-unselects)
+    if (existing && existing.qty > 0) {
+      posCart.delete(key);
+      savePosCartToStorage();
+      updatePosCartBar();
+      renderQsGrid();
+
+      if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden') && qsVariantDrawer.dataset.productId === productId) {
+        renderVariantDrawerContent(product);
+      }
+      if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
+        renderCartDrawerList();
+      }
+      return;
+    }
+
+    // Otherwise, select 1 unit
+    const maxStock = variant ? Number(variant.stock) : Number(product.stock);
+    if (maxStock <= 0) {
+      showToast('This item is out of stock.', 'warning');
+      return;
+    }
+
+    posCart.set(key, {
+      key,
+      productId,
+      variantId: variant ? variant.id : null,
+      name: variant ? `${product.name} (${variant.color_name})` : product.name,
+      category: product.category,
+      unitPrice: variant ? Number(variant.sell_price) : Number(product.sell_price),
+      photoUrl: (variant && variant.photo_url) || product.photo_url || DEFAULT_IMAGE,
+      maxStock,
+      qty: 1,
+    });
+
+    savePosCartToStorage();
+    updatePosCartBar();
+    renderQsGrid();
+
+    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden') && qsVariantDrawer.dataset.productId === productId) {
+      renderVariantDrawerContent(product);
+    }
+    if (qsCartDrawer && !qsCartDrawer.classList.contains('hidden')) {
+      renderCartDrawerList();
+    }
+  };
+
+  // Stepper quantity modification: + and − buttons explicitly change count
   window.modifyPosCartQty = function (productId, variantId = null, delta = 1, event = null) {
     if (event) event.stopPropagation();
 
@@ -1429,7 +1492,7 @@
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
               
               <!-- Style Count Pill -->
-              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/40 backdrop-blur-sm">
+              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/40 backdrop-blur-sm">
                 ✨ ${varCount}
               </span>
 
@@ -1446,9 +1509,21 @@
                 <p class="text-[9px] text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
                 <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
               </div>
-              <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
-                <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
-                <span class="text-[9px] text-slate-400 font-semibold">${product.stock} stk</span>
+
+              <div class="mt-1 pt-1 border-t border-white/5">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
+                  <span class="text-[9px] text-slate-400 font-semibold">${product.stock} total</span>
+                </div>
+                <button type="button" onclick="window.qsOpenVariantDrawer('${product.id}')"
+                  class="w-full h-7 mt-1.5 rounded-lg ${
+                    isInCart 
+                      ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/50' 
+                      : 'bg-white/10 text-slate-200 border-white/10'
+                  } hover:bg-[#c9a84c] hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border active:scale-95 transition-all shadow-sm">
+                  <span>${isInCart ? `🛒 ${cartQty} in cart` : `Styles (${varCount})`}</span>
+                  <span class="text-[10px]">➔</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1461,12 +1536,12 @@
           isInCart
             ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'border-white/10 hover:border-white/20 active:scale-98 shadow'
-        }" onclick="window.modifyPosCartQty('${product.id}', null, 1)">
+        }" onclick="window.togglePosCartItem('${product.id}')">
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
             
             <!-- Stock Badge -->
-            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               isLow ? 'bg-rose-950/90 text-rose-300 border border-rose-800/80' : 'bg-slate-950/80 text-slate-300 border border-white/15'
             }">
               ${product.stock} stk
@@ -1486,25 +1561,34 @@
               <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
             </div>
             
-            <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
-              <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
+            <div class="mt-1 pt-1 border-t border-white/5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
+                <span class="text-[9px] text-slate-400 font-semibold">${product.stock} stk</span>
+              </div>
               
-              <!-- Quick Steppers when in cart -->
               ${isInCart ? `
-                <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, -1, event)"
-                    class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+                    class="flex-1 h-7 rounded-lg bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                    title="Decrease quantity">
                     −
                   </button>
+                  <span class="text-xs font-black text-[#f3d489] px-2 text-center select-none min-w-[24px]">
+                    ${cartQty}
+                  </span>
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, 1, event)"
-                    class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+                    class="flex-1 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm"
+                    title="Increase quantity">
                     +
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md bg-white/10 hover:bg-[#c9a84c]/20 hover:text-[#f3d489] text-slate-300 flex items-center justify-center text-xs font-bold">
-                  +
-                </span>
+                <button type="button" onclick="window.togglePosCartItem('${product.id}', null, event)"
+                  class="w-full h-7 mt-1.5 rounded-lg bg-white/10 hover:bg-[#c9a84c] text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-white/10 active:scale-95 transition-all shadow-sm">
+                  <span class="text-sm font-black leading-none">+</span>
+                  <span>Select</span>
+                </button>
               `}
             </div>
           </div>
@@ -1532,12 +1616,12 @@
             : isInCart
             ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
-        }" ${isOut ? '' : `onclick="window.modifyPosCartQty('${product.id}', '${v.id}', 1)"`}>
+        }" ${isOut ? '' : `onclick="window.togglePosCartItem('${product.id}', '${v.id}')"`}>
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             
             <!-- Stock Pill -->
-            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
               v.stock <= 1 ? 'bg-rose-950/90 text-rose-300' : 'bg-slate-950/80 text-slate-300'
             }">
               ${v.stock} stk
@@ -1554,24 +1638,36 @@
           <div class="p-2 flex-1 flex flex-col justify-between">
             <h5 class="text-[11px] font-bold text-white truncate leading-tight" title="${escapeHtml(v.color_name)}">${escapeHtml(v.color_name)}</h5>
             
-            <div class="flex items-center justify-between mt-1 pt-1 border-t border-white/5">
-              <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(v.sell_price)}</span>
+            <div class="mt-1 pt-1 border-t border-white/5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(v.sell_price)}</span>
+                <span class="text-[9px] text-slate-400 font-semibold">${v.stock} stk</span>
+              </div>
               
-              ${isInCart && !isOut ? `
-                <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+              ${isOut ? `
+                <span class="w-full h-7 mt-1.5 rounded-lg bg-white/5 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-white/5">
+                  Sold Out
+                </span>
+              ` : isInCart ? `
+                <div class="flex items-center justify-between bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', -1, event)"
-                    class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+                    class="flex-1 h-7 rounded-lg bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition">
                     −
                   </button>
+                  <span class="text-xs font-black text-[#f3d489] px-2 text-center select-none min-w-[24px]">
+                    ${cartQty}
+                  </span>
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', 1, event)"
-                    class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+                    class="flex-1 h-7 rounded-lg bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-sm font-black active:scale-90 transition shadow-sm">
                     +
                   </button>
                 </div>
               ` : `
-                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
-                  ${isOut ? '✕' : '+'}
-                </span>
+                <button type="button" onclick="window.togglePosCartItem('${product.id}', '${v.id}', event)"
+                  class="w-full h-7 mt-1.5 rounded-lg bg-white/10 hover:bg-[#c9a84c] text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-white/10 active:scale-95 transition-all shadow-sm">
+                  <span class="text-sm font-black leading-none">+</span>
+                  <span>Select</span>
+                </button>
               `}
             </div>
           </div>
