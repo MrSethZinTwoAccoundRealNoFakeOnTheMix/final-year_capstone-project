@@ -123,6 +123,8 @@
   let activeTab = 'orders';
   let isInitialOrdersLoaded = false;
   let qsCategory = 'All';
+  let qsSearchQuery = '';
+  const qsBasket = new Map(); // Key: itemKey -> { key, productId, variantId, product, variant, name, category, unitPrice, photoUrl, maxStock, qty }
   let sessionDeductions = [];
   let currentConfirmAction = null;
 
@@ -192,13 +194,22 @@
   const confirmDialogYes = document.getElementById('confirm-dialog-yes');
 
   // Quick Sell Elements
+  const qsSearchInput = document.getElementById('qs-search-input');
+  const qsSearchClear = document.getElementById('qs-search-clear');
   const qsCategoryChips = document.getElementById('qs-category-chips');
   const qsDeductionBar = document.getElementById('qs-deduction-bar');
   const qsDeductionCount = document.getElementById('qs-deduction-count');
   const qsGrid = document.getElementById('qs-grid');
+  const qsBatchBar = document.getElementById('qs-batch-bar');
+  const qsBatchCount = document.getElementById('qs-batch-count');
+  const qsBatchTotal = document.getElementById('qs-batch-total');
   const qsLogDrawer = document.getElementById('qs-log-drawer');
   const qsLogList = document.getElementById('qs-log-list');
   const qsConfirmSheet = document.getElementById('qs-confirm-sheet');
+  const qsConfirmTitle = document.getElementById('qs-confirm-title');
+  const qsConfirmSingle = document.getElementById('qs-confirm-single');
+  const qsConfirmBatchList = document.getElementById('qs-confirm-batch-list');
+  const qsConfirmTotalBadge = document.getElementById('qs-confirm-total-badge');
   const qsConfirmImg = document.getElementById('qs-confirm-img');
   const qsConfirmCategory = document.getElementById('qs-confirm-category');
   const qsConfirmName = document.getElementById('qs-confirm-name');
@@ -435,6 +446,9 @@
         if (activeTab === 'quicksell') {
           renderQsCategories();
           renderQsGrid();
+          updateQsBatchBar();
+        } else if (qsBatchBar) {
+          qsBatchBar.classList.add('hidden');
         }
       }
       tabContentOverview.classList.toggle('hidden', activeTab !== 'overview');
@@ -1087,8 +1101,28 @@
   }
 
   // ─────────────────────────────────────────────────────────────
-  // QUICK SELL POS & IN-PERSON DEDUCTION
+  // QUICK SELL POS & MULTI-SELECT BASKET DEDUCTION
   // ─────────────────────────────────────────────────────────────
+
+  // Search input live filtering
+  if (qsSearchInput) {
+    qsSearchInput.addEventListener('input', (e) => {
+      qsSearchQuery = (e.target.value || '').trim().toLowerCase();
+      if (qsSearchClear) {
+        if (qsSearchQuery) qsSearchClear.classList.remove('hidden');
+        else qsSearchClear.classList.add('hidden');
+      }
+      renderQsGrid();
+    });
+  }
+
+  window.clearQsSearch = function () {
+    if (qsSearchInput) qsSearchInput.value = '';
+    qsSearchQuery = '';
+    if (qsSearchClear) qsSearchClear.classList.add('hidden');
+    renderQsGrid();
+  };
+
   function renderQsCategories() {
     if (!qsCategoryChips) return;
     const cats = ['All', ...categoriesList.map((c) => c.name)];
@@ -1096,7 +1130,7 @@
       const isActive = cat === qsCategory;
       return `
         <button type="button" onclick="window.setQsCategory('${escapeHtml(cat)}')"
-          class="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
+          class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition ${
             isActive
               ? 'bg-[#c9a84c] text-black shadow-md'
               : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
@@ -1124,17 +1158,122 @@
     }
   }
 
+  function getBasketItemKey(productId, variantId = null) {
+    return variantId ? `${productId}__${variantId}` : productId;
+  }
+
+  function updateQsBatchBar() {
+    if (!qsBatchBar || !qsBatchCount || !qsBatchTotal) return;
+    if (activeTab !== 'quicksell') {
+      qsBatchBar.classList.add('hidden');
+      return;
+    }
+
+    let totalItems = 0;
+    let totalDollars = 0;
+
+    qsBasket.forEach((item) => {
+      totalItems += item.qty;
+      totalDollars += item.qty * item.unitPrice;
+    });
+
+    if (totalItems > 0) {
+      qsBatchCount.textContent = totalItems;
+      qsBatchTotal.textContent = formatUSD(totalDollars);
+      qsBatchBar.classList.remove('hidden');
+    } else {
+      qsBatchBar.classList.add('hidden');
+    }
+  }
+
+  window.clearQsBasket = function () {
+    qsBasket.clear();
+    updateQsBatchBar();
+    renderQsGrid();
+    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden')) {
+      const curProductId = qsVariantDrawer.dataset.productId;
+      if (curProductId) {
+        const prod = productsList.find((p) => p.id === curProductId);
+        if (prod) renderVariantDrawerContent(prod);
+      }
+    }
+  };
+
+  window.qsModifyBasketItem = function (productId, variantId = null, delta = 1, event = null) {
+    if (event) event.stopPropagation();
+
+    const product = productsList.find((p) => p.id === productId);
+    if (!product) return;
+
+    let variant = null;
+    if (variantId && product.variant_list) {
+      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
+    }
+
+    const key = getBasketItemKey(productId, variantId);
+    const maxStock = variant ? Number(variant.stock) : Number(product.stock);
+
+    if (maxStock <= 0 && delta > 0) {
+      showToast('This item is out of stock.', 'warning');
+      return;
+    }
+
+    const existing = qsBasket.get(key);
+    let newQty = (existing ? existing.qty : 0) + delta;
+
+    if (newQty > maxStock) {
+      newQty = maxStock;
+      showToast(`Max in-stock reached (${maxStock}).`, 'warning');
+    }
+
+    if (newQty <= 0) {
+      qsBasket.delete(key);
+    } else {
+      qsBasket.set(key, {
+        key,
+        productId,
+        variantId: variant ? variant.id : null,
+        product,
+        variant,
+        name: variant ? `${product.name} (${variant.color_name})` : product.name,
+        category: product.category,
+        unitPrice: variant ? Number(variant.sell_price) : Number(product.sell_price),
+        photoUrl: (variant && variant.photo_url) || product.photo_url || DEFAULT_IMAGE,
+        maxStock,
+        qty: newQty,
+      });
+    }
+
+    updateQsBatchBar();
+    renderQsGrid();
+
+    // If variant drawer is currently open, refresh it so counters update live
+    if (qsVariantDrawer && !qsVariantDrawer.classList.contains('hidden') && qsVariantDrawer.dataset.productId === productId) {
+      renderVariantDrawerContent(product);
+    }
+  };
+
   function renderQsGrid() {
     if (!qsGrid) return;
-    const filtered = productsList.filter((p) =>
-      p.stock > 0 && (qsCategory === 'All' || p.category === qsCategory)
-    );
+
+    const filtered = productsList.filter((p) => {
+      if (p.stock <= 0) return false;
+      const matchesCat = qsCategory === 'All' || p.category === qsCategory;
+      if (!matchesCat) return false;
+
+      if (!qsSearchQuery) return true;
+      const q = qsSearchQuery;
+      const nameMatch = (p.name || '').toLowerCase().includes(q);
+      const skuMatch = (p.id || '').toLowerCase().includes(q);
+      const catMatch = (p.category || '').toLowerCase().includes(q);
+      return nameMatch || skuMatch || catMatch;
+    });
 
     if (filtered.length === 0) {
       qsGrid.innerHTML = `
-        <div class="col-span-2 text-center py-12 text-slate-400">
+        <div class="col-span-3 text-center py-12 text-slate-400">
           <p class="text-3xl mb-2">💎</p>
-          <p class="text-xs font-semibold">No in-stock jewelry found in this category.</p>
+          <p class="text-xs font-semibold">No in-stock jewelry found.</p>
         </div>
       `;
       return;
@@ -1143,31 +1282,55 @@
     qsGrid.innerHTML = filtered.map((product) => {
       const hasVars = product.has_variants === 1 || product.has_variants === true || (product.variant_list && product.variant_list.length > 0);
       const varCount = product.variant_list ? product.variant_list.length : 0;
-      const isLow = product.stock <= 3;
+      const isLow = product.stock <= 2;
+
+      // Count total units of this product (or its variants) currently in basket
+      let basketQty = 0;
+      if (hasVars) {
+        if (product.variant_list) {
+          product.variant_list.forEach((v) => {
+            const item = qsBasket.get(getBasketItemKey(product.id, v.id));
+            if (item) basketQty += item.qty;
+          });
+        }
+      } else {
+        const item = qsBasket.get(getBasketItemKey(product.id));
+        if (item) basketQty = item.qty;
+      }
+
+      const isSelected = basketQty > 0;
 
       if (hasVars) {
         return `
-          <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border border-white/10 hover:border-[#c9a84c]/50 transition shadow-lg"
-            onclick="window.qsOpenVariantDrawer('${product.id}')">
+          <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+            isSelected
+              ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
+              : 'border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
+          }" onclick="window.qsOpenVariantDrawer('${product.id}')">
             <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
-              <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/50 backdrop-blur-sm">
-                ✨ ${varCount} Styles
+              
+              <!-- Style Count Pill -->
+              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/40 backdrop-blur-sm">
+                ✨ ${varCount}
               </span>
+
+              <!-- Active Basket Counter Pill -->
+              ${isSelected ? `
+                <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                  ✕${basketQty}
+                </span>
+              ` : ''}
             </div>
-            <div class="p-3 flex-1 flex flex-col justify-between">
-              <div>
-                <p class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(product.category)}</p>
-                <h4 class="text-xs font-bold text-white truncate leading-snug mt-0.5">${escapeHtml(product.name)}</h4>
+
+            <div class="p-2 flex-1 flex flex-col justify-between">
+              <div class="min-w-0">
+                <p class="text-[9px] text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
+                <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
               </div>
-              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                <div>
-                  <span class="text-xs font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
-                  <span class="text-[10px] text-slate-400 block">${product.stock} total</span>
-                </div>
-                <button type="button" class="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-[#c9a84c] hover:text-black text-white text-[11px] font-bold transition">
-                  Choose Style →
-                </button>
+              <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
+                <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
+                <span class="text-[9px] text-slate-400 font-semibold">${product.stock} stk</span>
               </div>
             </div>
           </div>
@@ -1176,26 +1339,55 @@
 
       // Standalone single product (no variants)
       return `
-        <div class="admin-card p-0 overflow-hidden flex flex-col border border-white/10 hover:border-white/20 transition shadow-lg">
+        <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
+          isSelected
+            ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
+            : 'border-white/10 hover:border-white/20 active:scale-98 shadow'
+        }" onclick="window.qsModifyBasketItem('${product.id}', null, 1)">
           <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
             <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
-            <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              isLow ? 'bg-rose-950/90 text-rose-300 border border-rose-800/80' : 'bg-emerald-950/90 text-emerald-300 border border-emerald-800/80'
+            
+            <!-- Stock Badge -->
+            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+              isLow ? 'bg-rose-950/90 text-rose-300 border border-rose-800/80' : 'bg-slate-950/80 text-slate-300 border border-white/15'
             }">
-              ${product.stock} left
+              ${product.stock} stk
             </span>
+
+            <!-- Active Basket Counter Pill -->
+            ${isSelected ? `
+              <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                ✕${basketQty}
+              </span>
+            ` : ''}
           </div>
-          <div class="p-3 flex-1 flex flex-col justify-between">
-            <div>
-              <p class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(product.category)}</p>
-              <h4 class="text-xs font-bold text-white truncate leading-snug mt-0.5">${escapeHtml(product.name)}</h4>
+
+          <div class="p-2 flex-1 flex flex-col justify-between">
+            <div class="min-w-0">
+              <p class="text-[9px] text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
+              <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
             </div>
-            <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-              <span class="text-xs font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
-              <button type="button" onclick="window.qsOpenConfirm('${product.id}')"
-                class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold flex items-center space-x-1 shadow-md transition">
-                <span>− Deduct 1</span>
-              </button>
+            
+            <div class="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
+              <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(product.sell_price)}</span>
+              
+              <!-- Quick Steppers when selected -->
+              ${isSelected ? `
+                <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', null, -1, event)"
+                    class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+                    −
+                  </button>
+                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', null, 1, event)"
+                    class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+                    +
+                  </button>
+                </div>
+              ` : `
+                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
+                  +
+                </span>
+              `}
             </div>
           </div>
         </div>
@@ -1203,38 +1395,82 @@
     }).join('');
   }
 
-  // Quick Sell Variant Drawer
+  // Quick Sell Variant Drawer (Compact 3-Column Grid)
+  function renderVariantDrawerContent(product) {
+    if (!qsVariantList) return;
+    const variants = Array.isArray(product.variant_list) ? product.variant_list : [];
+
+    qsVariantList.innerHTML = variants.map((v) => {
+      const isOut = v.stock <= 0;
+      const key = getBasketItemKey(product.id, v.id);
+      const basketItem = qsBasket.get(key);
+      const basketQty = basketItem ? basketItem.qty : 0;
+      const isSelected = basketQty > 0;
+
+      return `
+        <div class="admin-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
+          isOut
+            ? 'opacity-40 cursor-not-allowed border-white/5'
+            : isSelected
+            ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
+            : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
+        }" ${isOut ? '' : `onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', 1)"`}>
+          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+            <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
+            
+            <!-- Stock Pill -->
+            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+              v.stock <= 1 ? 'bg-rose-950/90 text-rose-300' : 'bg-slate-950/80 text-slate-300'
+            }">
+              ${v.stock} stk
+            </span>
+
+            <!-- Counter Pill -->
+            ${isSelected ? `
+              <span class="absolute top-1.5 left-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#c9a84c] text-black font-extrabold text-[10px] flex items-center justify-center shadow-lg border border-black/40">
+                ✕${basketQty}
+              </span>
+            ` : ''}
+          </div>
+
+          <div class="p-2 flex-1 flex flex-col justify-between">
+            <h5 class="text-[11px] font-bold text-white truncate leading-tight" title="${escapeHtml(v.color_name)}">${escapeHtml(v.color_name)}</h5>
+            
+            <div class="flex items-center justify-between mt-1 pt-1 border-t border-white/5">
+              <span class="text-[11px] font-extrabold text-[#c9a84c]">${formatUSD(v.sell_price)}</span>
+              
+              ${isSelected && !isOut ? `
+                <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', -1, event)"
+                    class="w-5 h-5 rounded-md bg-white/15 hover:bg-rose-950 hover:text-rose-300 text-white flex items-center justify-center text-xs font-bold transition">
+                    −
+                  </button>
+                  <button type="button" onclick="window.qsModifyBasketItem('${product.id}', '${v.id}', 1, event)"
+                    class="w-5 h-5 rounded-md bg-[#c9a84c] hover:bg-[#d8b556] text-black flex items-center justify-center text-xs font-bold transition">
+                    +
+                  </button>
+                </div>
+              ` : `
+                <span class="w-5 h-5 rounded-md bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
+                  ${isOut ? '✕' : '+'}
+                </span>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   window.qsOpenVariantDrawer = function (productId) {
     const product = productsList.find((p) => p.id === productId);
     if (!product || !qsVariantDrawer) return;
 
+    qsVariantDrawer.dataset.productId = productId;
     qsVariantDrawerTitle.textContent = product.name;
-    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap a style to deduct`;
+    qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap styles to select`;
 
-    const variants = Array.isArray(product.variant_list) ? product.variant_list : [];
-    qsVariantList.innerHTML = variants.map((v) => {
-      const isOut = v.stock <= 0;
-      return `
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-2.5 flex flex-col justify-between transition ${isOut ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-[#c9a84c]/50 active:scale-98'}"
-          ${isOut ? '' : `onclick="window.qsOpenConfirm('${product.id}', '${v.id}')"`}>
-          <div class="w-full aspect-square rounded-xl bg-slate-900 overflow-hidden mb-2 relative">
-            <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
-            <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${v.stock <= 1 ? 'bg-rose-950/90 text-rose-300' : 'bg-emerald-950/90 text-emerald-300'}">
-              ${v.stock} in stock
-            </span>
-          </div>
-          <div>
-            <h5 class="text-xs font-bold text-white truncate">${escapeHtml(v.color_name)}</h5>
-            <p class="text-[11px] font-extrabold text-[#c9a84c] mt-0.5">${formatUSD(v.sell_price)}</p>
-          </div>
-          <button type="button" ${isOut ? 'disabled' : ''} onclick="event.stopPropagation(); window.qsOpenConfirm('${product.id}', '${v.id}')"
-            class="mt-2 w-full py-1.5 rounded-xl ${isOut ? 'bg-white/5 text-slate-500' : 'bg-rose-600 hover:bg-rose-500 text-white'} text-xs font-bold flex items-center justify-center space-x-1 transition shadow-md">
-            <span>${isOut ? 'Out of stock' : '− Deduct 1'}</span>
-          </button>
-        </div>
-      `;
-    }).join('');
-
+    renderVariantDrawerContent(product);
     qsVariantDrawer.classList.remove('hidden');
   };
 
@@ -1242,104 +1478,164 @@
     if (qsVariantDrawer) qsVariantDrawer.classList.add('hidden');
   };
 
-  // Quick Sell Confirmation Sheet
-  window.qsOpenConfirm = function (productId, variantId = null) {
-    const product = productsList.find((p) => p.id === productId);
-    if (!product || !qsConfirmSheet) return;
+  // Quick Sell Confirmation Sheet (Single Item & Multi-Item Batch)
+  let activeBatchToDeduct = [];
 
-    // Auto-close variant drawer so it doesn't overshadow the confirmation popup
-    window.closeVariantDrawer();
+  window.qsOpenBatchConfirm = function () {
+    if (qsBasket.size === 0) return;
 
-    let variant = null;
-    if (variantId && product.variant_list) {
-      variant = product.variant_list.find((v) => String(v.id) === String(variantId));
+    const items = Array.from(qsBasket.values());
+    activeBatchToDeduct = items;
+
+    if (qsConfirmTitle) qsConfirmTitle.innerHTML = `<span>📦 Confirm Batch Deduction (${items.length} styles)</span>`;
+    if (qsConfirmSingle) qsConfirmSingle.classList.add('hidden');
+    if (qsConfirmBatchList) {
+      qsConfirmBatchList.classList.remove('hidden');
+      qsConfirmBatchList.innerHTML = items.map((item) => `
+        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2.5 min-w-0">
+            <img src="${item.photoUrl}" class="w-10 h-10 rounded-lg object-cover bg-black/40 border border-white/10 flex-shrink-0">
+            <div class="min-w-0">
+              <p class="font-bold text-white truncate text-[11px]">${escapeHtml(item.name)}</p>
+              <p class="text-[10px] text-slate-400">${item.category} · ${formatUSD(item.unitPrice)} each</p>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0 ml-2">
+            <span class="px-2 py-0.5 rounded-full bg-[#c9a84c]/20 text-[#f3d489] font-bold text-[10px]">
+              ✕ ${item.qty}
+            </span>
+            <p class="text-[11px] font-extrabold text-white mt-0.5">${formatUSD(item.qty * item.unitPrice)}</p>
+          </div>
+        </div>
+      `).join('');
     }
 
-    const title = variant ? `${product.name} (${variant.color_name})` : product.name;
-    const price = variant ? variant.sell_price : product.sell_price;
-    const imgUrl = (variant && variant.photo_url) || product.photo_url || DEFAULT_IMAGE;
+    let totalDollars = 0;
+    let totalQty = 0;
+    items.forEach((it) => {
+      totalDollars += it.qty * it.unitPrice;
+      totalQty += it.qty;
+    });
 
-    qsConfirmImg.src = imgUrl;
-    qsConfirmCategory.textContent = product.category;
-    qsConfirmName.textContent = title;
-    qsConfirmPrice.textContent = formatUSD(price);
+    if (qsConfirmTotalBadge) {
+      qsConfirmTotalBadge.textContent = `${totalQty} items · ${formatUSD(totalDollars)}`;
+    }
+    if (qsConfirmYesBtn) {
+      qsConfirmYesBtn.textContent = `− Deduct All (${totalQty} items)`;
+      qsConfirmYesBtn.onclick = executeBatchDeduct;
+    }
 
-    qsConfirmYesBtn.onclick = () => {
-      qsDeductStock(product, variant);
-    };
-
-    qsConfirmSheet.classList.remove('hidden');
+    if (qsConfirmSheet) qsConfirmSheet.classList.remove('hidden');
   };
 
   window.closeQsConfirm = function () {
     if (qsConfirmSheet) qsConfirmSheet.classList.add('hidden');
   };
 
-  async function qsDeductStock(product, variant = null) {
+  async function executeBatchDeduct() {
     window.closeQsConfirm();
-    window.closeVariantDrawer();
+    if (!activeBatchToDeduct || activeBatchToDeduct.length === 0) return;
 
-    const productId = product.id;
-    const variantId = variant ? variant.id : null;
+    const items = [...activeBatchToDeduct];
+    activeBatchToDeduct = [];
 
-    try {
-      const res = await authFetch(`/api/admin/products/${productId}/deduct`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variant_id: variantId }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        const deductionEntry = {
-          id: Date.now(),
-          productId,
-          variantId,
-          name: variant ? `${product.name} (${variant.color_name})` : product.name,
-          price: variant ? variant.sell_price : product.sell_price,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        sessionDeductions.unshift(deductionEntry);
-        updateQsDeductionBar();
+    const executedDeductions = [];
+    let failedItem = null;
 
-        showToast(
-          `Deducted 1 unit of ${deductionEntry.name}.`,
-          'success',
-          () => undoDeduction(deductionEntry.id)
-        );
-
-        loadProducts(true);
-      } else {
-        showToast(data.error || 'Failed to deduct stock.', 'error');
+    // Execute atomic deductions for each unit
+    for (const item of items) {
+      for (let i = 0; i < item.qty; i++) {
+        try {
+          const res = await authFetch(`/api/admin/products/${item.productId}/deduct`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variant_id: item.variantId }),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            executedDeductions.push({
+              productId: item.productId,
+              variantId: item.variantId,
+              name: item.name,
+              price: item.unitPrice,
+            });
+          } else {
+            failedItem = item.name;
+            break;
+          }
+        } catch (err) {
+          failedItem = item.name;
+          break;
+        }
       }
-    } catch (err) {
-      if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+      if (failedItem) break;
+    }
+
+    if (executedDeductions.length > 0) {
+      const logEntry = {
+        id: 'batch-' + Date.now(),
+        isBatch: true,
+        items: executedDeductions,
+        name: executedDeductions.length === 1 
+          ? executedDeductions[0].name 
+          : `${executedDeductions.length} items (${executedDeductions[0].name}...)`,
+        count: executedDeductions.length,
+        totalPrice: executedDeductions.reduce((sum, d) => sum + d.price, 0),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      sessionDeductions.unshift(logEntry);
+      updateQsDeductionBar();
+
+      showToast(
+        `Deducted ${executedDeductions.length} item(s)!`,
+        'success',
+        () => undoDeduction(logEntry.id)
+      );
+
+      // Clear basket for completed batch
+      qsBasket.clear();
+      updateQsBatchBar();
+      loadProducts(true);
+    }
+
+    if (failedItem) {
+      showToast(`Could not deduct remaining stock for ${failedItem}.`, 'error');
     }
   }
 
   async function undoDeduction(logId) {
     const idx = sessionDeductions.findIndex((d) => String(d.id) === String(logId));
     if (idx === -1) return;
-    const item = sessionDeductions[idx];
+    const entry = sessionDeductions[idx];
 
-    try {
-      const res = await authFetch(`/api/admin/products/${item.productId}/restock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ variant_id: item.variantId }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        sessionDeductions.splice(idx, 1);
-        updateQsDeductionBar();
-        renderDeductionLogList();
-        showToast(`Restored 1 unit of ${item.name}!`, 'info');
-        loadProducts(true);
-      } else {
-        showToast(data.error || 'Failed to restock item.', 'error');
+    let restoredCount = 0;
+    if (entry.isBatch && Array.isArray(entry.items)) {
+      for (const item of entry.items) {
+        try {
+          const res = await authFetch(`/api/admin/products/${item.productId}/restock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variant_id: item.variantId }),
+          });
+          if (res.ok) restoredCount++;
+        } catch (e) {}
       }
-    } catch (err) {
-      if (err.message !== 'Unauthorized') showToast(err.message, 'error');
+    } else {
+      try {
+        const res = await authFetch(`/api/admin/products/${entry.productId}/restock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ variant_id: entry.variantId }),
+        });
+        if (res.ok) restoredCount++;
+      } catch (e) {}
     }
+
+    sessionDeductions.splice(idx, 1);
+    updateQsDeductionBar();
+    renderDeductionLogList();
+    showToast(`Restored ${restoredCount} item(s) back into inventory!`, 'info');
+    loadProducts(true);
   }
 
   // Quick Sell Deduction Log Drawer
@@ -1364,7 +1660,7 @@
       <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between text-xs">
         <div>
           <p class="font-bold text-white">${escapeHtml(item.name)}</p>
-          <p class="text-[10px] text-slate-400">${item.time} · ${formatUSD(item.price)}</p>
+          <p class="text-[10px] text-slate-400">${item.time} · ${formatUSD(item.totalPrice != null ? item.totalPrice : item.price)}</p>
         </div>
         <button type="button" onclick="window.undoDeductionItem('${item.id}')"
           class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition">

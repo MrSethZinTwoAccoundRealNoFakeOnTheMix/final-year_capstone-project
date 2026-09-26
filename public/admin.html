@@ -159,11 +159,22 @@
     <!-- ───────────────────────────────────────────────────────────── -->
     <!-- TAB 3: QUICK SELL                                             -->
     <!-- ───────────────────────────────────────────────────────────── -->
-    <section id="tab-content-quicksell" class="hidden space-y-3 pb-8">
+    <section id="tab-content-quicksell" class="hidden space-y-3 pb-24">
 
-      <!-- Category Chip Row (sticky) -->
-      <div id="qs-category-chips" class="flex space-x-2 overflow-x-auto no-scrollbar pb-0.5 sticky top-0 bg-[#0e101a]/95 backdrop-blur-md py-2 z-10">
-        <!-- Rendered by JS -->
+      <!-- Sticky Search & Category Header -->
+      <div class="sticky top-[53px] bg-[#0e101a]/95 backdrop-blur-md pt-1 pb-2 z-10 space-y-2">
+        <!-- Quick Search Bar -->
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
+          <input type="text" id="qs-search-input" placeholder="Search by title, SKU, or category..."
+            class="w-full bg-[#171928] border border-white/15 focus:border-[#c9a84c] rounded-xl pl-8 pr-8 py-2 text-xs text-white placeholder-slate-400 outline-none transition">
+          <button type="button" id="qs-search-clear" onclick="window.clearQsSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold w-5 h-5 flex items-center justify-center">✕</button>
+        </div>
+
+        <!-- Category Chip Row -->
+        <div id="qs-category-chips" class="flex space-x-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <!-- Rendered by JS -->
+        </div>
       </div>
 
       <!-- Recent Deductions Bar -->
@@ -172,11 +183,12 @@
         <button onclick="window.openDeductionLog()" class="text-[#c9a84c] font-semibold hover:underline">Review / Undo →</button>
       </div>
 
-      <!-- Product Grid -->
-      <div id="qs-grid" class="grid grid-cols-2 gap-3">
+      <!-- Compact 3-Column Product Grid -->
+      <div id="qs-grid" class="grid grid-cols-3 gap-2">
         <!-- Rendered by JS -->
-        <div class="skeleton rounded-2xl h-52"></div>
-        <div class="skeleton rounded-2xl h-52"></div>
+        <div class="skeleton rounded-2xl h-44"></div>
+        <div class="skeleton rounded-2xl h-44"></div>
+        <div class="skeleton rounded-2xl h-44"></div>
       </div>
     </section>
 
@@ -398,8 +410,16 @@
 
   <!-- ─── Quick Sell: Deduct Confirmation Sheet ─────────────────────────── -->
   <div id="qs-confirm-sheet" class="hidden fixed inset-0 z-[65] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto p-5 shadow-2xl">
-      <div class="flex items-center space-x-4 mb-5">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto p-5 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 flex-shrink-0">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-1.5" id="qs-confirm-title">
+          <span>📦 Confirm Stock Deduction</span>
+        </h3>
+        <button onclick="window.closeQsConfirm()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">✕</button>
+      </div>
+
+      <!-- Single Item Preview Row -->
+      <div id="qs-confirm-single" class="py-4 flex items-center space-x-4">
         <img id="qs-confirm-img" src="" alt="" class="w-16 h-16 rounded-2xl object-cover border border-white/15 bg-slate-900">
         <div>
           <p class="text-xs text-slate-400 mb-0.5" id="qs-confirm-category"></p>
@@ -407,27 +427,67 @@
           <p class="text-sm font-extrabold text-[#c9a84c]" id="qs-confirm-price"></p>
         </div>
       </div>
-      <p class="text-xs text-slate-400 text-center mb-4">Deduct <strong class="text-white">1 unit</strong> from inventory?</p>
-      <div class="flex space-x-2">
-        <button onclick="window.closeQsConfirm()" class="flex-1 py-3 rounded-xl bg-white/10 text-slate-300 font-bold text-sm">Cancel</button>
-        <button id="qs-confirm-yes-btn" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition">− Deduct 1</button>
+
+      <!-- Multi-Item Batch Preview Container -->
+      <div id="qs-confirm-batch-list" class="hidden flex-1 overflow-y-auto py-3 space-y-2 overscroll-contain">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="pt-3 border-t border-white/10 flex-shrink-0 space-y-3">
+        <div class="flex items-center justify-between text-xs px-1">
+          <span class="text-slate-400">Total Deduction:</span>
+          <span class="text-sm font-extrabold text-[#c9a84c]" id="qs-confirm-total-badge">$0.00</span>
+        </div>
+        <div class="flex space-x-2">
+          <button onclick="window.closeQsConfirm()" class="flex-1 py-3 rounded-xl bg-white/10 text-slate-300 font-bold text-xs">Cancel</button>
+          <button id="qs-confirm-yes-btn" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">− Confirm Deduction</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ─── Quick Sell: Variant Style Drawer ──────────────────────────────── -->
+  <!-- ─── Quick Sell: Variant Style Drawer (Compact 3-Column Grid) ────────── -->
   <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
     <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="flex-shrink-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between z-10">
-        <div>
-          <h3 class="text-sm font-bold text-white" id="qs-variant-drawer-title">Choose Style</h3>
-          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub">Select a style to deduct from inventory</p>
+      <div class="flex-shrink-0 bg-[#171928] px-4 pt-4 pb-2.5 border-b border-white/10 flex items-center justify-between z-10">
+        <div class="min-w-0 pr-2">
+          <h3 class="text-sm font-bold text-white truncate" id="qs-variant-drawer-title">Choose Style</h3>
+          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub">Select styles to deduct</p>
         </div>
-        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition">✕</button>
+        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition flex-shrink-0">✕</button>
       </div>
-      <div id="qs-variant-list" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 overscroll-contain">
-        <!-- Rendered by JS -->
+      <div id="qs-variant-list" class="flex-1 overflow-y-auto p-2.5 grid grid-cols-3 gap-2 overscroll-contain">
+        <!-- Rendered by JS as compact 3-column style cards -->
       </div>
+      <div class="p-3 border-t border-white/10 bg-[#171928] flex items-center justify-between">
+        <span class="text-[11px] text-slate-400">Tap cards to select / adjust</span>
+        <button onclick="window.closeVariantDrawer()" class="btn-gold px-4 py-1.5 rounded-xl text-xs font-bold shadow-md">
+          Done ✓
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Quick Sell: Floating Multi-Select Basket Tray ───────────────────── -->
+  <div id="qs-batch-bar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-[#171928]/95 backdrop-blur-md border border-[#c9a84c] rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform">
+    <div class="flex items-center space-x-2.5 min-w-0">
+      <div class="w-8 h-8 rounded-xl bg-[#c9a84c]/20 border border-[#c9a84c]/40 flex items-center justify-center text-sm">
+        🛒
+      </div>
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-white leading-tight">
+          <span id="qs-batch-count" class="text-[#c9a84c]">0</span> items selected
+        </p>
+        <p class="text-[11px] font-extrabold text-slate-300" id="qs-batch-total">$0.00</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-1.5">
+      <button onclick="window.clearQsBasket()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold transition">
+        Clear
+      </button>
+      <button onclick="window.qsOpenBatchConfirm()" class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition">
+        <span>Deduct All ➔</span>
+      </button>
     </div>
   </div>
 
