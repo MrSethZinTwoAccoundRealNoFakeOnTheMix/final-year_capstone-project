@@ -30,11 +30,11 @@
       promoTitle: 'Fine Cambodian Craftsmanship',
       promoSub: 'Direct checkout via KHQR & verified Messenger delivery.',
       catAll: 'All Pieces',
-      catBag: '👜 Bags',
-      catHairpin: '✨ Hairpins',
-      catBrooch: '🧷 Brooches',
-      catRing: '💍 Rings',
-      catBracelet: '✨ Bracelets',
+      catBag: 'Bags',
+      catHairpin: 'Hairpins',
+      catBrooch: 'Brooches',
+      catRing: 'Rings',
+      catBracelet: 'Bracelets',
       exploreAll: 'Explore All',
       rateDisplay: '1 USD = ៛4,100',
       piecesCount: '{n} piece{s} available',
@@ -69,9 +69,9 @@
       scanToPay: 'Scan to Pay',
       merchant: 'Merchant:',
       totalDue: 'Total Due:',
-      khqrNote: '💡 Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!',
+      khqrNote: 'Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!',
       keepShopping: 'Keep Shopping',
-      confirmOrder: 'Confirm Order ✨',
+      confirmOrder: 'Confirm Order',
       submitting: 'Submitting Order…',
       orderReceivedTag: 'Order Received',
       thankYou: 'Thank You!',
@@ -81,7 +81,7 @@
       orderStatus: 'Status:',
       pendingVerification: 'PENDING VERIFICATION',
       messengerNote: 'A receipt carousel has been sent to your Messenger chat! Our shop owner will verify payment and update shipping.',
-      continueShopping: 'Continue Shopping ✨',
+      continueShopping: 'Continue Shopping',
       clearBagConfirm: 'Clear all items from your shopping bag?',
       bagCleared: 'Shopping bag cleared',
       addedToBag: 'Added "{name}" to bag!',
@@ -98,10 +98,10 @@
       payOptVetTitle: 'VET / J&T Express',
       payOptVetSub: 'Delivery across all 25 provinces',
       codPayHeading: 'Cash on Delivery (Grab Express)',
-      codPayDesc: '🛵 Cash on Delivery (Grab Express): For Phnom Penh only.',
+      codPayDesc: 'Cash on Delivery (Grab Express): For Phnom Penh only.',
       vetPayHeading: 'Provincial Delivery (Virak Buntham / J&T)',
-      vetPayDesc: '📦 Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.',
-      addressBranchHint: '💡 Branch / Campus or Home',
+      vetPayDesc: 'Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.',
+      addressBranchHint: 'Branch / Campus or Home',
       addressPlaceholderVet: 'e.g. Province & Courier Branch / Campus (e.g. VET Siem Reap Branch) or Home Address...',
       addressPlaceholderDefault: 'House #, Street, Sangkat/Khan or Province...',
     },
@@ -122,11 +122,11 @@
       promoTitle: 'សិប្បកម្មគ្រឿងអលង្ការខ្មែរប្រណិត',
       promoSub: 'ទូទាត់ផ្ទាល់តាម KHQR & ដឹកជញ្ជូនរហ័សប្រកបដោយទំនុកចិត្ត។',
       catAll: 'គ្រឿងអលង្ការទាំងអស់',
-      catBag: '👜 កាបូប',
-      catHairpin: '✨ ស្នាតសក់',
-      catBrooch: '🧷 កន្លាស់អាវ',
-      catRing: '💍 ចិញ្ចៀន',
-      catBracelet: '✨ កងដៃ',
+      catBag: 'កាបូប',
+      catHairpin: 'ស្នាតសក់',
+      catBrooch: 'កន្លាស់អាវ',
+      catRing: 'ចិញ្ចៀន',
+      catBracelet: 'កងដៃ',
       exploreAll: 'មើលទាំងអស់',
       rateDisplay: '១ ដុល្លារ = ៛៤,១០០',
       piecesCount: 'មាន {n} មុខសម្រាប់ជ្រើសរើស',
@@ -161,9 +161,9 @@
       scanToPay: 'ស្កេនដើម្បីទូទាត់',
       merchant: 'ឈ្មោះគណនី:',
       totalDue: 'ត្រូវទូទាត់:',
-      khqrNote: '💡 ទូទាត់តាមកម្មវិធី Bakong ណាមួយ (ABA, Wing, ACLEDA)។ ម្ចាស់ហាងនឹងពិនិត្យផ្ទៀងផ្ទាត់ការទូទាត់មុននឹងដឹកជញ្ជូន!',
+      khqrNote: 'ទូទាត់តាមកម្មវិធី Bakong ណាមួយ (ABA, Wing, ACLEDA)។ ម្ចាស់ហាងនឹងពិនិត្យផ្ទៀងផ្ទាត់ការទូទាត់មុននឹងដឹកជញ្ជូន!',
       keepShopping: 'បន្តមើលទំនិញ',
-      confirmOrder: 'បញ្ជាក់ការបញ្ជាទិញ ✨',
+      confirmOrder: 'បញ្ជាក់ការបញ្ជាទិញ',
       submitting: 'កំពុងបញ្ជូនការបញ្ជាទិញ…',
       orderReceivedTag: 'បានទទួលការបញ្ជាទិញ',
       thankYou: 'សូមអរគុណ!',
@@ -173,7 +173,7 @@
       orderStatus: 'ស្ថានភាព:',
       pendingVerification: 'រង់ចាំការផ្ទៀងផ្ទាត់ការទូទាត់',
       messengerNote: 'បង្កាន់ដៃបញ្ជាទិញត្រូវបានផ្ញើចូលក្នុង Messenger របស់អ្នកហើយ! ម្ចាស់ហាងនឹងពិនិត្យការទូទាត់ និងចាត់ចែងដឹកជញ្ជូន។',
-      continueShopping: 'បន្តទិញទំនិញ ✨',
+      continueShopping: 'បន្តទិញទំនិញ',
       clearBagConfirm: 'តើអ្នកពិតជាចង់លុបទំនិញទាំងអស់ចេញពីកន្ត្រកមែនទេ?',
       bagCleared: 'បានសម្អាតកន្ត្រកទំនិញរួចរាល់',
       addedToBag: 'បានដាក់ "{name}" ចូលកន្ត្រក!',
@@ -190,10 +190,10 @@
       payOptVetTitle: 'វីរៈ ប៊ុនថាំ / J&T Express',
       payOptVetSub: 'ដឹកជញ្ជូនទូទាំង ២៥ ខេត្ត-ក្រុង',
       codPayHeading: 'ទូទាត់ពេលទំនិញដល់ (Grab Express)',
-      codPayDesc: '🛵 Cash on Delivery (Grab Express): សម្រាប់តែរាជធានីភ្នំពេញប៉ុណ្ណោះ។',
+      codPayDesc: 'Cash on Delivery (Grab Express): សម្រាប់តែរាជធានីភ្នំពេញប៉ុណ្ណោះ។',
       vetPayHeading: 'ផ្ញើតាមខេត្ត (វីរៈ ប៊ុនថាំ / J&T)',
-      vetPayDesc: '📦 Provincial Delivery (Virak Buntham / J&T): សេវាផ្ញើទំនិញទូទាំង ២៥ ខេត្ត-ក្រុង។',
-      addressBranchHint: '💡 ឈ្មោះសាខា ឬអាសយដ្ឋានផ្ទះ',
+      vetPayDesc: 'Provincial Delivery (Virak Buntham / J&T): សេវាផ្ញើទំនិញទូទាំង ២៥ ខេត្ត-ក្រុង។',
+      addressBranchHint: 'ឈ្មោះសាខា ឬអាសយដ្ឋានផ្ទះ',
       addressPlaceholderVet: 'ឧ. ខេត្ត និងសាខាបញ្ញើ (ឧ. វីរៈ ប៊ុនថាំ សាខាសៀមរាប) ឬអាសយដ្ឋានផ្ទះ...',
       addressPlaceholderDefault: 'ផ្ទះលេខ, ផ្លូវ, សង្កាត់/ខណ្ឌ ឬខេត្ត...',
     }
@@ -210,32 +210,30 @@
 
   // Category Configuration & Bilingual Formatting
   const CATEGORY_DEFINITIONS = {
-    'កាបូប': { emoji: '👜', en: 'Bags', km: 'កាបូប' },
-    'ស្នាតសក់': { emoji: '✨', en: 'Hairpins', km: 'ស្នាតសក់' },
-    'កន្លាស់អាវ': { emoji: '🧷', en: 'Brooches', km: 'កន្លាស់អាវ' },
-    'ចិញ្ចៀន': { emoji: '💍', en: 'Rings', km: 'ចិញ្ចៀន' },
-    'កងដៃ': { emoji: '✨', en: 'Bracelets', km: 'កងដៃ' },
-    Bag: { emoji: '👜', en: 'Bags', km: 'កាបូប' },
-    Hairpin: { emoji: '✨', en: 'Hairpins', km: 'ស្នាតសក់' },
-    Brooch: { emoji: '🧷', en: 'Brooches', km: 'កន្លាស់អាវ' },
-    Ring: { emoji: '💍', en: 'Rings', km: 'ចិញ្ចៀន' },
-    Bracelet: { emoji: '✨', en: 'Bracelets', km: 'កងដៃ' },
-    Necklace: { emoji: '📿', en: 'Necklaces', km: 'ខ្សែក' },
-    Earring: { emoji: '💎', en: 'Earrings', km: 'ក្រវិល' },
+    'កាបូប': { en: 'Bags', km: 'កាបូប' },
+    'ស្នាតសក់': { en: 'Hairpins', km: 'ស្នាតសក់' },
+    'កន្លាស់អាវ': { en: 'Brooches', km: 'កន្លាស់អាវ' },
+    'ចិញ្ចៀន': { en: 'Rings', km: 'ចិញ្ចៀន' },
+    'កងដៃ': { en: 'Bracelets', km: 'កងដៃ' },
+    Bag: { en: 'Bags', km: 'កាបូប' },
+    Hairpin: { en: 'Hairpins', km: 'ស្នាតសក់' },
+    Brooch: { en: 'Brooches', km: 'កន្លាស់អាវ' },
+    Ring: { en: 'Rings', km: 'ចិញ្ចៀន' },
+    Bracelet: { en: 'Bracelets', km: 'កងដៃ' },
+    Necklace: { en: 'Necklaces', km: 'ខ្សែក' },
+    Earring: { en: 'Earrings', km: 'ក្រវិល' },
   };
 
-  function getCategoryDisplay(cat, options = {}) {
-    const withEmoji = options.withEmoji !== false;
+  function getCategoryDisplay(cat) {
     if (!cat) return 'Jewelry';
     if (cat === 'ALL') {
       return t('catAll') || (currentLang === 'km' ? 'គ្រឿងអលង្ការទាំងអស់' : 'All Pieces');
     }
     const def = CATEGORY_DEFINITIONS[cat];
     if (def) {
-      const label = currentLang === 'en' ? def.en : def.km;
-      return withEmoji ? `${def.emoji} ${label}` : label;
+      return currentLang === 'en' ? def.en : def.km;
     }
-    return withEmoji ? `✦ ${escapeHtml(cat)}` : escapeHtml(cat);
+    return escapeHtml(cat);
   }
 
   // State
@@ -519,7 +517,7 @@
     submitOrderText.textContent = t('confirmOrder');
     const barCheckoutBtn = document.getElementById('bar-checkout-btn');
     if (barCheckoutBtn) {
-      barCheckoutBtn.innerHTML = `<span>${t('viewCart')}</span><span class="text-sm">🛍️</span>`;
+      barCheckoutBtn.innerHTML = `<span>${t('viewCart')}</span>`;
     }
 
     // Refresh UI elements
@@ -644,7 +642,7 @@
 
     categoryPillsContainer.innerHTML = displayCategories.map((cat) => {
       const isActive = cat === currentCategory;
-      const label = getCategoryDisplay(cat, { withEmoji: true });
+      const label = getCategoryDisplay(cat);
       return `
         <button class="category-pill ${isActive ? 'active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
           data-category="${escapeHtml(cat)}"
@@ -769,18 +767,11 @@
               }
             </div>
 
-            <!-- SKU pill -->
-            <div class="absolute top-2 right-2">
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/60 text-slate-300 backdrop-blur-sm">
-                ${product.id}
-              </span>
-            </div>
-
             <!-- Styles Pill on photo if multi-variant -->
             ${hasVariants ? `
               <div class="absolute bottom-2 right-2">
                 <span class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/75 text-[#f3d489] border border-[#c9a84c]/30 backdrop-blur-sm">
-                  ✨ ${product.variant_list.length} Styles
+                  ${product.variant_list.length} Styles
                 </span>
               </div>
             ` : ''}
@@ -789,7 +780,7 @@
           <!-- Details -->
           <div class="p-2 pb-0.5">
             <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
-              ${escapeHtml(getCategoryDisplay(product.category, { withEmoji: false }))}
+              ${escapeHtml(getCategoryDisplay(product.category))}
             </span>
             <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
               ${escapeHtml(product.name)}
@@ -810,7 +801,7 @@
             ${isSoldOut ? 'disabled' : ''}
             onclick="event.stopPropagation(); window.openStyleModal('${product.id}')"
             class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-1.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
-            <span>${isSoldOut ? t('soldOut') : (hasVariants ? '✨ Select Style' : t('addToBag'))}</span>
+            <span>${isSoldOut ? t('soldOut') : (hasVariants ? 'Select Style' : t('addToBag'))}</span>
           </button>
         </div>
       </div>
@@ -888,16 +879,13 @@
     let html = '';
     for (const [catName, items] of catMap.entries()) {
       if (items.length === 0) continue;
-      const def = CATEGORY_DEFINITIONS[catName];
-      const icon = def ? def.emoji : '✦';
-      const label = getCategoryDisplay(catName, { withEmoji: false });
+      const label = getCategoryDisplay(catName);
       const previewItems = items.slice(0, 4); // Featured 4 items per section
 
       html += `
         <section class="category-curated-block">
           <div class="section-header">
             <div class="flex items-center space-x-2">
-              <span class="text-base">${icon}</span>
               <h3 class="text-sm font-bold text-white tracking-wide">
                 ${escapeHtml(label)}
                 <span class="text-[11px] font-normal text-slate-400 ml-1">(${items.length})</span>
@@ -1009,7 +997,7 @@
 
     // 5. Name
     const nameLabel = document.getElementById('sm-focused-name');
-    if (nameLabel) nameLabel.innerHTML = `<span>✨</span> <span>${escapeHtml(v.color_name)}</span>`;
+    if (nameLabel) nameLabel.innerHTML = `<span>${escapeHtml(v.color_name)}</span>`;
 
     // 6. Highlight focused tile ring & auto-scroll into view in horizontal reel
     product.variant_list.forEach((variant, i) => {
@@ -1193,11 +1181,8 @@
           ${gallerySlides}
         </div>
 
-        <!-- Stock + SKU overlay -->
+        <!-- Stock badge -->
         <div id="sm-stock-badge" class="absolute top-2.5 left-2.5">${stockBadgeHtml}</div>
-        <div class="absolute top-2.5 right-2.5">
-          <span id="sm-sku" class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-black/70 text-slate-300 backdrop-blur-sm">${initialV ? initialV.id : product.id}</span>
-        </div>
 
         ${arrowsHtml}
         ${dotsHtml}
@@ -1207,7 +1192,7 @@
       <div class="flex items-start justify-between gap-3 pt-0.5">
         <div class="min-w-0 flex-1">
           <h2 id="style-modal-title" class="text-sm font-extrabold text-white leading-snug truncate">${escapeHtml(product.name)}</h2>
-          ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-[#f3d489] font-semibold mt-0.5 flex items-center space-x-1 truncate"><span>✨</span> <span>${escapeHtml(initialV ? initialV.color_name : '')}</span></p>` : ''}
+          ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-[#f3d489] font-semibold mt-0.5 flex items-center space-x-1 truncate"><span>${escapeHtml(initialV ? initialV.color_name : '')}</span></p>` : ''}
         </div>
         <div class="text-right flex-shrink-0">
           <div id="sm-price-usd" class="text-base font-extrabold text-white leading-none">${formatUSD(initPrice)}</div>
@@ -1331,7 +1316,7 @@
         btn.disabled = false;
         btn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
         const itemWord = totalQty === 1 ? 'item' : 'items';
-        btn.innerHTML = `<span>Add ${totalQty} ${itemWord} to Bag • ${formatUSD(totalPrice)}</span><span class="text-sm">🛍️</span>`;
+        btn.innerHTML = `<span>Add ${totalQty} ${itemWord} to Bag • ${formatUSD(totalPrice)}</span>`;
       }
     } else {
       // No-variant product: use sm-qty
@@ -1344,7 +1329,7 @@
       } else {
         btn.disabled = false;
         btn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
-        btn.innerHTML = `<span>${t('addToBag')} • ${formatUSD(price * qty)}</span><span class="text-sm">🛍️</span>`;
+        btn.innerHTML = `<span>${t('addToBag')} • ${formatUSD(price * qty)}</span>`;
       }
     }
 

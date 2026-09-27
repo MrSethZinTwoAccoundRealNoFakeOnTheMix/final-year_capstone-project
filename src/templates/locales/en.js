@@ -1,5 +1,5 @@
 module.exports = {
-  shopGuide: `👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Luxe Jewelry ✨
+  shopGuide: `👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Jomrous Jewelry ✨
 
 🛍️ របៀបបញ្ជាទិញ & ប្រើប្រាស់ហាង៖
 ១. ចុចប៊ូតុង "✨ ចូលមើលហាង" ខាងក្រោម ដើម្បីបើកទំព័រទំនិញ
@@ -13,10 +13,10 @@ module.exports = {
 2. Select your favorite jewelry and tap "Add to Cart".
 3. Enter your delivery info and pay via KHQR at checkout.`,
 
-  welcomeGreeting: `👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Luxe Jewelry ✨
+  welcomeGreeting: `👋 សួស្តី! សូមស្វាគមន៍មកកាន់ Jomrous Jewelry ✨
 តើពួកយើងអាចជួយអ្វីបានដែរ? បើលោកអ្នកចង់មើលទំនិញ ឬបញ្ជាទិញ សូមចុចប៊ូតុងខាងក្រោមនេះ👇
 
-👋 Hello! Welcome to Luxe Jewelry ✨
+👋 Hello! Welcome to Jomrous Jewelry ✨
 How can we help you today? To browse our collection or order, tap the button below👇`,
 
   openShopButtonText: '✨ ចូលមើលហាង (Open Shop)',

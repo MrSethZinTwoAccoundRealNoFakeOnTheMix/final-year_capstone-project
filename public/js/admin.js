@@ -3174,8 +3174,7 @@
     const top5 = items.slice(0, 5);
 
     overviewTopProducts.innerHTML = top5.map((item, index) => {
-      const medals = ['🥇', '🥈', '🥉'];
-      const rankBadge = medals[index] || `#${index + 1}`;
+      const rankBadge = `#${index + 1}`;
       return `
         <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#c9a84c]/40 transition">
           <div class="flex items-center space-x-2.5 min-w-0">

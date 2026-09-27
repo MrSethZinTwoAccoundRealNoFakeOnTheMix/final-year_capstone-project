@@ -6,7 +6,7 @@ const telegramService = require('./services/telegram.service');
 const orderService = require('./services/order.service');
 
 const server = app.listen(PORT, () => {
-  logger.info(`✨ Luxe Jewelry server running on http://localhost:${PORT} [${NODE_ENV}]`);
+  logger.info(`✨ Jomrous server running on http://localhost:${PORT} [${NODE_ENV}]`);
 });
 
 // Run 7-day auto-delivery check on startup and periodically every 30 minutes

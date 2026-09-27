@@ -139,7 +139,7 @@ if (!TELEGRAM_BOT_TOKEN) {
 
       return bot.sendMessage(
         chatId,
-        `👋 *Welcome to Luxe Jewelry Owner Panel* 💍\n\n` +
+        `👋 *Welcome to Jomrous Owner Panel* 💍\n\n` +
         `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
         `📱 *Features Enabled:*\n` +
         `• Real-time new order alerts with instant 1-tap actions\n` +

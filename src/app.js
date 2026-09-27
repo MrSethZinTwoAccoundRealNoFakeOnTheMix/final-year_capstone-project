@@ -31,7 +31,7 @@ app.get(['/', '/webview'], (req, res) => {
     return res.sendFile(indexPath);
   }
   res.json({
-    name: 'Luxe Jewelry API',
+    name: 'Jomrous API',
     status: 'online',
     phase: 'Phase 2 (Backend API Ready)',
     message: 'Storefront webview will be populated in Phase 3.',
@@ -45,7 +45,7 @@ app.get('/admin', (req, res) => {
     return res.sendFile(adminPath);
   }
   res.json({
-    name: 'Luxe Jewelry Admin API',
+    name: 'Jomrous Admin API',
     status: 'online',
     phase: 'Phase 2 (Backend API Ready)',
     message: 'Admin dashboard UI will be populated in Phase 4.',

@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Luxe Jewelry ✨ Boutique</title>
+  <title>Jomrous Boutique</title>
 
   <!-- Google Fonts: Outfit & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,10 +50,9 @@
   <header class="sticky top-0 z-30 glass-header border-b border-white/10 px-4 py-3.5 transition-all">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2">
-        <span class="text-xl">✨</span>
         <div>
           <h1 class="text-lg font-extrabold tracking-tight text-white leading-none">
-            LUXE <span class="text-[#c9a84c]">JEWELRY</span>
+            JOMROUS <span class="text-[#c9a84c]">JEWELRY</span>
           </h1>
           <p class="text-[10px] text-slate-400 font-medium tracking-wider uppercase mt-0.5">Phnom Penh Boutique</p>
         </div>
@@ -115,7 +114,7 @@
         </svg>
       </div>
       <input type="text" id="customer-search-input"
-        placeholder="Search collection, style, or SKU..."
+        placeholder="Search collection or style..."
         autocomplete="off"
         class="w-full pl-10 pr-9 py-2.5 bg-[#171829] border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:ring-1 focus:ring-[#c9a84c] transition shadow-inner">
       <button id="search-clear-btn" type="button" onclick="window.clearCustomerSearch()"
@@ -191,7 +190,6 @@
       <button id="bar-checkout-btn" onclick="openCartSheet()"
         class="btn-gold px-5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5">
         <span>View Cart</span>
-        <span class="text-sm">🛍️</span>
       </button>
     </div>
   </div>
@@ -264,7 +262,6 @@
           </div>
 
           <div id="sheet-cart-empty" class="hidden py-8 text-center bg-white/5 rounded-xl border border-white/5">
-            <span class="text-3xl block mb-1">🛍️</span>
             <p class="text-xs font-semibold text-slate-300">Your bag is empty</p>
             <p class="text-[11px] text-slate-500 mt-0.5">Add fine jewelry pieces from the catalog to order.</p>
           </div>
@@ -413,7 +410,7 @@
             <span class="text-xs font-bold text-white" id="cod-pay-heading">Cash on Delivery (Grab Express)</span>
           </div>
           <p class="text-[11px] text-slate-300 leading-relaxed" id="cod-pay-desc">
-            🛵 Cash on Delivery (Grab Express): For Phnom Penh only.
+            Cash on Delivery (Grab Express): For Phnom Penh only.
           </p>
         </div>
 
@@ -443,7 +440,7 @@
 
             <div class="flex-1 text-xs">
               <p class="text-slate-400 text-[11px]" id="merchant-label">Merchant:</p>
-              <p class="font-bold text-white text-xs">LUXE JEWELRY SHOP</p>
+              <p class="font-bold text-white text-xs">JOMROUS JEWELRY</p>
               <div class="mt-2 py-1 px-2 rounded-lg bg-black/30 border border-white/5">
                 <span class="text-[10px] text-slate-400 block" id="total-due-label">Total Due:</span>
                 <span id="khqr-due-usd" class="font-extrabold text-sm text-white">$0.00</span>
@@ -453,8 +450,7 @@
           </div>
 
           <p class="text-[10px] text-slate-400 mt-2.5 leading-relaxed" id="khqr-note-text">
-            💡 Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before
-            shipping!
+            Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!
           </p>
         </div>
 
@@ -467,7 +463,7 @@
               J&T)</span>
           </div>
           <p class="text-[11px] text-slate-300 leading-relaxed" id="vet-pay-desc">
-            📦 Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.
+            Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.
           </p>
         </div>
 
@@ -483,7 +479,7 @@
           <button type="button" id="submit-order-btn" onclick="submitCustomerOrder()"
             class="btn-gold flex-1 py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2">
             <span id="submit-order-spinner" class="hidden animate-spin">⏳</span>
-            <span id="submit-order-text">Confirm Order ✨</span>
+            <span id="submit-order-text">Confirm Order</span>
           </button>
         </div>
       </div>
@@ -541,7 +537,7 @@
 
       <button type="button" onclick="closeSuccessModal()"
         class="btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg">
-        Continue Shopping ✨
+        Continue Shopping
       </button>
     </div>
   </div>
