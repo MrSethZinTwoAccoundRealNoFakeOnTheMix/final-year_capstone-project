@@ -2,6 +2,7 @@ const authService = require('../services/auth.service');
 const productRepository = require('../repositories/product.repository');
 const categoryRepository = require('../repositories/category.repository');
 const variantRepository = require('../repositories/variant.repository');
+const posRepository = require('../repositories/pos.repository');
 const orderService = require('../services/order.service');
 const imageService = require('../services/image.service');
 
@@ -340,6 +341,44 @@ function quickSellRestock(req, res, next) {
   }
 }
 
+/**
+ * Get all POS Quick Sell records
+ */
+function getQuickSells(req, res, next) {
+  try {
+    const sales = posRepository.findAll();
+    res.json(sales);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Atomic batch checkout for POS Quick Sell Cart
+ */
+function checkoutQuickSell(req, res, next) {
+  try {
+    const { items, payment_method, note } = req.body;
+    const sale = posRepository.createSale({ items, payment_method, note });
+    res.json({ success: true, sale });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+/**
+ * Undo / Restock an entire POS Quick Sell
+ */
+function undoQuickSell(req, res, next) {
+  try {
+    const { id } = req.params;
+    const result = posRepository.undoSale(id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
 module.exports = {
   login,
   getProducts,
@@ -358,5 +397,8 @@ module.exports = {
   deleteCategory,
   quickSellDeduct,
   quickSellRestock,
+  getQuickSells,
+  checkoutQuickSell,
+  undoQuickSell,
 };
 

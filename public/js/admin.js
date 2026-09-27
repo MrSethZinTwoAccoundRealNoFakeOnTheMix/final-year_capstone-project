@@ -129,6 +129,12 @@
   const expandedStylesSet = new Set();
   const qsBasket = new Map(); // Key: itemKey -> { key, productId, variantId, product, variant, name, category, unitPrice, photoUrl, maxStock, qty }
   let sessionDeductions = [];
+  let quickSellsList = [];
+  let currentOverviewRange = 'today'; // 'today', 'yesterday', '7d', '30d', 'all', 'custom'
+  let customRangeStart = null;
+  let customRangeEnd = null;
+  let currentChartMetric = 'revenue'; // 'revenue' or 'units'
+  let overviewChartInstance = null;
   let currentConfirmAction = null;
 
   // DOM Elements
@@ -239,6 +245,24 @@
   const statTotalOrders = document.getElementById('stat-total-orders');
   const statTotalSkus = document.getElementById('stat-total-skus');
   const statLowStock = document.getElementById('stat-low-stock');
+  const overviewPeriodBadge = document.getElementById('overview-period-badge');
+  const ovCustomDateContainer = document.getElementById('ov-custom-date-container');
+  const ovDateStartInput = document.getElementById('ov-date-start');
+  const ovDateEndInput = document.getElementById('ov-date-end');
+  const ovApplyCustomBtn = document.getElementById('ov-apply-custom-btn');
+  const statProfitUsd = document.getElementById('stat-profit-usd');
+  const statProfitMargin = document.getElementById('stat-profit-margin');
+  const statSalesCount = document.getElementById('stat-sales-count');
+  const statUnitsCount = document.getElementById('stat-units-count');
+  const statAov = document.getElementById('stat-aov');
+  const statRevenueSubtitle = document.getElementById('stat-revenue-subtitle');
+  const statPendingSummary = document.getElementById('stat-pending-summary');
+  const chartSubtitle = document.getElementById('chart-subtitle');
+  const chartBtnRevenue = document.getElementById('chart-btn-revenue');
+  const chartBtnUnits = document.getElementById('chart-btn-units');
+  const overviewTopProducts = document.getElementById('overview-top-products');
+  const overviewCategoryBars = document.getElementById('overview-category-bars');
+  const overviewCatTotal = document.getElementById('overview-cat-total');
 
   // Auth & Notifications
   const loginModal = document.getElementById('login-modal');
@@ -471,6 +495,9 @@
         }
       }
       tabContentOverview.classList.toggle('hidden', activeTab !== 'overview');
+      if (activeTab === 'overview') {
+        updateOverviewStats();
+      }
     });
   });
 
@@ -2101,104 +2128,62 @@
     const items = Array.from(posCart.values());
     window.closeQsCartDrawer();
 
-    const executedDeductions = [];
-    let failedItem = null;
+    try {
+      const res = await authFetch('/api/admin/quick-sells/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_method: 'CASH',
+          items: items.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            name: item.name,
+            qty: item.qty,
+            price: item.unitPrice,
+          })),
+        }),
+      });
 
-    // Atomically deduct each unit
-    for (const item of items) {
-      for (let i = 0; i < item.qty; i++) {
-        try {
-          const res = await authFetch(`/api/admin/products/${item.productId}/deduct`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ variant_id: item.variantId }),
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            executedDeductions.push({
-              productId: item.productId,
-              variantId: item.variantId,
-              name: item.name,
-              price: item.unitPrice,
-            });
-          } else {
-            failedItem = item.name;
-            break;
-          }
-        } catch (err) {
-          failedItem = item.name;
-          break;
-        }
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data.error || 'Failed to complete quick sell.', 'error');
+        return;
       }
-      if (failedItem) break;
-    }
 
-    if (executedDeductions.length > 0) {
-      const logEntry = {
-        id: 'sale-' + Date.now(),
-        isBatch: true,
-        items: executedDeductions,
-        name: executedDeductions.length === 1 
-          ? executedDeductions[0].name 
-          : `${executedDeductions.length} items (${executedDeductions[0].name}...)`,
-        count: executedDeductions.length,
-        totalPrice: executedDeductions.reduce((sum, d) => sum + d.price, 0),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      sessionDeductions.unshift(logEntry);
-      updateQsDeductionBar();
-
+      const sale = data.sale;
       showToast(
-        `✨ Sale recorded! Deducted ${executedDeductions.length} item(s).`,
+        `✨ Sale recorded! Sold ${sale.item_count} item(s) for ${formatUSD(sale.total_amount)}.`,
         'success',
-        () => undoDeduction(logEntry.id)
+        () => undoDeduction(sale.id)
       );
 
-      // Clear cart from memory and LocalStorage now that sale is complete
+      // Clear cart from memory and storage
       posCart.clear();
       savePosCartToStorage();
       updatePosCartBar();
       loadProducts(true);
-    }
-
-    if (failedItem) {
-      showToast(`Could not deduct remaining stock for ${failedItem}.`, 'error');
+      loadQuickSells(true);
+    } catch (err) {
+      showToast('Quick Sell error: ' + err.message, 'error');
     }
   };
 
-  async function undoDeduction(logId) {
-    const idx = sessionDeductions.findIndex((d) => String(d.id) === String(logId));
-    if (idx === -1) return;
-    const entry = sessionDeductions[idx];
-
-    let restoredCount = 0;
-    if (entry.isBatch && Array.isArray(entry.items)) {
-      for (const item of entry.items) {
-        try {
-          const res = await authFetch(`/api/admin/products/${item.productId}/restock`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ variant_id: item.variantId }),
-          });
-          if (res.ok) restoredCount++;
-        } catch (e) {}
+  async function undoDeduction(saleId) {
+    try {
+      const res = await authFetch(`/api/admin/quick-sells/${saleId}/undo`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Restocked item(s) back into inventory!', 'info');
+        loadProducts(true);
+        loadQuickSells(true);
+      } else {
+        showToast(data.error || 'Could not restock items.', 'error');
       }
-    } else {
-      try {
-        const res = await authFetch(`/api/admin/products/${entry.productId}/restock`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ variant_id: entry.variantId }),
-        });
-        if (res.ok) restoredCount++;
-      } catch (e) {}
+    } catch (err) {
+      showToast('Error undoing sale: ' + err.message, 'error');
     }
-
-    sessionDeductions.splice(idx, 1);
-    updateQsDeductionBar();
-    renderDeductionLogList();
-    showToast(`Restored ${restoredCount} item(s) back into inventory!`, 'info');
-    loadProducts(true);
   }
 
   // Quick Sell Deduction Log Drawer
@@ -2733,25 +2718,551 @@
   };
 
   // ─────────────────────────────────────────────────────────────
-  // OVERVIEW STATS
+  // QUICK SELLS (IN-PERSON POS) MANAGEMENT
   // ─────────────────────────────────────────────────────────────
+  async function loadQuickSells(silent = false) {
+    if (!adminToken) return;
+
+    try {
+      const res = await authFetch('/api/admin/quick-sells');
+      const data = await res.json();
+      quickSellsList = Array.isArray(data) ? data : [];
+
+      // Mirror completed sales into session deductions for drawer & bar
+      sessionDeductions = quickSellsList
+        .filter((s) => s.status === 'COMPLETED')
+        .map((s) => ({
+          id: s.id,
+          name: s.items && s.items.length === 1
+            ? `${s.items[0].product_name}${s.items[0].variant_name ? ' (' + s.items[0].variant_name + ')' : ''}`
+            : `${s.item_count} items`,
+          totalPrice: s.total_amount,
+          count: s.item_count,
+          time: new Date(s.created_at + (s.created_at.includes('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          items: s.items,
+          status: s.status,
+        }));
+
+      updateQsDeductionBar();
+      renderDeductionLogList();
+      updateOverviewStats();
+    } catch (err) {
+      if (!silent && err.message !== 'Unauthorized') {
+        console.error('Failed to load quick sells:', err);
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // OVERVIEW & REVENUE ANALYTICS ENGINE
+  // ─────────────────────────────────────────────────────────────
+  function parseEntryDate(dateStr) {
+    if (!dateStr) return new Date();
+    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
+      return new Date(dateStr.replace(' ', 'T') + 'Z');
+    }
+    return new Date(dateStr);
+  }
+
+  function getRangeBounds(rangeType) {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+
+    if (rangeType === 'today') {
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (rangeType === 'yesterday') {
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 999);
+    } else if (rangeType === '7d') {
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (rangeType === '30d') {
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (rangeType === 'all') {
+      return { start: new Date(0), end: new Date(8640000000000000) };
+    } else if (rangeType === 'custom') {
+      const s = customRangeStart ? new Date(customRangeStart + 'T00:00:00') : new Date(0);
+      const e = customRangeEnd ? new Date(customRangeEnd + 'T23:59:59.999') : new Date();
+      return { start: s, end: e };
+    }
+
+    return { start, end };
+  }
+
   function updateOverviewStats() {
     if (!statRevenueUsd) return;
-    let revenueUSD = 0;
-    ordersList.forEach((o) => {
-      if (['CONFIRMED', 'SHIPPED', 'COMPLETED'].includes(o.status)) {
-        revenueUSD += Number(o.total_amount || 0);
+
+    // Period badge text
+    const badgeMap = {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      '7d': 'Last 7 Days',
+      '30d': 'Last 30 Days',
+      all: 'All Time',
+      custom: customRangeStart && customRangeEnd ? `${customRangeStart} → ${customRangeEnd}` : 'Custom Range',
+    };
+    if (overviewPeriodBadge) {
+      overviewPeriodBadge.textContent = badgeMap[currentOverviewRange] || 'Selected Range';
+    }
+
+    const { start: rangeStart, end: rangeEnd } = getRangeBounds(currentOverviewRange);
+
+    // Lookups for wholesale cost & details
+    const productsMap = new Map();
+    const variantsMap = new Map();
+    for (const p of productsList) {
+      productsMap.set(p.id, p);
+      if (Array.isArray(p.variant_list)) {
+        for (const v of p.variant_list) {
+          variantsMap.set(v.id, v);
+        }
+      }
+    }
+
+    let grossRevenueUSD = 0;
+    let totalCostUSD = 0;
+    let totalTransactions = 0;
+    let totalUnitsSold = 0;
+
+    const topProductsMap = new Map(); // key: productId -> { id, name, category, photo_url, units, revenue }
+    const categoryRevenueMap = new Map();
+
+    // 1. Process Online Orders (CONFIRMED, SHIPPED, COMPLETED)
+    for (const o of ordersList) {
+      if (!['CONFIRMED', 'SHIPPED', 'COMPLETED'].includes(o.status)) continue;
+      const orderDate = parseEntryDate(o.created_at);
+      if (orderDate < rangeStart || orderDate > rangeEnd) continue;
+
+      grossRevenueUSD += Number(o.total_amount || 0);
+      totalTransactions += 1;
+
+      if (Array.isArray(o.items)) {
+        for (const it of o.items) {
+          const qty = Number(it.quantity || 1);
+          totalUnitsSold += qty;
+          const unitPrice = Number(it.unit_price || it.price_at_order || 0);
+          const itemRev = unitPrice * qty;
+
+          // Wholesale cost calculation
+          let itemCost = 0;
+          if (it.variant_id && variantsMap.has(it.variant_id)) {
+            itemCost = Number(variantsMap.get(it.variant_id).import_price || 0) * qty;
+          } else if (productsMap.has(it.product_id)) {
+            itemCost = Number(productsMap.get(it.product_id).import_price || 0) * qty;
+          }
+          totalCostUSD += itemCost;
+
+          // Top products tracking
+          const prodId = it.product_id;
+          const pObj = productsMap.get(prodId);
+          if (!topProductsMap.has(prodId)) {
+            topProductsMap.set(prodId, {
+              id: prodId,
+              name: pObj ? pObj.name : (it.name || 'Jewelry Piece'),
+              category: pObj ? pObj.category : (it.category || 'Jewelry'),
+              photo_url: (pObj && pObj.photo_url) || it.photo_url || DEFAULT_IMAGE,
+              units: 0,
+              revenue: 0,
+            });
+          }
+          const tp = topProductsMap.get(prodId);
+          tp.units += qty;
+          tp.revenue += itemRev;
+
+          // Category tracking
+          const cat = pObj ? pObj.category : (it.category || 'Jewelry');
+          categoryRevenueMap.set(cat, (categoryRevenueMap.get(cat) || 0) + itemRev);
+        }
+      }
+    }
+
+    // 2. Process Quick Sells (COMPLETED)
+    for (const s of quickSellsList) {
+      if (s.status !== 'COMPLETED') continue;
+      const saleDate = parseEntryDate(s.created_at);
+      if (saleDate < rangeStart || saleDate > rangeEnd) continue;
+
+      grossRevenueUSD += Number(s.total_amount || 0);
+      totalCostUSD += Number(s.total_cost || 0);
+      totalTransactions += 1;
+
+      if (Array.isArray(s.items)) {
+        for (const it of s.items) {
+          const qty = Number(it.quantity || 1);
+          totalUnitsSold += qty;
+          const unitPrice = Number(it.unit_price || 0);
+          const itemRev = unitPrice * qty;
+
+          const prodId = it.product_id;
+          const pObj = productsMap.get(prodId);
+          if (!topProductsMap.has(prodId)) {
+            topProductsMap.set(prodId, {
+              id: prodId,
+              name: pObj ? pObj.name : it.product_name,
+              category: pObj ? pObj.category : 'Jewelry',
+              photo_url: (pObj && pObj.photo_url) || DEFAULT_IMAGE,
+              units: 0,
+              revenue: 0,
+            });
+          }
+          const tp = topProductsMap.get(prodId);
+          tp.units += qty;
+          tp.revenue += itemRev;
+
+          const cat = pObj ? pObj.category : 'Jewelry';
+          categoryRevenueMap.set(cat, (categoryRevenueMap.get(cat) || 0) + itemRev);
+        }
+      }
+    }
+
+    // 3. Update Primary KPI Card Values
+    statRevenueUsd.textContent = formatUSD(grossRevenueUSD);
+    statRevenueKhr.textContent = formatKHR(grossRevenueUSD);
+    if (statRevenueSubtitle) {
+      statRevenueSubtitle.textContent = `${totalTransactions} total completed sales`;
+    }
+
+    const grossProfitUSD = Math.max(0, grossRevenueUSD - totalCostUSD);
+    const profitMarginPercent = grossRevenueUSD > 0 ? ((grossProfitUSD / grossRevenueUSD) * 100).toFixed(1) : '0.0';
+    if (statProfitUsd) statProfitUsd.textContent = formatUSD(grossProfitUSD);
+    if (statProfitMargin) statProfitMargin.textContent = `${profitMarginPercent}% profit margin`;
+
+    if (statSalesCount) statSalesCount.textContent = totalTransactions;
+    if (statUnitsCount) statUnitsCount.textContent = `${totalUnitsSold} pieces sold`;
+
+    const aovUSD = totalTransactions > 0 ? grossRevenueUSD / totalTransactions : 0;
+    if (statAov) statAov.textContent = `AOV: ${formatUSD(aovUSD)}`;
+
+    // Inventory status (always live)
+    statTotalSkus.textContent = productsList.length;
+    const lowStockCount = productsList.filter((p) => p.stock <= 3).length;
+    statLowStock.textContent = `${lowStockCount} low stock`;
+
+    const pendingOrdersCount = ordersList.filter((o) => o.status === 'PENDING').length;
+    if (statPendingSummary) {
+      statPendingSummary.textContent = `${pendingOrdersCount} pending orders`;
+    }
+
+    // 4. Render Chart
+    buildAndRenderChart(rangeStart, rangeEnd, currentOverviewRange, currentChartMetric);
+
+    // 5. Render Top Products
+    renderOverviewTopProducts(Array.from(topProductsMap.values()));
+
+    // 6. Render Categories Share
+    renderOverviewCategoryBars(categoryRevenueMap, grossRevenueUSD);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // CHART RENDERING (Chart.js via CDN)
+  // ─────────────────────────────────────────────────────────────
+  function buildAndRenderChart(rangeStart, rangeEnd, rangeType, metricType) {
+    const isRevenue = metricType === 'revenue';
+    if (chartSubtitle) {
+      chartSubtitle.textContent = isRevenue ? 'Gross revenue generated ($)' : 'Total units sold (pcs)';
+    }
+
+    const txEvents = [];
+
+    for (const o of ordersList) {
+      if (!['CONFIRMED', 'SHIPPED', 'COMPLETED'].includes(o.status)) continue;
+      const d = parseEntryDate(o.created_at);
+      if (d >= rangeStart && d <= rangeEnd) {
+        const units = Array.isArray(o.items) ? o.items.reduce((sum, it) => sum + Number(it.quantity || 1), 0) : 1;
+        txEvents.push({ date: d, revenue: Number(o.total_amount || 0), units });
+      }
+    }
+
+    for (const s of quickSellsList) {
+      if (s.status !== 'COMPLETED') continue;
+      const d = parseEntryDate(s.created_at);
+      if (d >= rangeStart && d <= rangeEnd) {
+        const units = Number(s.item_count || 1);
+        txEvents.push({ date: d, revenue: Number(s.total_amount || 0), units });
+      }
+    }
+
+    let labels = [];
+    let values = [];
+
+    if (rangeType === 'today' || rangeType === 'yesterday') {
+      const hours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+      labels = hours.map((h) => {
+        const period = h >= 12 ? 'pm' : 'am';
+        const displayH = h % 12 === 0 ? 12 : h % 12;
+        return `${displayH}${period}`;
+      });
+      values = new Array(hours.length).fill(0);
+
+      for (const ev of txEvents) {
+        const evHour = ev.date.getHours();
+        const bucketIdx = Math.min(hours.length - 1, Math.floor(evHour / 2));
+        values[bucketIdx] += (isRevenue ? ev.revenue : ev.units);
+      }
+    } else if (rangeType === '7d') {
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d);
+      }
+      labels = days.map((d) => d.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' }));
+      values = new Array(days.length).fill(0);
+
+      for (const ev of txEvents) {
+        const evDateStr = ev.date.toDateString();
+        const idx = days.findIndex((d) => d.toDateString() === evDateStr);
+        if (idx !== -1) {
+          values[idx] += (isRevenue ? ev.revenue : ev.units);
+        }
+      }
+    } else if (rangeType === '30d') {
+      const days = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d);
+      }
+      labels = days.map((d, i) => (i % 3 === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : ''));
+      values = new Array(days.length).fill(0);
+
+      for (const ev of txEvents) {
+        const evDateStr = ev.date.toDateString();
+        const idx = days.findIndex((d) => d.toDateString() === evDateStr);
+        if (idx !== -1) {
+          values[idx] += (isRevenue ? ev.revenue : ev.units);
+        }
+      }
+    } else {
+      const diffMs = rangeEnd - rangeStart;
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 14) {
+        const days = [];
+        const cur = new Date(rangeStart);
+        while (cur <= rangeEnd) {
+          days.push(new Date(cur));
+          cur.setDate(cur.getDate() + 1);
+        }
+        labels = days.map((d) => `${d.getMonth() + 1}/${d.getDate()}`);
+        values = new Array(days.length).fill(0);
+
+        for (const ev of txEvents) {
+          const evDateStr = ev.date.toDateString();
+          const idx = days.findIndex((d) => d.toDateString() === evDateStr);
+          if (idx !== -1) {
+            values[idx] += (isRevenue ? ev.revenue : ev.units);
+          }
+        }
+      } else {
+        const monthMap = new Map();
+        for (const ev of txEvents) {
+          const key = `${ev.date.toLocaleString([], { month: 'short' })} ${ev.date.getFullYear()}`;
+          monthMap.set(key, (monthMap.get(key) || 0) + (isRevenue ? ev.revenue : ev.units));
+        }
+        if (monthMap.size === 0) {
+          labels = ['No data'];
+          values = [0];
+        } else {
+          labels = Array.from(monthMap.keys());
+          values = Array.from(monthMap.values());
+        }
+      }
+    }
+
+    renderOverviewChart(labels, values, metricType);
+  }
+
+  function renderOverviewChart(labels, values, metricType = 'revenue') {
+    const ctx = document.getElementById('overview-chart');
+    if (!ctx || typeof Chart === 'undefined') return;
+
+    if (overviewChartInstance) {
+      overviewChartInstance.destroy();
+    }
+
+    const isRevenue = metricType === 'revenue';
+
+    overviewChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: isRevenue ? 'Gross Revenue ($)' : 'Units Sold',
+          data: values,
+          backgroundColor: 'rgba(201, 168, 76, 0.45)',
+          hoverBackgroundColor: 'rgba(243, 212, 137, 0.85)',
+          borderColor: '#c9a84c',
+          borderWidth: 1.5,
+          borderRadius: 6,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#171928',
+            titleColor: '#f3d489',
+            bodyColor: '#ffffff',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: function (context) {
+                const val = context.parsed.y || 0;
+                return isRevenue ? `Revenue: $${val.toFixed(2)}` : `Units Sold: ${val} pcs`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8', font: { size: 10, family: 'Inter' } },
+          },
+          y: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10, family: 'Inter' },
+              callback: function (val) {
+                return isRevenue ? `$${val}` : val;
+              },
+            },
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+  }
+
+  function renderOverviewTopProducts(items) {
+    if (!overviewTopProducts) return;
+    if (items.length === 0) {
+      overviewTopProducts.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No jewelry pieces sold in this period.</p>`;
+      return;
+    }
+
+    items.sort((a, b) => b.units - a.units || b.revenue - a.revenue);
+    const top5 = items.slice(0, 5);
+
+    overviewTopProducts.innerHTML = top5.map((item, index) => {
+      const medals = ['🥇', '🥈', '🥉'];
+      const rankBadge = medals[index] || `#${index + 1}`;
+      return `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#c9a84c]/40 transition">
+          <div class="flex items-center space-x-2.5 min-w-0">
+            <span class="text-xs font-bold text-slate-400 w-5 text-center flex-shrink-0">${rankBadge}</span>
+            <img src="${item.photo_url || DEFAULT_IMAGE}" alt="" class="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-white/10 flex-shrink-0" onerror="this.src='${DEFAULT_IMAGE}'">
+            <div class="min-w-0">
+              <p class="text-xs font-bold text-white truncate">${escapeHtml(item.name)}</p>
+              <p class="text-[10px] text-slate-400">${escapeHtml(item.category)} · ${item.id}</p>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0 pl-2">
+            <p class="text-xs font-extrabold text-[#f3d489]">${formatUSD(item.revenue)}</p>
+            <p class="text-[10px] text-slate-400 font-semibold">${item.units} sold</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderOverviewCategoryBars(catMap, totalRev) {
+    if (!overviewCategoryBars) return;
+    if (catMap.size === 0 || totalRev <= 0) {
+      if (overviewCatTotal) overviewCatTotal.textContent = '$0.00 total';
+      overviewCategoryBars.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No category sales in this period.</p>`;
+      return;
+    }
+
+    if (overviewCatTotal) overviewCatTotal.textContent = `${formatUSD(totalRev)} total`;
+
+    const sortedCats = Array.from(catMap.entries()).sort((a, b) => b[1] - a[1]);
+
+    overviewCategoryBars.innerHTML = sortedCats.map(([catName, rev]) => {
+      const pct = Math.min(100, Math.round((rev / totalRev) * 100));
+      return `
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-200">${escapeHtml(catName)}</span>
+            <div class="space-x-1.5 font-semibold text-right">
+              <span class="text-white">${formatUSD(rev)}</span>
+              <span class="text-[10px] text-[#c9a84c]">(${pct}%)</span>
+            </div>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-r from-[#c9a84c] to-[#f3d489] transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // OVERVIEW EVENT LISTENERS (Range Pills & Metric Toggle)
+  // ─────────────────────────────────────────────────────────────
+  document.querySelectorAll('.ov-range-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ov-range-btn').forEach((b) => {
+        b.classList.remove('bg-[#c9a84c]', 'text-black');
+        b.classList.add('text-slate-300');
+      });
+      btn.classList.add('bg-[#c9a84c]', 'text-black');
+      btn.classList.remove('text-slate-300');
+
+      currentOverviewRange = btn.dataset.range;
+      if (currentOverviewRange === 'custom') {
+        if (ovCustomDateContainer) ovCustomDateContainer.classList.remove('hidden');
+      } else {
+        if (ovCustomDateContainer) ovCustomDateContainer.classList.add('hidden');
+        updateOverviewStats();
       }
     });
+  });
 
-    statRevenueUsd.textContent = formatUSD(revenueUSD);
-    statRevenueKhr.textContent = formatKHR(revenueUSD);
-    statPendingCount.textContent = ordersList.filter((o) => o.status === 'PENDING').length;
-    statTotalOrders.textContent = ordersList.length;
-    statTotalSkus.textContent = productsList.length;
+  if (ovApplyCustomBtn) {
+    ovApplyCustomBtn.addEventListener('click', () => {
+      if (!ovDateStartInput || !ovDateEndInput || !ovDateStartInput.value || !ovDateEndInput.value) {
+        showToast('Please select both start and end dates.', 'warning');
+        return;
+      }
+      customRangeStart = ovDateStartInput.value;
+      customRangeEnd = ovDateEndInput.value;
+      updateOverviewStats();
+    });
+  }
 
-    const lowStockCount = productsList.filter((p) => p.stock <= 3).length;
-    statLowStock.textContent = t('lowStock', { n: lowStockCount });
+  if (chartBtnRevenue && chartBtnUnits) {
+    chartBtnRevenue.addEventListener('click', () => {
+      currentChartMetric = 'revenue';
+      chartBtnRevenue.classList.add('bg-[#c9a84c]', 'text-black', 'font-bold');
+      chartBtnRevenue.classList.remove('text-slate-400');
+      chartBtnUnits.classList.remove('bg-[#c9a84c]', 'text-black', 'font-bold');
+      chartBtnUnits.classList.add('text-slate-400');
+      updateOverviewStats();
+    });
+
+    chartBtnUnits.addEventListener('click', () => {
+      currentChartMetric = 'units';
+      chartBtnUnits.classList.add('bg-[#c9a84c]', 'text-black', 'font-bold');
+      chartBtnUnits.classList.remove('text-slate-400');
+      chartBtnRevenue.classList.remove('bg-[#c9a84c]', 'text-black', 'font-bold');
+      chartBtnRevenue.classList.add('text-slate-400');
+      updateOverviewStats();
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -2761,6 +3272,7 @@
     loadCategories();
     loadOrders(silent);
     loadProducts(silent);
+    loadQuickSells(silent);
   }
   window.refreshData = refreshData;
 
@@ -2785,6 +3297,7 @@
   setInterval(() => {
     if (adminToken) {
       loadOrders(true);
+      loadQuickSells(true);
     }
   }, 6000);
 })();

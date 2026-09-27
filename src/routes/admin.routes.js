@@ -20,7 +20,12 @@ router.get('/categories', requireAdmin, adminController.getCategories);
 router.post('/categories', requireAdmin, adminController.createCategory);
 router.delete('/categories/:id', requireAdmin, adminController.deleteCategory);
 
-// Quick Sell: in-person stock deduction (no order created, supports variants)
+// Quick Sell POS Management (Protected)
+router.get('/quick-sells', requireAdmin, adminController.getQuickSells);
+router.post('/quick-sells/checkout', requireAdmin, adminController.checkoutQuickSell);
+router.post('/quick-sells/:id/undo', requireAdmin, adminController.undoQuickSell);
+
+// Quick Sell: single-item deduction fallback (legacy & unit tests)
 router.post('/products/:id/deduct', requireAdmin, adminController.quickSellDeduct);
 router.post('/products/:id/restock', requireAdmin, adminController.quickSellRestock);
 
