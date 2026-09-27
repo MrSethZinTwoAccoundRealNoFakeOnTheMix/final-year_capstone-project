@@ -57,6 +57,26 @@ body {
   scrollbar-width: none;
 }
 
+/* Quick Sell Variant Grid Scrollbar */
+#qs-variant-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 168, 76, 0.35) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+#qs-variant-list::-webkit-scrollbar {
+  width: 5px;
+}
+#qs-variant-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+#qs-variant-list::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 9999px;
+}
+#qs-variant-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.5);
+}
+
 /* Glass Header */
 .glass-header {
   background: rgba(14, 16, 26, 0.92);

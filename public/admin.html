@@ -556,7 +556,7 @@
 
   <!-- ─── Quick Sell: Variant Style Drawer (Compact 3-Column Grid) ────────── -->
   <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[75vh] flex flex-col overflow-hidden shadow-2xl">
+    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[82vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="flex-shrink-0 bg-[#171928] px-4 pt-4 pb-2.5 border-b border-white/10 flex items-center justify-between z-10">
         <div class="min-w-0 pr-2">
           <h3 class="text-sm font-bold text-white truncate" id="qs-variant-drawer-title">Choose Style</h3>
@@ -564,10 +564,10 @@
         </div>
         <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition flex-shrink-0">✕</button>
       </div>
-      <div id="qs-variant-list" class="flex-1 overflow-y-auto p-2.5 grid grid-cols-3 gap-2 overscroll-contain">
+      <div id="qs-variant-list" class="flex-1 min-h-0 overflow-y-auto p-2.5 grid grid-cols-3 gap-2 overscroll-contain">
         <!-- Rendered by JS as compact 3-column style cards -->
       </div>
-      <div class="p-3 border-t border-white/10 bg-[#171928] flex items-center justify-between">
+      <div class="flex-shrink-0 p-3 border-t border-white/10 bg-[#171928] flex items-center justify-between">
         <span class="text-[11px] text-slate-400">Tap cards to add · Adjust in cart</span>
         <button onclick="window.closeVariantDrawer()" class="btn-gold px-4 py-1.5 rounded-xl text-xs font-bold shadow-md">
           Done ✓

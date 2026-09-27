@@ -2044,7 +2044,7 @@
             ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
             : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
         }" ${isOut ? '' : `onclick="window.togglePosCartItem('${product.id}', '${v.id}')"`}>
-          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden flex-shrink-0">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             
             <!-- Stock Pill -->
@@ -2112,6 +2112,7 @@
     qsVariantDrawerSub.textContent = `Total stock: ${product.stock} · Tap styles to add to cart`;
 
     renderVariantDrawerContent(product);
+    if (qsVariantList) qsVariantList.scrollTop = 0;
     qsVariantDrawer.classList.remove('hidden');
   };
 
