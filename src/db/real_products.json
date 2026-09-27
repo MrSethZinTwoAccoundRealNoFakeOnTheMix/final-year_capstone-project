@@ -1,0 +1,1227 @@
+[
+  {
+    "id": "KA-0001",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 1)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0001_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0001-01",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style1.jpg"
+      },
+      {
+        "id": "KA-0001-02",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style2.jpg"
+      },
+      {
+        "id": "KA-0001-03",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style3.jpg"
+      },
+      {
+        "id": "KA-0001-04",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style4.jpg"
+      },
+      {
+        "id": "KA-0001-05",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style5.jpg"
+      },
+      {
+        "id": "KA-0001-06",
+        "product_id": "KA-0001",
+        "color_name": "ម៉ូដទី 6 (Style 6)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0001_style6.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0002",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 2)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0002_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0002-01",
+        "product_id": "KA-0002",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 15,
+        "photo_url": "/images/products/KA-0002_style1.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0003",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 3)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0003_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0003-01",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style1.jpg"
+      },
+      {
+        "id": "KA-0003-02",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style2.jpg"
+      },
+      {
+        "id": "KA-0003-03",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style3.jpg"
+      },
+      {
+        "id": "KA-0003-04",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style4.jpg"
+      },
+      {
+        "id": "KA-0003-05",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style5.jpg"
+      },
+      {
+        "id": "KA-0003-06",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 6 (Style 6)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style6.jpg"
+      },
+      {
+        "id": "KA-0003-07",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 7 (Style 7)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style7.jpg"
+      },
+      {
+        "id": "KA-0003-08",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 8 (Style 8)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style8.jpg"
+      },
+      {
+        "id": "KA-0003-09",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 9 (Style 9)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style9.jpg"
+      },
+      {
+        "id": "KA-0003-10",
+        "product_id": "KA-0003",
+        "color_name": "ម៉ូដទី 10 (Style 10)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 1,
+        "photo_url": "/images/products/KA-0003_style10.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0004",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 4)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0004_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0004-01",
+        "product_id": "KA-0004",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0004_style1.jpg"
+      },
+      {
+        "id": "KA-0004-02",
+        "product_id": "KA-0004",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0004_style2.jpg"
+      },
+      {
+        "id": "KA-0004-03",
+        "product_id": "KA-0004",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0004_style3.jpg"
+      },
+      {
+        "id": "KA-0004-04",
+        "product_id": "KA-0004",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0004_style4.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0005",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 5)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0005_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0005-01",
+        "product_id": "KA-0005",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0005_style1.jpg"
+      },
+      {
+        "id": "KA-0005-02",
+        "product_id": "KA-0005",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0005_style2.jpg"
+      },
+      {
+        "id": "KA-0005-03",
+        "product_id": "KA-0005",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0005_style3.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0006",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 6)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0006_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0006-01",
+        "product_id": "KA-0006",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0006_style1.jpg"
+      },
+      {
+        "id": "KA-0006-02",
+        "product_id": "KA-0006",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0006_style2.jpg"
+      },
+      {
+        "id": "KA-0006-03",
+        "product_id": "KA-0006",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0006_style3.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0007",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 7)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0007_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0007-01",
+        "product_id": "KA-0007",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0007_style1.jpg"
+      },
+      {
+        "id": "KA-0007-02",
+        "product_id": "KA-0007",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0007_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0008",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 8)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0008_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0008-01",
+        "product_id": "KA-0008",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0008_style1.jpg"
+      },
+      {
+        "id": "KA-0008-02",
+        "product_id": "KA-0008",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0008_style2.jpg"
+      },
+      {
+        "id": "KA-0008-03",
+        "product_id": "KA-0008",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0008_style3.jpg"
+      },
+      {
+        "id": "KA-0008-04",
+        "product_id": "KA-0008",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0008_style4.jpg"
+      },
+      {
+        "id": "KA-0008-05",
+        "product_id": "KA-0008",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0008_style5.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0009",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 9)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0009_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0009-01",
+        "product_id": "KA-0009",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0009_style1.jpg"
+      },
+      {
+        "id": "KA-0009-02",
+        "product_id": "KA-0009",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0009_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0010",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 10)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0010_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0010-01",
+        "product_id": "KA-0010",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0010_style1.jpg"
+      },
+      {
+        "id": "KA-0010-02",
+        "product_id": "KA-0010",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0010_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0011",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 11)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0011_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0011-01",
+        "product_id": "KA-0011",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0011_style1.jpg"
+      },
+      {
+        "id": "KA-0011-02",
+        "product_id": "KA-0011",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0011_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0012",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 12)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0012_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0012-01",
+        "product_id": "KA-0012",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0012_style1.jpg"
+      },
+      {
+        "id": "KA-0012-02",
+        "product_id": "KA-0012",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0012_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0013",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 13)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0013_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0013-01",
+        "product_id": "KA-0013",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0013_style1.jpg"
+      },
+      {
+        "id": "KA-0013-02",
+        "product_id": "KA-0013",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0013_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0014",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 14)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0014_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0014-01",
+        "product_id": "KA-0014",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0014_style1.jpg"
+      },
+      {
+        "id": "KA-0014-02",
+        "product_id": "KA-0014",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0014_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0015",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 15)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0015_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0015-01",
+        "product_id": "KA-0015",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0015_style1.jpg"
+      },
+      {
+        "id": "KA-0015-02",
+        "product_id": "KA-0015",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0015_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0016",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 16)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0016_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0016-01",
+        "product_id": "KA-0016",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0016_style1.jpg"
+      },
+      {
+        "id": "KA-0016-02",
+        "product_id": "KA-0016",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0016_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0017",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 17)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0017_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0017-01",
+        "product_id": "KA-0017",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0017_style1.jpg"
+      },
+      {
+        "id": "KA-0017-02",
+        "product_id": "KA-0017",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0017_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0018",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 18)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0018_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0018-01",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style1.jpg"
+      },
+      {
+        "id": "KA-0018-02",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style2.jpg"
+      },
+      {
+        "id": "KA-0018-03",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style3.jpg"
+      },
+      {
+        "id": "KA-0018-04",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style4.jpg"
+      },
+      {
+        "id": "KA-0018-05",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style5.jpg"
+      },
+      {
+        "id": "KA-0018-06",
+        "product_id": "KA-0018",
+        "color_name": "ម៉ូដទី 6 (Style 6)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0018_style6.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0019",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 19)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0019_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0019-01",
+        "product_id": "KA-0019",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0019_style1.jpg"
+      },
+      {
+        "id": "KA-0019-02",
+        "product_id": "KA-0019",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0019_style2.jpg"
+      },
+      {
+        "id": "KA-0019-03",
+        "product_id": "KA-0019",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0019_style3.jpg"
+      },
+      {
+        "id": "KA-0019-04",
+        "product_id": "KA-0019",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0019_style4.jpg"
+      },
+      {
+        "id": "KA-0019-05",
+        "product_id": "KA-0019",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0019_style5.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0020",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 20)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0020_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 0,
+    "variant_list": []
+  },
+  {
+    "id": "KB-0001",
+    "name": "កាបូបម៉ូដបុរាណ (Model 21)",
+    "category": "កាបូប",
+    "import_price": 167,
+    "sell_price": 170,
+    "stock": 15,
+    "photo_url": "/images/products/KB-0001_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KB-0001-01",
+        "product_id": "KB-0001",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 167,
+        "sell_price": 170,
+        "stock": 15,
+        "photo_url": "/images/products/KB-0001_style1.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0021",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 22)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0021_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0021-01",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style1.jpg"
+      },
+      {
+        "id": "KA-0021-02",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style2.jpg"
+      },
+      {
+        "id": "KA-0021-03",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style3.jpg"
+      },
+      {
+        "id": "KA-0021-04",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style4.jpg"
+      },
+      {
+        "id": "KA-0021-05",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style5.jpg"
+      },
+      {
+        "id": "KA-0021-06",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 6 (Style 6)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style6.jpg"
+      },
+      {
+        "id": "KA-0021-07",
+        "product_id": "KA-0021",
+        "color_name": "ម៉ូដទី 7 (Style 7)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0021_style7.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0022",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 23)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0022_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0022-01",
+        "product_id": "KA-0022",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 15,
+        "photo_url": "/images/products/KA-0022_style1.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0023",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 24)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0023_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0023-01",
+        "product_id": "KA-0023",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0023_style1.jpg"
+      },
+      {
+        "id": "KA-0023-02",
+        "product_id": "KA-0023",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0023_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0024",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 25)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0024_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0024-01",
+        "product_id": "KA-0024",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0024_style1.jpg"
+      },
+      {
+        "id": "KA-0024-02",
+        "product_id": "KA-0024",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0024_style2.jpg"
+      },
+      {
+        "id": "KA-0024-03",
+        "product_id": "KA-0024",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0024_style3.jpg"
+      },
+      {
+        "id": "KA-0024-04",
+        "product_id": "KA-0024",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 3,
+        "photo_url": "/images/products/KA-0024_style4.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0025",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 26)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0025_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0025-01",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style1.jpg"
+      },
+      {
+        "id": "KA-0025-02",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style2.jpg"
+      },
+      {
+        "id": "KA-0025-03",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style3.jpg"
+      },
+      {
+        "id": "KA-0025-04",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 4 (Style 4)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style4.jpg"
+      },
+      {
+        "id": "KA-0025-05",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 5 (Style 5)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style5.jpg"
+      },
+      {
+        "id": "KA-0025-06",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 6 (Style 6)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style6.jpg"
+      },
+      {
+        "id": "KA-0025-07",
+        "product_id": "KA-0025",
+        "color_name": "ម៉ូដទី 7 (Style 7)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 2,
+        "photo_url": "/images/products/KA-0025_style7.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0026",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 27)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0026_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 0,
+    "variant_list": []
+  },
+  {
+    "id": "KA-0027",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 28)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0027_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0027-01",
+        "product_id": "KA-0027",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0027_style1.jpg"
+      },
+      {
+        "id": "KA-0027-02",
+        "product_id": "KA-0027",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 7,
+        "photo_url": "/images/products/KA-0027_style2.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0028",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 29)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0028_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0028-01",
+        "product_id": "KA-0028",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0028_style1.jpg"
+      },
+      {
+        "id": "KA-0028-02",
+        "product_id": "KA-0028",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0028_style2.jpg"
+      },
+      {
+        "id": "KA-0028-03",
+        "product_id": "KA-0028",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0028_style3.jpg"
+      }
+    ]
+  },
+  {
+    "id": "KA-0029",
+    "name": "កន្លាស់អាវម៉ូដបុរាណ (Model 30)",
+    "category": "កន្លាស់អាវ",
+    "import_price": 9,
+    "sell_price": 12,
+    "stock": 15,
+    "photo_url": "/images/products/KA-0029_cover.jpg",
+    "variants": "ម៉ូដរចនាបទខ្មែរបុរាណ ស្រោបមាសដាំត្បូងភ្លឺថ្លា",
+    "has_variants": 1,
+    "variant_list": [
+      {
+        "id": "KA-0029-01",
+        "product_id": "KA-0029",
+        "color_name": "ម៉ូដទី 1 (Style 1)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0029_style1.jpg"
+      },
+      {
+        "id": "KA-0029-02",
+        "product_id": "KA-0029",
+        "color_name": "ម៉ូដទី 2 (Style 2)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0029_style2.jpg"
+      },
+      {
+        "id": "KA-0029-03",
+        "product_id": "KA-0029",
+        "color_name": "ម៉ូដទី 3 (Style 3)",
+        "import_price": 9,
+        "sell_price": 12,
+        "stock": 5,
+        "photo_url": "/images/products/KA-0029_style3.jpg"
+      }
+    ]
+  }
+]

@@ -1,10 +1,7 @@
 /**
- * Seed Script — Authentic Khmer Local Jewelry Catalog
- * ---------------------------------------------------
- * Seeds authentic Khmer local jewelry products and their cropped child variants
- * from `real_products.json` into SQLite (`shop.db`).
- *
- * Safe to run multiple times.
+ * Seed Real Catalog Script
+ * Seeds the 30 authentic products (KA-0001 to KA-0029, KB-0001)
+ * along with their 93 real cropped child variants into SQLite.
  */
 
 const fs = require('fs');
@@ -12,20 +9,8 @@ const path = require('path');
 const db = require('./index');
 const variantRepo = require('../repositories/variant.repository');
 
-console.log('\n🇰🇭 Seeding Authentic Khmer Local Jewelry Catalog...\n');
+console.log('\n💎 Seeding Real Khmer Jewelry Products (KA-0001 to KA-0029, KB-0001)...\n');
 
-// 1. Deactivate old products first so they disappear from active storefront
-db.prepare('UPDATE products SET is_active = 0').run();
-db.prepare('UPDATE product_variants SET is_active = 0').run();
-
-// 2. Ensure categories table has official Khmer categories
-const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
-const categories = ['កាបូប', 'ស្នាតសក់', 'កន្លាស់អាវ', 'ចិញ្ចៀន', 'កងដៃ'];
-for (const cat of categories) {
-  insertCategory.run(cat);
-}
-
-// 3. Load catalog from real_products.json
 const dataFile = path.join(__dirname, 'real_products.json');
 if (!fs.existsSync(dataFile)) {
   console.error('❌ real_products.json not found in src/db/');
@@ -34,7 +19,11 @@ if (!fs.existsSync(dataFile)) {
 
 const products = JSON.parse(fs.readFileSync(dataFile, 'utf-8'));
 
-// 4. Prepare upsert statement
+// 1. Ensure categories exist
+const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
+['កាបូប', 'ស្នាតសក់', 'កន្លាស់អាវ', 'ចិញ្ចៀន', 'កងដៃ'].forEach(cat => insertCategory.run(cat));
+
+// 2. Prepare product upsert statement
 const upsertProduct = db.prepare(`
   INSERT INTO products (id, name, category, import_price, sell_price, stock, photo_url, variants, has_variants, is_active)
   VALUES (@id, @name, @category, @import_price, @sell_price, @stock, @photo_url, @variants, @has_variants, 1)
@@ -67,12 +56,12 @@ for (const p of products) {
   });
   productCount++;
 
-  // Handle variants if any
+  // Insert child variants
   if (p.has_variants === 1 && Array.isArray(p.variant_list) && p.variant_list.length > 0) {
     variantRepo.replaceForProduct(p.id, p.variant_list);
     variantCount += p.variant_list.length;
   }
 }
 
-console.log(`✅ Successfully seeded ${productCount} authentic Khmer local products into database.`);
+console.log(`✅ Successfully seeded ${productCount} products into database!`);
 console.log(`💎 Attached ${variantCount} cropped child variants with unique local images.\n`);
