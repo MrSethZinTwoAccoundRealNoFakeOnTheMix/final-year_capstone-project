@@ -2037,7 +2037,7 @@
       const isInCart = cartQty > 0;
 
       return `
-        <div class="admin-card p-0 overflow-hidden flex flex-col border transition-all duration-200 select-none ${
+        <div class="qs-variant-card admin-card p-0 overflow-hidden flex flex-col flex-shrink-0 border transition-all duration-200 select-none ${
           isOut
             ? 'opacity-40 cursor-not-allowed border-white/5'
             : isInCart
@@ -2062,7 +2062,7 @@
             ` : ''}
           </div>
 
-          <div class="p-2 flex-1 flex flex-col justify-between">
+          <div class="qs-card-info p-2 flex-shrink-0 flex flex-col justify-between">
             <h5 class="text-[11px] font-bold text-white truncate leading-tight" title="${escapeHtml(v.color_name)}">${escapeHtml(v.color_name)}</h5>
             
             <div class="mt-1 pt-1 border-t border-white/5">

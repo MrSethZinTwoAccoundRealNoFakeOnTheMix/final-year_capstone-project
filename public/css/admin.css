@@ -57,12 +57,24 @@ body {
   scrollbar-width: none;
 }
 
-/* Quick Sell Variant Grid Scrollbar */
+/* Quick Sell Variant Grid: Fixed 2-row max height with non-shrinking cards */
 #qs-variant-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
+  max-height: 440px;
   scrollbar-width: thin;
   scrollbar-color: rgba(201, 168, 76, 0.35) transparent;
   -webkit-overflow-scrolling: touch;
 }
+
+@media (min-width: 640px) {
+  #qs-variant-list {
+    max-height: 580px;
+  }
+}
+
 #qs-variant-list::-webkit-scrollbar {
   width: 5px;
 }
@@ -75,6 +87,16 @@ body {
 }
 #qs-variant-list::-webkit-scrollbar-thumb:hover {
   background: rgba(201, 168, 76, 0.5);
+}
+
+.qs-variant-card {
+  min-height: max-content !important;
+  flex-shrink: 0 !important;
+}
+
+.qs-variant-card .qs-card-info {
+  min-height: 74px;
+  flex-shrink: 0;
 }
 
 /* Glass Header */
