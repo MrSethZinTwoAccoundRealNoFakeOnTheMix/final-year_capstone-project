@@ -23,6 +23,10 @@ try {
 } catch (e) {}
 
 try {
+  db.exec('ALTER TABLE orders ADD COLUMN shipped_at DATETIME DEFAULT NULL');
+} catch (e) {}
+
+try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS facebook_profiles (
       psid TEXT PRIMARY KEY,
@@ -100,6 +104,11 @@ function getItemsForOrder(orderId) {
  * Get all orders with their items (admin order queue).
  */
 function findAll() {
+  // Automatically complete any orders shipped >= 7 days ago
+  try {
+    autoDeliverShippedOrders(7);
+  } catch (e) {}
+
   const orders = db.prepare(`
     SELECT * FROM orders ORDER BY created_at DESC
   `).all();
@@ -293,7 +302,7 @@ function shipOrder(id) {
     throw new Error(`Cannot ship order with status '${order.status}'. Only CONFIRMED orders can be shipped.`);
   }
 
-  db.prepare(`UPDATE orders SET status = 'SHIPPED' WHERE id = ?`).run(id);
+  db.prepare(`UPDATE orders SET status = 'SHIPPED', shipped_at = CURRENT_TIMESTAMP WHERE id = ?`).run(id);
   return findById(id);
 }
 
@@ -359,6 +368,47 @@ function updateDeliveryType(id, deliveryType) {
   return findById(id);
 }
 
+/**
+ * Auto-mark orders that have been SHIPPED for >= 7 days as COMPLETED (Delivered).
+ * Moves them to archive automatically without requiring manual action.
+ *
+ * @param {number} [daysThreshold=7] - Number of days in transit before completing
+ * @returns {Array<string>} Array of completed order IDs
+ */
+function autoDeliverShippedOrders(daysThreshold = 7) {
+  const thresholdModifier = `-${daysThreshold} days`;
+
+  const eligibleOrders = db.prepare(`
+    SELECT id, shipped_at, updated_at
+    FROM orders
+    WHERE status = 'SHIPPED'
+      AND datetime(COALESCE(shipped_at, updated_at)) <= datetime('now', ?)
+  `).all(thresholdModifier);
+
+  if (eligibleOrders.length === 0) {
+    return [];
+  }
+
+  const completedIds = [];
+  const stmt = db.prepare(`
+    UPDATE orders
+    SET status = 'COMPLETED'
+    WHERE id = ? AND status = 'SHIPPED'
+  `);
+
+  const tx = db.transaction(() => {
+    for (const ord of eligibleOrders) {
+      const res = stmt.run(ord.id);
+      if (res.changes > 0) {
+        completedIds.push(ord.id);
+      }
+    }
+  });
+
+  tx();
+  return completedIds;
+}
+
 module.exports = {
   findAll,
   findById,
@@ -368,6 +418,7 @@ module.exports = {
   shipOrder,
   returnOrder,
   completeOrder,
+  autoDeliverShippedOrders,
   updateDeliveryType,
   findLatestByPsid,
   getCachedFacebookProfile,

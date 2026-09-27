@@ -2477,23 +2477,38 @@
           </div>
         `;
       } else if (order.status === 'SHIPPED') {
+        const shippedTimestamp = order.shipped_at || order.updated_at || order.created_at;
+        const shippedDate = new Date(shippedTimestamp + (shippedTimestamp.includes('Z') ? '' : 'Z'));
+        const daysInTransit = Math.max(0, Math.floor((Date.now() - shippedDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const daysLeft = Math.max(0, 7 - daysInTransit);
+
         actionButtons = `
-          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/10">
-            <button onclick="window.completeOrderAction('${order.id}')"
-              class="col-span-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
-              <span>🎉 ${t('markDelivered')}</span>
-            </button>
-            <button onclick="window.returnOrderAction('${order.id}')"
-              class="col-span-1 py-2.5 px-2 rounded-xl bg-white/5 hover:bg-rose-950/80 hover:text-rose-200 border border-white/10 text-slate-400 font-semibold text-[11px] flex items-center justify-center space-x-1 transition">
-              <span>📦 ${t('markReturnedSecondary')}</span>
-            </button>
+          <div class="mt-2.5 pt-2 border-t border-white/10 space-y-2">
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span class="inline-flex items-center space-x-1">
+                <span>🚚 Shipped ${daysInTransit === 0 ? 'today' : daysInTransit + 'd ago'}</span>
+              </span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                ⏳ Auto-delivers in ${daysLeft === 0 ? '<1 day' : daysLeft + 'd'}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="window.completeOrderAction('${order.id}')"
+                class="col-span-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
+                <span>🎉 ${t('markDelivered')}</span>
+              </button>
+              <button onclick="window.returnOrderAction('${order.id}')"
+                class="col-span-1 py-2.5 px-2 rounded-xl bg-white/5 hover:bg-rose-950/80 hover:text-rose-200 border border-white/10 text-slate-400 font-semibold text-[11px] flex items-center justify-center space-x-1 transition">
+                <span>📦 ${t('markReturnedSecondary')}</span>
+              </button>
+            </div>
           </div>
         `;
       } else if (order.status === 'COMPLETED') {
         actionButtons = `
           <div class="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
             <span class="text-[11px] text-emerald-400 font-semibold">✅ ${t('completedState')}</span>
-            <span class="text-[10px] text-slate-500">${t('archivedState')}</span>
+            <span class="text-[10px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">${t('archivedState')}</span>
           </div>
         `;
       } else {

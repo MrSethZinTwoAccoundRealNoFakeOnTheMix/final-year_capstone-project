@@ -290,6 +290,21 @@ async function getOrder(orderId) {
   return attachFacebookName(order);
 }
 
+/**
+ * Auto-mark orders that have been in transit (SHIPPED) for >= 7 days as COMPLETED.
+ * Moves them to archive automatically.
+ *
+ * @param {number} [daysThreshold=7]
+ * @returns {Array<string>} Completed order IDs
+ */
+function autoDeliverShippedOrders(daysThreshold = 7) {
+  const completedIds = orderRepository.autoDeliverShippedOrders(daysThreshold);
+  if (completedIds.length > 0) {
+    logger.info(`[OrderService] Auto-marked ${completedIds.length} order(s) as COMPLETED (Delivered) after ${daysThreshold} days: ${completedIds.join(', ')}`);
+  }
+  return completedIds;
+}
+
 module.exports = {
   placeOrder,
   confirmOrder,
@@ -297,6 +312,7 @@ module.exports = {
   shipOrder,
   returnOrder,
   completeOrder,
+  autoDeliverShippedOrders,
   updateDeliveryType,
   getAllOrders,
   getOrder,
