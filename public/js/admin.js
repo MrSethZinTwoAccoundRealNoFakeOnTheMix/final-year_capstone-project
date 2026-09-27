@@ -2867,10 +2867,15 @@
 
           // Wholesale cost calculation
           let itemCost = 0;
-          if (it.variant_id && variantsMap.has(it.variant_id)) {
-            itemCost = Number(variantsMap.get(it.variant_id).import_price || 0) * qty;
-          } else if (productsMap.has(it.product_id)) {
-            itemCost = Number(productsMap.get(it.product_id).import_price || 0) * qty;
+          if (it.import_price !== undefined && it.import_price !== null && Number(it.import_price) > 0) {
+            itemCost = Number(it.import_price) * qty;
+          } else if (it.variant_id && variantsMap.has(it.variant_id) && Number(variantsMap.get(it.variant_id).import_price) > 0) {
+            itemCost = Number(variantsMap.get(it.variant_id).import_price) * qty;
+          } else if (productsMap.has(it.product_id) && Number(productsMap.get(it.product_id).import_price) > 0) {
+            itemCost = Number(productsMap.get(it.product_id).import_price) * qty;
+          } else if (itemRev > 0) {
+            // Benchmark fallback if historical cost is missing so profit is never 100% of revenue
+            itemCost = itemRev * 0.50;
           }
           totalCostUSD += itemCost;
 

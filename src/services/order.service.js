@@ -81,6 +81,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     }
 
     const unitPrice = variant ? Number(variant.sell_price || product.sell_price) : Number(product.sell_price);
+    const importPrice = variant ? Number(variant.import_price != null ? variant.import_price : (product.import_price || 0)) : Number(product.import_price || 0);
     const photoUrl = (variant && variant.photo_url) ? variant.photo_url : product.photo_url;
     const itemTotal = unitPrice * quantity;
     totalAmount += itemTotal;
@@ -93,6 +94,7 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
       photo_url: photoUrl,
       quantity,
       unit_price: unitPrice,
+      import_price: importPrice,
     });
   }
 

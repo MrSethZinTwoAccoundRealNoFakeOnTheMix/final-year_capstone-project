@@ -23,6 +23,10 @@ try {
 } catch (e) {}
 
 try {
+  db.exec('ALTER TABLE order_items ADD COLUMN import_price REAL DEFAULT NULL');
+} catch (e) {}
+
+try {
   db.exec('ALTER TABLE orders ADD COLUMN shipped_at DATETIME DEFAULT NULL');
 } catch (e) {}
 
@@ -83,6 +87,7 @@ function getItemsForOrder(orderId) {
     SELECT
       oi.id, oi.order_id, oi.product_id, oi.variant_id, oi.quantity, oi.unit_price,
       oi.unit_price AS price_at_order,
+      COALESCE(oi.import_price, pv.import_price, p.import_price, pv_fallback.import_price, parent_p.import_price, 0) AS import_price,
       COALESCE(p.name, parent_p.name, 'Item ' || oi.product_id) AS name,
       COALESCE(p.name, parent_p.name, 'Item ' || oi.product_id) AS product_name,
       COALESCE(pv.color_name, pv_fallback.color_name, '') AS variant_name,
@@ -169,14 +174,21 @@ function create({ orderId, psid, totalAmount, customerName, phone, address, note
     VALUES (?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertItem = db.prepare(`
-    INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO order_items (order_id, product_id, variant_id, quantity, unit_price, import_price)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
 
   const run = db.transaction(() => {
     insertOrder.run(orderId, psid, totalAmount, customerName || '', phone || '', address || '', note || '', paymentMethod || 'COD', facebookName || null);
     for (const item of items) {
-      insertItem.run(orderId, item.productId, item.variantId || null, item.quantity, item.unit_price);
+      insertItem.run(
+        orderId,
+        item.productId,
+        item.variantId || null,
+        item.quantity,
+        item.unit_price,
+        item.import_price !== undefined ? item.import_price : null
+      );
     }
   });
 
