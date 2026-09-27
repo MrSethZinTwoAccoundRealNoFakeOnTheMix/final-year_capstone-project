@@ -716,7 +716,9 @@
     const isLowStock = product.stock > 0 && product.stock <= 3;
     const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
 
-    let displayPhoto = product.photo_url || DEFAULT_IMAGE;
+    // Prioritize product cover photo set in inventory edit; fallback to first variant photo, then DEFAULT_IMAGE
+    const hasCoverPhoto = Boolean(product.photo_url && product.photo_url.trim());
+    let displayPhoto = hasCoverPhoto ? product.photo_url.trim() : '';
     let priceUsdText = '';
     let priceKhrText = '';
 
@@ -725,8 +727,8 @@
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       const defaultVariant = product.variant_list.find((v) => v.stock > 0) || product.variant_list[0];
-      if (defaultVariant && defaultVariant.photo_url) {
-        displayPhoto = defaultVariant.photo_url;
+      if (!displayPhoto && defaultVariant && defaultVariant.photo_url) {
+        displayPhoto = defaultVariant.photo_url.trim();
       }
 
       if (minPrice !== maxPrice) {
@@ -739,6 +741,10 @@
     } else {
       priceUsdText = formatUSD(product.sell_price);
       priceKhrText = formatKHR(product.sell_price);
+    }
+
+    if (!displayPhoto) {
+      displayPhoto = DEFAULT_IMAGE;
     }
 
     return `
@@ -1261,7 +1267,7 @@
       <div class="sm-style-tile ${isOut ? 'sm-tile-sold' : ''}" id="sm-tile-${v.id}"
         onclick="window.smToggleTile('${v.id}')">
         <div class="sm-tile-img-wrap">
-          <img src="${v.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(v.color_name)}" loading="lazy"
+          <img src="${v.photo_url || (styleModalState.product && styleModalState.product.photo_url) || DEFAULT_IMAGE}" alt="${escapeHtml(v.color_name)}" loading="lazy"
             class="w-full h-full object-cover"
             onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
           <div class="sm-tile-check" id="sm-check-${v.id}">✓</div>
