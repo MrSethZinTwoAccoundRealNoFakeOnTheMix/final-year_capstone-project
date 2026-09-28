@@ -10,7 +10,7 @@ const lastGreetingSentAt = new Map();
 const lastExplicitShopSentAt = new Map();
 // In-flight locks to prevent parallel duplicate webhook processing for the same PSID
 const inFlightShopRequests = new Set();
-const EXPLICIT_SHOP_DEBOUNCE_MS = 2500; // 2.5-second debounce against accidental rapid multi-taps
+const EXPLICIT_SHOP_DEBOUNCE_MS = 20000; // 20-second debounce against accidental multi-taps
 
 /**
  * 1. Webhook Verification (Meta challenge endpoint)
