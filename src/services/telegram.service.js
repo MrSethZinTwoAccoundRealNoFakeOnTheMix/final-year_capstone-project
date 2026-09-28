@@ -211,8 +211,14 @@ if (!TELEGRAM_BOT_TOKEN) {
           ).catch(() => {});
 
         } else if (action === 'tg_ship') {
-          orderService.shipOrder(orderId);
-          await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! Customer notified via Messenger.' });
+          const shipResult = await orderService.shipOrder(orderId);
+          const windowExpired = shipResult && shipResult.notification && shipResult.notification.reason === 'WINDOW_EXPIRED';
+
+          if (windowExpired) {
+            await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! ⚠️ Messenger notice skipped (24h window expired).' });
+          } else {
+            await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! Customer notified via Messenger.' });
+          }
 
           // Transition to SHIPPED stage: show [🎉 Delivered] & [📦 Return & Restock]
           await bot.editMessageText(
@@ -224,7 +230,9 @@ if (!TELEGRAM_BOT_TOKEN) {
             `🕒 *Shipped At:* ${meta.timestamp}\n` +
             `━━━━━━━━━━━━━━━━━━━\n` +
             `🛵 *Status:* Package is in transit with delivery driver.\n` +
-            `💬 Customer notified via Messenger.\n` +
+            (windowExpired
+              ? `⚠️ *Messenger notice skipped (24h window expired).*\n`
+              : `💬 Customer notified via Messenger.\n`) +
             `👉 Once delivery is completed or if package is returned:`,
             {
               chat_id: query.message.chat.id,
@@ -470,11 +478,17 @@ async function notifyNewOrder(order, items) {
 /**
  * Notify owner that an order has been shipped (confirmation receipt).
  * @param {string} orderId
+ * @param {Object} [notifyResult]
  */
-async function notifyShipped(orderId) {
+async function notifyShipped(orderId, notifyResult = null) {
   if (!bot) return;
   try {
     const meta = await getOrderMeta(orderId);
+    const windowExpired = notifyResult && notifyResult.reason === 'WINDOW_EXPIRED';
+    const messengerStatusText = windowExpired
+      ? '⚠️ Messenger notice skipped (24h window expired).'
+      : '💬 Customer has been notified via Messenger.';
+
     await _send(
       `🚚 *Order ${orderId} marked as SHIPPED*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
@@ -483,7 +497,7 @@ async function notifyShipped(orderId) {
       (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
       `🕒 *Shipped At:* ${meta.timestamp}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
-      `💬 Customer has been notified via Messenger.`,
+      `${messengerStatusText}`,
       { parse_mode: 'Markdown' }
     );
   } catch (err) {

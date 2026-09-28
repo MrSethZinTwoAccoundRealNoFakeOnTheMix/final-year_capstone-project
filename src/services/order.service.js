@@ -173,21 +173,27 @@ function cancelOrder(orderId) {
  * Mark order as SHIPPED and trigger customer notification.
  * @param {string} orderId 
  */
-function shipOrder(orderId) {
+async function shipOrder(orderId) {
   const updatedOrder = orderRepository.shipOrder(orderId);
   logger.info(`[OrderService] Order ${orderId} marked as SHIPPED.`);
 
-  // Fire-and-forget: Messenger shipping notification to customer
+  let notifyResult = { sent: false, reason: 'NO_PSID' };
   if (updatedOrder.psid) {
-    messengerService.sendShippingNotification(updatedOrder.psid, orderId).catch((err) => {
+    try {
+      notifyResult = await messengerService.sendShippingNotification(updatedOrder.psid, orderId);
+    } catch (err) {
       logger.error(`[OrderService] Failed sending shipping notification for ${orderId}:`, err);
-    });
+      notifyResult = { sent: false, reason: 'ERROR', error: err.message };
+    }
   }
 
   // Fire-and-forget: Telegram confirmation to owner
-  telegramService.notifyShipped(orderId).catch(() => {});
+  telegramService.notifyShipped(orderId, notifyResult).catch(() => {});
 
-  return updatedOrder;
+  return {
+    ...updatedOrder,
+    notification: notifyResult,
+  };
 }
 
 /**

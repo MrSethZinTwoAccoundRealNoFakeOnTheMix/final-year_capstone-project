@@ -624,6 +624,7 @@ The previous "Color Group Tag" concept was abandoned because requiring the merch
 - **Test Suites:**
   - `node scripts/test_customer_storefront.js` (Customer catalog & order lifecycle)
   - `node scripts/test_redesign_verification.js` (Admin SPU/SKU & Quick Sell)
+  - `node scripts/test_24h_window.js` (Meta 24h window tracking & safe shipping notices)
 
 ---
 

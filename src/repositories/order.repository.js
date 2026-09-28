@@ -46,6 +46,14 @@ try {
   db.exec('ALTER TABLE facebook_profiles ADD COLUMN status TEXT DEFAULT "RESOLVED"');
 } catch (e) {}
 
+try {
+  db.exec('ALTER TABLE facebook_profiles ADD COLUMN first_interaction_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+} catch (e) {}
+
+try {
+  db.exec('ALTER TABLE facebook_profiles ADD COLUMN last_interaction_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+} catch (e) {}
+
 /**
  * Read cached Facebook Profile from SQLite.
  * Returns: string (name), null (unresolvable/failed), or undefined (not cached yet).
@@ -63,8 +71,8 @@ function getCachedFacebookProfile(psid) {
 function setCachedFacebookProfile(psid, name, status = 'RESOLVED') {
   if (!psid) return;
   db.prepare(`
-    INSERT INTO facebook_profiles (psid, name, status, updated_at)
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO facebook_profiles (psid, name, status, first_interaction_at, last_interaction_at, updated_at)
+    VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     ON CONFLICT(psid) DO UPDATE SET
       name = excluded.name,
       status = excluded.status,
@@ -74,6 +82,34 @@ function setCachedFacebookProfile(psid, name, status = 'RESOLVED') {
   if (name) {
     db.prepare('UPDATE orders SET facebook_name = ? WHERE psid = ? AND (facebook_name IS NULL OR facebook_name = \'\')').run(name, psid);
   }
+}
+
+/**
+ * Record an incoming customer interaction (text message, postback, quick reply).
+ * Updates last_interaction_at and sets first_interaction_at if first time seen.
+ */
+function recordCustomerInteraction(psid, name = null) {
+  if (!psid) return;
+  db.prepare(`
+    INSERT INTO facebook_profiles (psid, name, status, first_interaction_at, last_interaction_at, updated_at)
+    VALUES (?, ?, 'RESOLVED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(psid) DO UPDATE SET
+      last_interaction_at = CURRENT_TIMESTAMP,
+      updated_at = CURRENT_TIMESTAMP,
+      name = COALESCE(excluded.name, facebook_profiles.name)
+  `).run(psid, name || null);
+}
+
+/**
+ * Get customer interaction profile for 24h messaging window status.
+ */
+function getCustomerInteraction(psid) {
+  if (!psid) return null;
+  return db.prepare(`
+    SELECT psid, name, status, first_interaction_at, last_interaction_at
+    FROM facebook_profiles
+    WHERE psid = ?
+  `).get(psid) || null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,7 +151,10 @@ function findAll() {
   } catch (e) {}
 
   const orders = db.prepare(`
-    SELECT * FROM orders ORDER BY created_at DESC
+    SELECT o.*, fp.last_interaction_at, fp.first_interaction_at
+    FROM orders o
+    LEFT JOIN facebook_profiles fp ON o.psid = fp.psid
+    ORDER BY o.created_at DESC
   `).all();
 
   for (const order of orders) {
@@ -129,7 +168,12 @@ function findAll() {
  * Returns null if not found.
  */
 function findById(id) {
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+  const order = db.prepare(`
+    SELECT o.*, fp.last_interaction_at, fp.first_interaction_at
+    FROM orders o
+    LEFT JOIN facebook_profiles fp ON o.psid = fp.psid
+    WHERE o.id = ?
+  `).get(id);
   if (!order) return null;
   order.items = getItemsForOrder(id);
   return order;
@@ -435,4 +479,6 @@ module.exports = {
   findLatestByPsid,
   getCachedFacebookProfile,
   setCachedFacebookProfile,
+  recordCustomerInteraction,
+  getCustomerInteraction,
 };

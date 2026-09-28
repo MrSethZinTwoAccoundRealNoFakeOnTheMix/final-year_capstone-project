@@ -2,6 +2,7 @@ const { VERIFY_TOKEN } = require('../config');
 const { SHOP_LINK_COOLDOWN_MS } = require('../config/constants');
 const identityService = require('../services/identity.service');
 const messengerService = require('../services/messenger.service');
+const orderRepository = require('../repositories/order.repository');
 const logger = require('../utils/logger');
 
 // Cache of last time a shop link was auto-sent to a PSID (in-memory cooldown)
@@ -50,6 +51,11 @@ async function handleEvent(req, res) {
       if (webhookEvent.message && webhookEvent.message.is_echo) {
         continue;
       }
+
+      // Record customer interaction timestamp to track Meta 24-hour messaging window
+      try {
+        orderRepository.recordCustomerInteraction(senderPsid);
+      } catch (e) {}
 
       // Pre-warm user profile in server RAM cache in the background (0ms delay when opening webview)
       messengerService.getUserProfile(senderPsid).catch(() => {});

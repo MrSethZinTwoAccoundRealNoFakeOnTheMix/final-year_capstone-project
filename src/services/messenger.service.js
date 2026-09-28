@@ -130,22 +130,50 @@ async function sendOrderReceipt(psid, order, items) {
 }
 
 /**
+ * Check if a customer's Meta 24-hour standard messaging window is currently open.
+ * @param {string} psid 
+ * @returns {boolean}
+ */
+function isWithin24HourWindow(psid) {
+  if (!psid) return false;
+  const interaction = orderRepository.getCustomerInteraction(psid);
+  if (!interaction || !interaction.last_interaction_at) {
+    return false;
+  }
+  const lastTime = new Date(
+    typeof interaction.last_interaction_at === 'string' && !interaction.last_interaction_at.includes('Z') && !interaction.last_interaction_at.includes('+')
+      ? interaction.last_interaction_at.replace(' ', 'T') + 'Z'
+      : interaction.last_interaction_at
+  ).getTime();
+
+  if (isNaN(lastTime)) return false;
+  const elapsedMs = Date.now() - lastTime;
+  return elapsedMs < 24 * 60 * 60 * 1000 && elapsedMs >= 0;
+}
+
+/**
  * Send shipping notification to customer.
- * Fire-and-forget.
- * Note: If the 24-hour standard messaging window has expired, Graph API returns an error,
- * which is caught and logged gracefully without throwing.
+ * If the 24-hour window has expired, skip sending to avoid Meta policy violations and flags.
+ * Returns { sent: boolean, reason?: string }
  * @param {string} psid 
  * @param {string} orderId 
  */
 async function sendShippingNotification(psid, orderId) {
-  if (!psid) return;
+  if (!psid) return { sent: false, reason: 'NO_PSID' };
+
+  if (!isWithin24HourWindow(psid)) {
+    logger.warn(`[Messenger] 24-hour messaging window expired for PSID ${psid}. Skipping automated shipping notification for ${orderId} to avoid Meta flags.`);
+    return { sent: false, reason: 'WINDOW_EXPIRED' };
+  }
 
   try {
     const messageText = locales.shippingNotification(orderId);
     await sendRawMessage(psid, { text: messageText });
     logger.info(`[Messenger] Sent shipping notification for order ${orderId} to ${psid}`);
+    return { sent: true };
   } catch (err) {
     logger.error(`[Messenger] Failed to send shipping notification for order ${orderId}:`, err.message || err);
+    return { sent: false, reason: 'ERROR', error: err.message };
   }
 }
 
@@ -301,5 +329,6 @@ module.exports = {
   sendExplicitShopResponse,
   sendLightweightGreeting,
   getUserProfile,
+  isWithin24HourWindow,
 };
 

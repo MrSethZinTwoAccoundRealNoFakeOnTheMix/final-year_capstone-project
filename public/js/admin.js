@@ -281,6 +281,73 @@
     return '៛' + khr.toLocaleString();
   }
 
+  // Timezone & Timestamp Helpers (Asia/Phnom_Penh UTC+7)
+  const TIMEZONE_CAMBODIA = 'Asia/Phnom_Penh';
+
+  function parseUtcDate(dateStr) {
+    if (!dateStr) return new Date();
+    if (dateStr instanceof Date) return dateStr;
+    if (typeof dateStr === 'string') {
+      const trimmed = dateStr.trim();
+      // SQLite CURRENT_TIMESTAMP returns "YYYY-MM-DD HH:MM:SS" (UTC without Z or offset)
+      if (!trimmed.includes('Z') && !trimmed.includes('+') && !trimmed.includes('T')) {
+        return new Date(trimmed.replace(' ', 'T') + 'Z');
+      }
+      if (!trimmed.includes('Z') && !trimmed.includes('+')) {
+        return new Date(trimmed + 'Z');
+      }
+      return new Date(trimmed);
+    }
+    return new Date(dateStr);
+  }
+
+  function formatDateTimePhnomPenh(dateStr) {
+    if (!dateStr) return '';
+    const d = parseUtcDate(dateStr);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE_CAMBODIA,
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(d);
+  }
+
+  function formatTimePhnomPenh(dateStr) {
+    if (!dateStr) return '';
+    const d = parseUtcDate(dateStr);
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE_CAMBODIA,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(d);
+  }
+
+  // Meta 24-Hour Messaging Window Helper
+  function get24hWindowStatus(lastInteractionAt) {
+    if (!lastInteractionAt) {
+      return { active: false, hoursLeft: 0, text: 'No interaction', expired: true };
+    }
+    const lastTime = parseUtcDate(lastInteractionAt).getTime();
+    if (isNaN(lastTime)) {
+      return { active: false, hoursLeft: 0, text: 'No interaction', expired: true };
+    }
+    const elapsedMs = Date.now() - lastTime;
+    const msRemaining = (24 * 60 * 60 * 1000) - elapsedMs;
+
+    if (msRemaining <= 0) {
+      return { active: false, hoursLeft: 0, text: 'Expired (>24h)', expired: true };
+    }
+
+    const hoursLeft = Math.floor(msRemaining / (1000 * 60 * 60));
+    const minsLeft = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const timeStr = hoursLeft > 0 ? `${hoursLeft}h left` : `${minsLeft}m left`;
+
+    return { active: true, hoursLeft, minsLeft, text: timeStr, expired: false };
+  }
+
   // Toast Notifications
   function showToast(message, type = 'info', undoCallback = null) {
     const toast = document.createElement('div');
@@ -2361,12 +2428,7 @@
 
     ordersEmptyEl.classList.add('hidden');
     ordersListEl.innerHTML = filtered.map((order) => {
-      const createdDate = new Date(order.created_at).toLocaleString([], {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const createdDate = formatDateTimePhnomPenh(order.created_at);
 
       const rawMethod = (order.delivery_type || order.payment_method || 'COD').toUpperCase();
       let deliveryBadge = `<span class="badge-delivery badge-delivery-cod">🛵 COD</span>`;
@@ -2479,7 +2541,7 @@
         `;
       } else if (order.status === 'SHIPPED') {
         const shippedTimestamp = order.shipped_at || order.updated_at || order.created_at;
-        const shippedDate = new Date(shippedTimestamp + (shippedTimestamp.includes('Z') ? '' : 'Z'));
+        const shippedDate = parseUtcDate(shippedTimestamp);
         const daysInTransit = Math.max(0, Math.floor((Date.now() - shippedDate.getTime()) / (1000 * 60 * 60 * 24)));
         const daysLeft = Math.max(0, 7 - daysInTransit);
 
@@ -2523,6 +2585,27 @@
       const filledName = order.customer_name || 'Guest Customer';
       const fbName = order.facebook_name;
 
+      // 24-Hour Messenger Window Status Chip (Option B)
+      let windowChipHtml = '';
+      if (order.psid) {
+        const win = get24hWindowStatus(order.last_interaction_at);
+        if (win.active) {
+          windowChipHtml = `
+            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window is OPEN (${win.text}). Automated Messenger shipping notice will be delivered.">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>24h: ${win.text}</span>
+            </span>
+          `;
+        } else {
+          windowChipHtml = `
+            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-amber-300/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window has EXPIRED. Outbound automated notice will be safely skipped to prevent Meta flags.">
+              <span>⏳</span>
+              <span>24h Expired</span>
+            </span>
+          `;
+        }
+      }
+
       let nameBadgeHtml = '';
       if (fbName && fbName.trim().toLowerCase() !== filledName.trim().toLowerCase()) {
         nameBadgeHtml = `
@@ -2532,6 +2615,7 @@
               <span>💬</span>
               <span>FB: ${escapeHtml(fbName)}</span>
             </span>
+            ${windowChipHtml}
           </div>
         `;
       } else if (fbName) {
@@ -2542,10 +2626,16 @@
               <span>✓</span>
               <span>FB Verified</span>
             </span>
+            ${windowChipHtml}
           </div>
         `;
       } else {
-        nameBadgeHtml = `<span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>`;
+        nameBadgeHtml = `
+          <div class="flex items-center flex-wrap gap-1.5 min-w-0">
+            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
+            ${windowChipHtml}
+          </div>
+        `;
       }
 
       return `
@@ -2651,7 +2741,16 @@
   window.shipOrderAction = async function (orderId) {
     const actionKey = `ship_${orderId}`;
     if (pendingOrderActions.has(actionKey)) return;
-    if (!confirm(`Mark order ${orderId} as SHIPPED? An automated notification will be sent to the customer via Messenger.`)) return;
+
+    const order = ordersList.find((o) => o.id === orderId);
+    const win = order && order.psid ? get24hWindowStatus(order.last_interaction_at) : null;
+    const isExpired = !win || !win.active;
+
+    const confirmMsg = isExpired
+      ? `Mark order ${orderId} as SHIPPED?\n\n⚠️ Note: The customer's 24-hour Messenger window has expired. The order will be marked as SHIPPED, but the automated Messenger notice will be skipped.`
+      : `Mark order ${orderId} as SHIPPED? An automated notification will be sent to the customer via Messenger.`;
+
+    if (!confirm(confirmMsg)) return;
 
     pendingOrderActions.add(actionKey);
     try {
@@ -2754,7 +2853,7 @@
             : `${s.item_count} items`,
           totalPrice: s.total_amount,
           count: s.item_count,
-          time: new Date(s.created_at + (s.created_at.includes('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: formatDateTimePhnomPenh(s.created_at),
           items: s.items,
           status: s.status,
         }));
@@ -2773,11 +2872,7 @@
   // OVERVIEW & REVENUE ANALYTICS ENGINE
   // ─────────────────────────────────────────────────────────────
   function parseEntryDate(dateStr) {
-    if (!dateStr) return new Date();
-    if (typeof dateStr === 'string' && !dateStr.includes('Z') && !dateStr.includes('+')) {
-      return new Date(dateStr.replace(' ', 'T') + 'Z');
-    }
-    return new Date(dateStr);
+    return parseUtcDate(dateStr);
   }
 
   function getRangeBounds(rangeType) {

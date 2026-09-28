@@ -158,12 +158,17 @@ function cancelOrder(req, res, next) {
 /**
  * Mark order as SHIPPED
  */
-function shipOrder(req, res, next) {
+async function shipOrder(req, res, next) {
   try {
-    const order = orderService.shipOrder(req.params.id);
+    const order = await orderService.shipOrder(req.params.id);
+    const windowExpired = order.notification && order.notification.reason === 'WINDOW_EXPIRED';
+    const message = windowExpired
+      ? `Order ${req.params.id} marked as SHIPPED! ⚠️ Messenger notice skipped (24h window expired).`
+      : `Order ${req.params.id} marked as SHIPPED! Customer notified via Messenger.`;
+
     res.json({
       success: true,
-      message: `Order ${req.params.id} has been marked as SHIPPED.`,
+      message,
       order,
     });
   } catch (err) {
