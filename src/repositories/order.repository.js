@@ -47,11 +47,11 @@ try {
 } catch (e) {}
 
 try {
-  db.exec('ALTER TABLE facebook_profiles ADD COLUMN first_interaction_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+  db.exec('ALTER TABLE facebook_profiles ADD COLUMN first_interaction_at DATETIME DEFAULT NULL');
 } catch (e) {}
 
 try {
-  db.exec('ALTER TABLE facebook_profiles ADD COLUMN last_interaction_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+  db.exec('ALTER TABLE facebook_profiles ADD COLUMN last_interaction_at DATETIME DEFAULT NULL');
 } catch (e) {}
 
 /**
