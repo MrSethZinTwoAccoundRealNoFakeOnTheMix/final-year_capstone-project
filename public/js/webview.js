@@ -1823,21 +1823,64 @@
   };
 
   window.returnToMessengerChat = function () {
-    // 1. If running inside Meta Messenger App webview, close webview directly
-    if (window.MessengerExtensions && typeof window.MessengerExtensions.requestCloseBrowser === 'function') {
-      window.MessengerExtensions.requestCloseBrowser(
-        function success() {
-          console.log('[MessengerExtensions] Browser closed successfully.');
-        },
-        function error(err) {
-          console.warn('[MessengerExtensions] requestCloseBrowser error, falling back:', err);
-          fallbackCloseWebview();
+    const btn = document.getElementById('btn-return-chat');
+    const btnText = document.getElementById('btn-return-chat-text');
+    const originalText = btnText ? btnText.textContent : 'Return to Messenger Chat';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('opacity-75');
+      if (btnText) btnText.textContent = 'Closing...';
+    }
+
+    console.log('[MessengerExtensions] Attempting to close webview. SDK ready:', window.isMessengerExtensionsReady, 'MessengerExtensions defined:', typeof window.MessengerExtensions !== 'undefined');
+
+    function resetButton() {
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75');
+        if (btnText) btnText.textContent = originalText;
+      }
+    }
+
+    function trySdkClose() {
+      const ext = window.MessengerExtensions;
+      if (ext && typeof ext.requestCloseBrowser === 'function') {
+        try {
+          ext.requestCloseBrowser(
+            function success() {
+              console.log('[MessengerExtensions] Browser closed successfully.');
+            },
+            function error(err) {
+              console.warn('[MessengerExtensions] requestCloseBrowser error code:', err);
+              resetButton();
+              fallbackCloseWebview();
+            }
+          );
+          return true;
+        } catch (e) {
+          console.warn('[MessengerExtensions] Exception in requestCloseBrowser:', e);
         }
-      );
+      }
+      return false;
+    }
+
+    if (trySdkClose()) {
       return;
     }
 
-    fallbackCloseWebview();
+    // If SDK bridge is still completing handshake, retry for up to 500ms
+    let retries = 0;
+    const timer = setInterval(() => {
+      retries++;
+      if (trySdkClose()) {
+        clearInterval(timer);
+      } else if (retries >= 5) {
+        clearInterval(timer);
+        resetButton();
+        fallbackCloseWebview();
+      }
+    }, 100);
   };
 
   function fallbackCloseWebview() {
@@ -1846,7 +1889,7 @@
       window.close();
     } catch (e) {}
 
-    // 3. Fallback toast if standalone mobile browser prevents programmatic window.close
+    // 3. Fallback toast guiding customer if in-app browser sandbox prevents script window.close
     setTimeout(() => {
       showToast(t('closeWebviewHint'), 'info');
     }, 300);

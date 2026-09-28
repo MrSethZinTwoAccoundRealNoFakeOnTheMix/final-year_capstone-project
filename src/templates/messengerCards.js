@@ -60,6 +60,8 @@ function buildItemElement(item, shopUrl, baseUrl) {
         type: 'web_url',
         url: shopUrl,
         title: 'View Store',
+        webview_height_ratio: 'tall',
+        messenger_extensions: true,
       },
     ];
   }

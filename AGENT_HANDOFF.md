@@ -625,6 +625,13 @@ The previous "Color Group Tag" concept was abandoned because requiring the merch
   - `node scripts/test_customer_storefront.js` (Customer catalog & order lifecycle)
   - `node scripts/test_redesign_verification.js` (Admin SPU/SKU & Quick Sell)
   - `node scripts/test_24h_window.js` (Meta 24h window tracking & safe shipping notices)
+  - `node scripts/test_webhook_debounce.js` (Webhook rapid tap deduplication)
+
+### 3. Messenger Extensions & Webview Close SDK
+- **Architecture:** `window.extAsyncInit` is defined in `<head>` before `https://connect.facebook.net/en_US/messenger.Extensions.js` loads.
+- **Button Requirements:** Any button or carousel item opening the webview must specify `messenger_extensions: true` and `webview_height_ratio: 'tall'`.
+- **Domain Whitelisting:** Domain `https://test.trapiseth.site` must be whitelisted on the Facebook Page via the Graph API `/me/messenger_profile` endpoint.
+- **Fallback:** In external browsers or unwhitelisted contexts, `window.close()` is attempted with a fallback toast guiding the customer to tap Done/✕.
 
 ---
 
