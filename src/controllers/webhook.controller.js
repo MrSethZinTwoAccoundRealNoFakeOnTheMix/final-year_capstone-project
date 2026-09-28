@@ -7,6 +7,9 @@ const logger = require('../utils/logger');
 
 // Cache of last time a shop link was auto-sent to a PSID (in-memory cooldown)
 const lastShopLinkSentAt = new Map();
+// In-flight locks to prevent parallel duplicate webhook processing for the same PSID
+const inFlightShopRequests = new Set();
+const EXPLICIT_SHOP_DEBOUNCE_MS = 10000; // 10-second debounce against accidental multi-taps
 
 /**
  * 1. Webhook Verification (Meta challenge endpoint)
@@ -78,24 +81,39 @@ async function handleEvent(req, res) {
         userText.includes('ចូលហាង') ||
         userText.includes('open shop');
 
-      // Check cooldown (in-memory)
-      const lastSent = lastShopLinkSentAt.get(senderPsid) || 0;
-      const isCoolDownOver = Date.now() - lastSent > (SHOP_LINK_COOLDOWN_MS || 60000);
-
-      // 1. Explicit Shop Request
+      // 1. Explicit Shop Request (Debounced against accidental multi-taps)
       if (isExplicitShopRequest) {
-        logger.info(`🛍️ Explicit shop request from PSID: ${senderPsid} (Trigger: "${actionPayload || userText}")`);
+        const lastSent = lastShopLinkSentAt.get(senderPsid) || 0;
+        const isDebounced = Date.now() - lastSent < EXPLICIT_SHOP_DEBOUNCE_MS;
+        const isInFlight = inFlightShopRequests.has(senderPsid);
+
+        if (isDebounced || isInFlight) {
+          logger.info(`⏳ Debounced duplicate shop request from PSID: ${senderPsid} (within 10s or in-flight). Skipping duplicate send.`);
+          continue;
+        }
+
+        inFlightShopRequests.add(senderPsid);
         lastShopLinkSentAt.set(senderPsid, Date.now());
 
-        const shopUrl = identityService.generateSignedUrl(senderPsid);
-        await messengerService.sendExplicitShopResponse(senderPsid, shopUrl);
+        logger.info(`🛍️ Explicit shop request from PSID: ${senderPsid} (Trigger: "${actionPayload || userText}")`);
+
+        try {
+          const shopUrl = identityService.generateSignedUrl(senderPsid);
+          await messengerService.sendExplicitShopResponse(senderPsid, shopUrl);
+        } finally {
+          inFlightShopRequests.delete(senderPsid);
+        }
       }
       // 2. First interaction or after cooldown
-      else if (isCoolDownOver) {
-        logger.info(`👋 First interaction from PSID: ${senderPsid} (Trigger: "${userText || 'interaction'}")`);
-        lastShopLinkSentAt.set(senderPsid, Date.now());
+      else {
+        const lastSent = lastShopLinkSentAt.get(senderPsid) || 0;
+        const isCoolDownOver = Date.now() - lastSent > (SHOP_LINK_COOLDOWN_MS || 60000);
+        if (isCoolDownOver) {
+          logger.info(`👋 First interaction from PSID: ${senderPsid} (Trigger: "${userText || 'interaction'}")`);
+          lastShopLinkSentAt.set(senderPsid, Date.now());
 
-        await messengerService.sendLightweightGreeting(senderPsid);
+          await messengerService.sendLightweightGreeting(senderPsid);
+        }
       }
     }
   } else {

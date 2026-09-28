@@ -535,9 +535,15 @@
         </p>
       </div>
 
-      <button type="button" onclick="closeSuccessModal()"
-        class="btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg">
-        Continue Shopping
+      <button type="button" onclick="window.returnToMessengerChat()" id="btn-return-chat"
+        class="btn-gold w-full py-3.5 rounded-2xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2 transition active:scale-[0.98]">
+        <span>💬</span>
+        <span id="btn-return-chat-text">Return to Messenger Chat</span>
+      </button>
+
+      <button type="button" onclick="window.closeSuccessModal()" id="btn-continue-shopping"
+        class="w-full mt-2.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition">
+        <span id="btn-continue-shopping-text">Continue Browsing Catalog</span>
       </button>
     </div>
   </div>
@@ -546,8 +552,19 @@
   <div id="toast-container"
     class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
+  <!-- Meta Messenger Extensions JS SDK -->
+  <script>
+    (function(d, s, id){
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {return;}
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/messenger.Extensions.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'MessengerExtensions'));
+  </script>
+
   <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js?v=1.3.1"></script>
+  <script src="/js/webview.js?v=1.3.2"></script>
 
 </body>
 

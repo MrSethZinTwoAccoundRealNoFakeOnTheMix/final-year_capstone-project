@@ -81,7 +81,9 @@
       orderStatus: 'Status:',
       pendingVerification: 'PENDING VERIFICATION',
       messengerNote: 'A receipt carousel has been sent to your Messenger chat! Our shop owner will verify payment and update shipping.',
-      continueShopping: 'Continue Shopping',
+      returnToChat: 'Return to Messenger Chat',
+      continueShopping: 'Continue Browsing Catalog',
+      closeWebviewHint: 'Order completed! Tap ✕ or Done in the top corner to return to your chat.',
       clearBagConfirm: 'Clear all items from your shopping bag?',
       bagCleared: 'Shopping bag cleared',
       addedToBag: 'Added "{name}" to bag!',
@@ -173,7 +175,9 @@
       orderStatus: 'ស្ថានភាព:',
       pendingVerification: 'រង់ចាំការផ្ទៀងផ្ទាត់ការទូទាត់',
       messengerNote: 'បង្កាន់ដៃបញ្ជាទិញត្រូវបានផ្ញើចូលក្នុង Messenger របស់អ្នកហើយ! ម្ចាស់ហាងនឹងពិនិត្យការទូទាត់ និងចាត់ចែងដឹកជញ្ជូន។',
-      continueShopping: 'បន្តទិញទំនិញ',
+      returnToChat: 'ត្រឡប់ទៅការសន្ទនា Messenger',
+      continueShopping: 'បន្តមើលទំនិញក្នុងហាង',
+      closeWebviewHint: 'ការបញ្ជាទិញបានជោគជ័យ! សូមចុច ✕ ឬ Done នៅជ្រុងខាងលើដើម្បីត្រឡប់ទៅការសន្ទនា។',
       clearBagConfirm: 'តើអ្នកពិតជាចង់លុបទំនិញទាំងអស់ចេញពីកន្ត្រកមែនទេ?',
       bagCleared: 'បានសម្អាតកន្ត្រកទំនិញរួចរាល់',
       addedToBag: 'បានដាក់ "{name}" ចូលកន្ត្រក!',
@@ -518,6 +522,14 @@
     const barCheckoutBtn = document.getElementById('bar-checkout-btn');
     if (barCheckoutBtn) {
       barCheckoutBtn.innerHTML = `<span>${t('viewCart')}</span>`;
+    }
+    const returnChatBtn = document.getElementById('btn-return-chat-text');
+    if (returnChatBtn) {
+      returnChatBtn.textContent = t('returnToChat');
+    }
+    const continueShoppingBtn = document.getElementById('btn-continue-shopping-text');
+    if (continueShoppingBtn) {
+      continueShoppingBtn.textContent = t('continueShopping');
     }
 
     // Refresh UI elements
@@ -1809,6 +1821,36 @@
       closeModalState('#view-success');
     }
   };
+
+  window.returnToMessengerChat = function () {
+    // 1. If running inside Meta Messenger App webview, close webview directly
+    if (window.MessengerExtensions && typeof window.MessengerExtensions.requestCloseBrowser === 'function') {
+      window.MessengerExtensions.requestCloseBrowser(
+        function success() {
+          console.log('[MessengerExtensions] Browser closed successfully.');
+        },
+        function error(err) {
+          console.warn('[MessengerExtensions] requestCloseBrowser error, falling back:', err);
+          fallbackCloseWebview();
+        }
+      );
+      return;
+    }
+
+    fallbackCloseWebview();
+  };
+
+  function fallbackCloseWebview() {
+    // 2. Normal browser window.close attempt
+    try {
+      window.close();
+    } catch (e) {}
+
+    // 3. Fallback toast if standalone mobile browser prevents programmatic window.close
+    setTimeout(() => {
+      showToast(t('closeWebviewHint'), 'info');
+    }, 300);
+  }
 
   if (styleModal) {
     styleModal.addEventListener('click', (e) => {
