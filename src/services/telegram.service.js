@@ -133,7 +133,7 @@ if (!TELEGRAM_BOT_TOKEN) {
         return bot.sendMessage(
           chatId,
           `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID or TELEGRAM_OWNER_CHAT_ID_2.`,
-          { parse_mode: 'Markdown' }
+          // { parse_mode: 'Markdown' }
         );
       }
 
