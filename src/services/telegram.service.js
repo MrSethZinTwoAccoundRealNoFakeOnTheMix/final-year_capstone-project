@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 /**
  * telegram.service.js
@@ -15,74 +15,82 @@
  * Errors are logged but never propagate to the caller.
  */
 
-const TelegramBot = require('node-telegram-bot-api');
-const { TELEGRAM_BOT_TOKEN, TELEGRAM_OWNER_CHAT_IDS, BASE_URL } = require('../config');
-const messengerService = require('./messenger.service');
-const logger = require('../utils/logger');
+const TelegramBot = require("node-telegram-bot-api");
+const {
+  TELEGRAM_BOT_TOKEN,
+  TELEGRAM_OWNER_CHAT_IDS,
+  BASE_URL,
+} = require("../config");
+const messengerService = require("./messenger.service");
+const logger = require("../utils/logger");
 
 // ─── Format & Meta Helpers ──────────────────────────────────────────────────
 
 function formatPhnomPenhTime(date = new Date()) {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Phnom_Penh',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Phnom_Penh",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: true,
   }).format(date);
 }
 
 function getDeliveryDetails(paymentMethod) {
-  const method = (paymentMethod || 'COD').toUpperCase();
-  if (method === 'COD') {
+  const method = (paymentMethod || "COD").toUpperCase();
+  if (method === "COD") {
     return {
-      method: 'COD',
-      label: '🛵 Cash on Delivery (Grab Express)',
-      notice: '🛵 Grab COD: Collect cash upon driver delivery in Phnom Penh.',
+      method: "COD",
+      label: "🛵 Cash on Delivery (Grab Express)",
+      notice: "🛵 Grab COD: Collect cash upon driver delivery in Phnom Penh.",
     };
   }
-  if (method === 'KHQR') {
+  if (method === "KHQR") {
     return {
-      method: 'KHQR',
-      label: '📲 Bakong KHQR (Prepaid Scan)',
-      notice: '⏰ Check Bakong app to confirm payment before tapping Confirm.',
+      method: "KHQR",
+      label: "📲 Bakong KHQR (Prepaid Scan)",
+      notice: "⏰ Check Bakong app to confirm payment before tapping Confirm.",
     };
   }
-  if (method === 'VET') {
+  if (method === "VET") {
     return {
-      method: 'VET',
-      label: '📦 Provincial Delivery (Virak Buntham / J&T)',
-      notice: '📦 VET / J&T: Drop at courier depot for provincial shipment.',
+      method: "VET",
+      label: "📦 Provincial Delivery (Virak Buntham / J&T)",
+      notice: "📦 VET / J&T: Drop at courier depot for provincial shipment.",
     };
   }
   return {
-    method: 'OTHER',
-    label: '💬 Other / Discuss with Customer',
-    notice: '💬 Discuss delivery & payment details with customer before confirming.',
+    method: "OTHER",
+    label: "💬 Other / Discuss with Customer",
+    notice:
+      "💬 Discuss delivery & payment details with customer before confirming.",
   };
 }
 
 async function getOrderMeta(orderId) {
   let order = null;
   try {
-    const orderRepository = require('../repositories/order.repository');
+    const orderRepository = require("../repositories/order.repository");
     order = orderRepository.findById(orderId);
   } catch (err) {
-    logger.warn(`[Telegram] Could not find order ${orderId} in repository:`, err.message);
+    logger.warn(
+      `[Telegram] Could not find order ${orderId} in repository:`,
+      err.message,
+    );
   }
 
-  let fbDisplay = 'N/A';
-  let custDisplay = 'N/A';
-  let totalDisplay = '';
+  let fbDisplay = "N/A";
+  let custDisplay = "N/A";
+  let totalDisplay = "";
 
   if (order) {
     if (order.psid) {
       try {
         const profile = await messengerService.getUserProfile(order.psid);
         if (profile && profile.name) {
-          fbDisplay = profile.name.replace(/[*_`\[]/g, '');
+          fbDisplay = profile.name.replace(/[*_`\[]/g, "");
         } else {
           fbDisplay = `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}`;
         }
@@ -90,11 +98,16 @@ async function getOrderMeta(orderId) {
         fbDisplay = `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}`;
       }
     } else {
-      fbDisplay = 'Guest / No PSID';
+      fbDisplay = "Guest / No PSID";
     }
 
-    const cleanCustName = (order.customer_name || 'N/A').replace(/[*_`\[]/g, '');
-    custDisplay = order.phone ? `${cleanCustName} (${order.phone})` : cleanCustName;
+    const cleanCustName = (order.customer_name || "N/A").replace(
+      /[*_`\[]/g,
+      "",
+    );
+    custDisplay = order.phone
+      ? `${cleanCustName} (${order.phone})`
+      : cleanCustName;
 
     if (order.total_amount != null) {
       const totalKHR = (Number(order.total_amount) * 4100).toLocaleString();
@@ -118,9 +131,13 @@ async function getOrderMeta(orderId) {
 let bot = null;
 
 if (!TELEGRAM_BOT_TOKEN) {
-  logger.warn('[Telegram] TELEGRAM_BOT_TOKEN not set — Telegram notifications disabled.');
+  logger.warn(
+    "[Telegram] TELEGRAM_BOT_TOKEN not set — Telegram notifications disabled.",
+  );
 } else if (!TELEGRAM_OWNER_CHAT_IDS || TELEGRAM_OWNER_CHAT_IDS.length === 0) {
-  logger.warn('[Telegram] No TELEGRAM_OWNER_CHAT_ID configured — Telegram notifications disabled.');
+  logger.warn(
+    "[Telegram] No TELEGRAM_OWNER_CHAT_ID configured — Telegram notifications disabled.",
+  );
 } else {
   try {
     // Long-polling mode: works without any public URL / tunnel
@@ -132,23 +149,23 @@ if (!TELEGRAM_BOT_TOKEN) {
       if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
         return bot.sendMessage(
           chatId,
-          `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID or TELEGRAM_OWNER_CHAT_ID_2.`,
-          // { parse_mode: 'Markdown' }
+          `⛔ Unauthorized access.\nYour Chat ID is: \`${chatId}\`\nPlease add this ID to .env as TELEGRAM_OWNER_CHAT_ID (or TELEGRAM_OWNER_CHAT_ID_2, TELEGRAM_OWNER_CHAT_ID_3, etc.).`,
+          { parse_mode: "Markdown" },
         );
       }
 
       return bot.sendMessage(
         chatId,
         `👋 *Welcome to Jomrous Owner Panel* 💍\n\n` +
-        `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
-        `📱 *Features Enabled:*\n` +
-        `• Real-time new order alerts with instant 1-tap actions\n` +
-        `• Multi-stage order lifecycle: Confirm ➔ Ship ➔ Deliver/Return\n` +
-        `• Automatic stock synchronization with database\n\n` +
-        `🌐 *Web Links:*\n` +
-        `• Store: ${BASE_URL}\n` +
-        `• Admin Panel: ${BASE_URL}/admin.html`,
-        { parse_mode: 'Markdown' }
+          `✅ *Authorized Owner:* Chat ID \`${chatId}\`\n\n` +
+          `📱 *Features Enabled:*\n` +
+          `• Real-time new order alerts with instant 1-tap actions\n` +
+          `• Multi-stage order lifecycle: Confirm ➔ Ship ➔ Deliver/Return\n` +
+          `• Automatic stock synchronization with database\n\n` +
+          `🌐 *Web Links:*\n` +
+          `• Store: ${BASE_URL}\n` +
+          `• Admin Panel: ${BASE_URL}/admin.html`,
+        { parse_mode: "Markdown" },
       );
     });
 
@@ -157,224 +174,301 @@ if (!TELEGRAM_BOT_TOKEN) {
     // PENDING   → [✅ Confirm & Pack] [❌ Cancel]
     // CONFIRMED → [🚚 Mark as Shipped] [❌ Cancel & Restock]
     // SHIPPED   → [🎉 Delivered / Completed] [📦 Return & Restock (Refund)]
-    bot.on('callback_query', async (query) => {
+    bot.on("callback_query", async (query) => {
       const chatId = query.message.chat.id.toString();
-      const data   = query.data || '';
+      const data = query.data || "";
 
       // Security: only process callbacks from authorized owners
       if (!TELEGRAM_OWNER_CHAT_IDS.includes(chatId)) {
-        await bot.answerCallbackQuery(query.id, { text: '⛔ Unauthorized.' }).catch(() => {});
+        await bot
+          .answerCallbackQuery(query.id, { text: "⛔ Unauthorized." })
+          .catch(() => {});
         return;
       }
 
-      const [action, orderId, extra] = data.split(':'); // e.g. "tg_confirm:ORD-123456" or "tg_set_type:ORD-123456:COD"
+      const [action, orderId, extra] = data.split(":"); // e.g. "tg_confirm:ORD-123456" or "tg_set_type:ORD-123456:COD"
 
       if (!orderId) {
-        await bot.answerCallbackQuery(query.id, { text: '⚠️ Unknown action.' }).catch(() => {});
+        await bot
+          .answerCallbackQuery(query.id, { text: "⚠️ Unknown action." })
+          .catch(() => {});
         return;
       }
 
       // Lazy-require to break circular dependency (telegram ↔ order)
-      const orderService = require('./order.service');
+      const orderService = require("./order.service");
 
       try {
         const meta = await getOrderMeta(orderId);
 
-        if (action === 'tg_confirm') {
+        if (action === "tg_confirm") {
           orderService.confirmOrder(orderId);
-          await bot.answerCallbackQuery(query.id, { text: '✅ Order confirmed & stock decremented!' });
+          await bot.answerCallbackQuery(query.id, {
+            text: "✅ Order confirmed & stock decremented!",
+          });
 
           // Transition to CONFIRMED stage: show [🚚 Mark as Shipped] & [❌ Cancel & Restock]
-          await bot.editMessageText(
-            `✅ *Order ${orderId} CONFIRMED*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-            `👤 *Customer:* ${meta.custDisplay}\n` +
-            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-            `🕒 *Confirmed At:* ${meta.timestamp}\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `📦 *Status:* Stock decremented. Items packed.\n` +
-            `👉 When handed to delivery driver, tap *Mark as Shipped*:`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    { text: '🚚 Mark as Shipped', callback_data: `tg_ship:${orderId}` },
-                    { text: '❌ Cancel & Restock', callback_data: `tg_cancel:${orderId}` },
+          await bot
+            .editMessageText(
+              `✅ *Order ${orderId} CONFIRMED*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+                `👤 *Customer:* ${meta.custDisplay}\n` +
+                (meta.totalDisplay
+                  ? `💰 *Total:* ${meta.totalDisplay}\n`
+                  : "") +
+                `🕒 *Confirmed At:* ${meta.timestamp}\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `📦 *Status:* Stock decremented. Items packed.\n` +
+                `👉 When handed to delivery driver, tap *Mark as Shipped*:`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "🚚 Mark as Shipped",
+                        callback_data: `tg_ship:${orderId}`,
+                      },
+                      {
+                        text: "❌ Cancel & Restock",
+                        callback_data: `tg_cancel:${orderId}`,
+                      },
+                    ],
                   ],
-                ],
+                },
               },
-            }
-          ).catch(() => {});
-
-        } else if (action === 'tg_ship') {
+            )
+            .catch(() => {});
+        } else if (action === "tg_ship") {
           const shipResult = await orderService.shipOrder(orderId);
-          const windowExpired = shipResult && shipResult.notification && shipResult.notification.reason === 'WINDOW_EXPIRED';
+          const windowExpired =
+            shipResult &&
+            shipResult.notification &&
+            shipResult.notification.reason === "WINDOW_EXPIRED";
 
           if (windowExpired) {
-            await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! ⚠️ Messenger notice skipped (24h window expired).' });
+            await bot.answerCallbackQuery(query.id, {
+              text: "🚚 Order marked as SHIPPED! ⚠️ Messenger notice skipped (24h window expired).",
+            });
           } else {
-            await bot.answerCallbackQuery(query.id, { text: '🚚 Order marked as SHIPPED! Customer notified via Messenger.' });
+            await bot.answerCallbackQuery(query.id, {
+              text: "🚚 Order marked as SHIPPED! Customer notified via Messenger.",
+            });
           }
 
           // Transition to SHIPPED stage: show [🎉 Delivered] & [📦 Return & Restock]
-          await bot.editMessageText(
-            `🚚 *Order ${orderId} SHIPPED*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-            `👤 *Customer:* ${meta.custDisplay}\n` +
-            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-            `🕒 *Shipped At:* ${meta.timestamp}\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🛵 *Status:* Package is in transit with delivery driver.\n` +
-            (windowExpired
-              ? `⚠️ *Messenger notice skipped (24h window expired).*\n`
-              : `💬 Customer notified via Messenger.\n`) +
-            `👉 Once delivery is completed or if package is returned:`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    { text: '🎉 Delivered / Completed', callback_data: `tg_complete:${orderId}` },
-                    { text: '📦 Return & Restock (Refund)', callback_data: `tg_return:${orderId}` },
+          await bot
+            .editMessageText(
+              `🚚 *Order ${orderId} SHIPPED*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+                `👤 *Customer:* ${meta.custDisplay}\n` +
+                (meta.totalDisplay
+                  ? `💰 *Total:* ${meta.totalDisplay}\n`
+                  : "") +
+                `🕒 *Shipped At:* ${meta.timestamp}\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🛵 *Status:* Package is in transit with delivery driver.\n` +
+                (windowExpired
+                  ? `⚠️ *Messenger notice skipped (24h window expired).*\n`
+                  : `💬 Customer notified via Messenger.\n`) +
+                `👉 Once delivery is completed or if package is returned:`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "🎉 Delivered / Completed",
+                        callback_data: `tg_complete:${orderId}`,
+                      },
+                      {
+                        text: "📦 Return & Restock (Refund)",
+                        callback_data: `tg_return:${orderId}`,
+                      },
+                    ],
                   ],
-                ],
+                },
               },
-            }
-          ).catch(() => {});
-
-        } else if (action === 'tg_complete') {
+            )
+            .catch(() => {});
+        } else if (action === "tg_complete") {
           orderService.completeOrder(orderId);
-          await bot.answerCallbackQuery(query.id, { text: '🎉 Order marked as Completed!' });
+          await bot.answerCallbackQuery(query.id, {
+            text: "🎉 Order marked as Completed!",
+          });
 
           // Final Completed stage: remove buttons
-          await bot.editMessageText(
-            `🎉 *Order ${orderId} COMPLETED!*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-            `👤 *Customer:* ${meta.custDisplay}\n` +
-            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-            `🕒 *Completed At:* ${meta.timestamp}\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `✅ Customer received package and payment settled. Finished! ✨`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-            }
-          ).catch(() => {});
-
-        } else if (action === 'tg_set_type') {
-          const newType = (extra || 'COD').toUpperCase();
-          const updatedOrder = orderService.updateDeliveryType(orderId, newType);
-          await bot.answerCallbackQuery(query.id, { text: `🚚 Delivery type set to ${newType}!` });
+          await bot
+            .editMessageText(
+              `🎉 *Order ${orderId} COMPLETED!*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+                `👤 *Customer:* ${meta.custDisplay}\n` +
+                (meta.totalDisplay
+                  ? `💰 *Total:* ${meta.totalDisplay}\n`
+                  : "") +
+                `🕒 *Completed At:* ${meta.timestamp}\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `✅ Customer received package and payment settled. Finished! ✨`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+              },
+            )
+            .catch(() => {});
+        } else if (action === "tg_set_type") {
+          const newType = (extra || "COD").toUpperCase();
+          const updatedOrder = orderService.updateDeliveryType(
+            orderId,
+            newType,
+          );
+          await bot.answerCallbackQuery(query.id, {
+            text: `🚚 Delivery type set to ${newType}!`,
+          });
 
           const delivery = getDeliveryDetails(updatedOrder.payment_method);
           const orderItems = updatedOrder.items || [];
           const itemLines = orderItems
-            .map((i) => `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`)
-            .join('\n');
-          const totalKHR = (Number(updatedOrder.total_amount) * 4100).toLocaleString();
+            .map(
+              (i) =>
+                `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`,
+            )
+            .join("\n");
+          const totalKHR = (
+            Number(updatedOrder.total_amount) * 4100
+          ).toLocaleString();
 
-          await bot.editMessageText(
-            `🛍️ *New Order — ${updatedOrder.id}*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n\n` +
-            `👤 *Customer:* ${updatedOrder.customer_name || 'N/A'}\n` +
-            `📞 *Phone:* ${updatedOrder.phone || 'N/A'}\n` +
-            `📍 *Address:* ${updatedOrder.address || 'N/A'}\n` +
-            `💳 *Delivery & Payment:* ${delivery.label}\n` +
-            (updatedOrder.note ? `📝 *Note:* ${updatedOrder.note}\n` : '') +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            (itemLines ? `${itemLines}\n━━━━━━━━━━━━━━━━━━━\n` : '') +
-            `💰 *Total: $${Number(updatedOrder.total_amount).toFixed(2)}* (${totalKHR} ៛)\n` +
-            `${delivery.notice}`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    { text: '✅ Confirm & Pack', callback_data: `tg_confirm:${orderId}` },
-                    { text: '❌ Cancel',         callback_data: `tg_cancel:${orderId}` },
+          await bot
+            .editMessageText(
+              `🛍️ *New Order — ${updatedOrder.id}*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n\n` +
+                `👤 *Customer:* ${updatedOrder.customer_name || "N/A"}\n` +
+                `📞 *Phone:* ${updatedOrder.phone || "N/A"}\n` +
+                `📍 *Address:* ${updatedOrder.address || "N/A"}\n` +
+                `💳 *Delivery & Payment:* ${delivery.label}\n` +
+                (updatedOrder.note ? `📝 *Note:* ${updatedOrder.note}\n` : "") +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                (itemLines ? `${itemLines}\n━━━━━━━━━━━━━━━━━━━\n` : "") +
+                `💰 *Total: $${Number(updatedOrder.total_amount).toFixed(2)}* (${totalKHR} ៛)\n` +
+                `${delivery.notice}`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "✅ Confirm & Pack",
+                        callback_data: `tg_confirm:${orderId}`,
+                      },
+                      {
+                        text: "❌ Cancel",
+                        callback_data: `tg_cancel:${orderId}`,
+                      },
+                    ],
+                    [
+                      {
+                        text: "🛵 Set COD",
+                        callback_data: `tg_set_type:${orderId}:COD`,
+                      },
+                      {
+                        text: "📲 Set KHQR",
+                        callback_data: `tg_set_type:${orderId}:KHQR`,
+                      },
+                      {
+                        text: "📦 Set VET",
+                        callback_data: `tg_set_type:${orderId}:VET`,
+                      },
+                    ],
                   ],
-                  [
-                    { text: '🛵 Set COD', callback_data: `tg_set_type:${orderId}:COD` },
-                    { text: '📲 Set KHQR', callback_data: `tg_set_type:${orderId}:KHQR` },
-                    { text: '📦 Set VET', callback_data: `tg_set_type:${orderId}:VET` },
-                  ],
-                ],
+                },
               },
-            }
-          ).catch(() => {});
-
-        } else if (action === 'tg_return') {
+            )
+            .catch(() => {});
+        } else if (action === "tg_return") {
           orderService.returnOrder(orderId);
-          await bot.answerCallbackQuery(query.id, { text: '📦 Order RETURNED. Stock restored to inventory!' });
+          await bot.answerCallbackQuery(query.id, {
+            text: "📦 Order RETURNED. Stock restored to inventory!",
+          });
 
           // Final Returned stage: remove buttons
-          await bot.editMessageText(
-            `📦 *Order ${orderId} RETURNED / REFUNDED*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-            `👤 *Customer:* ${meta.custDisplay}\n` +
-            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-            `🕒 *Returned At:* ${meta.timestamp}\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🔄 Package returned by driver. Stock automatically restored to inventory in database!`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-            }
-          ).catch(() => {});
-
-        } else if (action === 'tg_cancel') {
+          await bot
+            .editMessageText(
+              `📦 *Order ${orderId} RETURNED / REFUNDED*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+                `👤 *Customer:* ${meta.custDisplay}\n` +
+                (meta.totalDisplay
+                  ? `💰 *Total:* ${meta.totalDisplay}\n`
+                  : "") +
+                `🕒 *Returned At:* ${meta.timestamp}\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🔄 Package returned by driver. Stock automatically restored to inventory in database!`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+              },
+            )
+            .catch(() => {});
+        } else if (action === "tg_cancel") {
           orderService.cancelOrder(orderId);
-          await bot.answerCallbackQuery(query.id, { text: '❌ Order cancelled.' });
+          await bot.answerCallbackQuery(query.id, {
+            text: "❌ Order cancelled.",
+          });
 
           // Cancelled stage: remove buttons
-          await bot.editMessageText(
-            `❌ *Order ${orderId} CANCELLED*\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-            `👤 *Customer:* ${meta.custDisplay}\n` +
-            (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-            `🕒 *Cancelled At:* ${meta.timestamp}\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `Order has been cancelled. Stock restored if previously confirmed.`,
-            {
-              chat_id: query.message.chat.id,
-              message_id: query.message.message_id,
-              parse_mode: 'Markdown',
-            }
-          ).catch(() => {});
-
+          await bot
+            .editMessageText(
+              `❌ *Order ${orderId} CANCELLED*\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+                `👤 *Customer:* ${meta.custDisplay}\n` +
+                (meta.totalDisplay
+                  ? `💰 *Total:* ${meta.totalDisplay}\n`
+                  : "") +
+                `🕒 *Cancelled At:* ${meta.timestamp}\n` +
+                `━━━━━━━━━━━━━━━━━━━\n` +
+                `Order has been cancelled. Stock restored if previously confirmed.`,
+              {
+                chat_id: query.message.chat.id,
+                message_id: query.message.message_id,
+                parse_mode: "Markdown",
+              },
+            )
+            .catch(() => {});
         } else {
-          await bot.answerCallbackQuery(query.id, { text: '⚠️ Unknown action.' });
+          await bot.answerCallbackQuery(query.id, {
+            text: "⚠️ Unknown action.",
+          });
         }
-
       } catch (err) {
-        logger.error('[Telegram] Callback handler error:', err.message);
-        await bot.answerCallbackQuery(query.id, { text: `⚠️ Error: ${err.message}` }).catch(() => {});
+        logger.error("[Telegram] Callback handler error:", err.message);
+        await bot
+          .answerCallbackQuery(query.id, { text: `⚠️ Error: ${err.message}` })
+          .catch(() => {});
       }
     });
 
     // ── Graceful polling-error recovery ──────────────────────────────────────
-    bot.on('polling_error', (err) => {
-      logger.error('[Telegram] Polling error:', err.code, err.message);
+    bot.on("polling_error", (err) => {
+      logger.error("[Telegram] Polling error:", err.code, err.message);
     });
 
-    logger.info('[Telegram] Bot started in long-polling mode ✅');
+    logger.info(
+      `[Telegram] Bot started in long-polling mode ✅ (${TELEGRAM_OWNER_CHAT_IDS.length} owner(s) configured)`,
+    );
   } catch (initErr) {
-    logger.error('[Telegram] Failed to initialize bot:', initErr.message);
+    logger.error("[Telegram] Failed to initialize bot:", initErr.message);
     bot = null;
   }
 }
@@ -393,10 +487,13 @@ async function _send(text, extra = {}) {
       try {
         return await bot.sendMessage(chatId, text, extra);
       } catch (err) {
-        logger.error(`[Telegram] sendMessage failed for ${chatId}:`, err.message);
+        logger.error(
+          `[Telegram] sendMessage failed for ${chatId}:`,
+          err.message,
+        );
         return null;
       }
-    })
+    }),
   );
 
   return results[0] ? results[0].value : null;
@@ -424,17 +521,25 @@ async function notifyNewOrder(order, items) {
           fbName = profile.name;
         }
       } catch (err) {
-        logger.warn(`[Telegram] Could not fetch FB name for PSID ${order.psid}:`, err.message);
+        logger.warn(
+          `[Telegram] Could not fetch FB name for PSID ${order.psid}:`,
+          err.message,
+        );
       }
     }
 
     const fbDisplay = fbName
-      ? fbName.replace(/[*_`\[]/g, '')
-      : (order.psid ? `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}` : 'Guest / No PSID');
+      ? fbName.replace(/[*_`\[]/g, "")
+      : order.psid
+        ? `PSID: ${order.psid.slice(0, 6)}…${order.psid.slice(-4)}`
+        : "Guest / No PSID";
 
     const itemLines = items
-      .map((i) => `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`)
-      .join('\n');
+      .map(
+        (i) =>
+          `  • ${i.name} ×${i.quantity} @ $${Number(i.unit_price).toFixed(2)}`,
+      )
+      .join("\n");
 
     const totalKHR = (Number(order.total_amount) * 4100).toLocaleString();
     const delivery = getDeliveryDetails(order.payment_method);
@@ -443,11 +548,11 @@ async function notifyNewOrder(order, items) {
       `🛍️ *New Order — ${order.id}*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `🌐 *Facebook:* ${fbDisplay}\n\n` +
-      `👤 *Customer:* ${order.customer_name || 'N/A'}\n` +
-      `📞 *Phone:* ${order.phone || 'N/A'}\n` +
-      `📍 *Address:* ${order.address || 'N/A'}\n` +
+      `👤 *Customer:* ${order.customer_name || "N/A"}\n` +
+      `📞 *Phone:* ${order.phone || "N/A"}\n` +
+      `📍 *Address:* ${order.address || "N/A"}\n` +
       `💳 *Delivery & Payment:* ${delivery.label}\n` +
-      (order.note ? `📝 *Note:* ${order.note}\n` : '') +
+      (order.note ? `📝 *Note:* ${order.note}\n` : "") +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `${itemLines}\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
@@ -457,21 +562,32 @@ async function notifyNewOrder(order, items) {
     const replyMarkup = {
       inline_keyboard: [
         [
-          { text: '✅ Confirm & Pack', callback_data: `tg_confirm:${order.id}` },
-          { text: '❌ Cancel',         callback_data: `tg_cancel:${order.id}` },
+          {
+            text: "✅ Confirm & Pack",
+            callback_data: `tg_confirm:${order.id}`,
+          },
+          { text: "❌ Cancel", callback_data: `tg_cancel:${order.id}` },
         ],
         [
-          { text: '🛵 Set COD', callback_data: `tg_set_type:${order.id}:COD` },
-          { text: '📲 Set KHQR', callback_data: `tg_set_type:${order.id}:KHQR` },
-          { text: '📦 Set VET', callback_data: `tg_set_type:${order.id}:VET` },
+          { text: "🛵 Set COD", callback_data: `tg_set_type:${order.id}:COD` },
+          {
+            text: "📲 Set KHQR",
+            callback_data: `tg_set_type:${order.id}:KHQR`,
+          },
+          { text: "📦 Set VET", callback_data: `tg_set_type:${order.id}:VET` },
         ],
       ],
     };
 
-    await _send(text, { parse_mode: 'Markdown', reply_markup: replyMarkup });
-    logger.info(`[Telegram] New order alert sent for ${order.id} (${delivery.method})`);
+    await _send(text, { parse_mode: "Markdown", reply_markup: replyMarkup });
+    logger.info(
+      `[Telegram] New order alert sent for ${order.id} (${delivery.method})`,
+    );
   } catch (err) {
-    logger.error(`[Telegram] notifyNewOrder error for ${order.id}:`, err.message);
+    logger.error(
+      `[Telegram] notifyNewOrder error for ${order.id}:`,
+      err.message,
+    );
   }
 }
 
@@ -484,21 +600,22 @@ async function notifyShipped(orderId, notifyResult = null) {
   if (!bot) return;
   try {
     const meta = await getOrderMeta(orderId);
-    const windowExpired = notifyResult && notifyResult.reason === 'WINDOW_EXPIRED';
+    const windowExpired =
+      notifyResult && notifyResult.reason === "WINDOW_EXPIRED";
     const messengerStatusText = windowExpired
-      ? '⚠️ Messenger notice skipped (24h window expired).'
-      : '💬 Customer has been notified via Messenger.';
+      ? "⚠️ Messenger notice skipped (24h window expired)."
+      : "💬 Customer has been notified via Messenger.";
 
     await _send(
       `🚚 *Order ${orderId} marked as SHIPPED*\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-      `👤 *Customer:* ${meta.custDisplay}\n` +
-      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-      `🕒 *Shipped At:* ${meta.timestamp}\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `${messengerStatusText}`,
-      { parse_mode: 'Markdown' }
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+        `👤 *Customer:* ${meta.custDisplay}\n` +
+        (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : "") +
+        `🕒 *Shipped At:* ${meta.timestamp}\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `${messengerStatusText}`,
+      { parse_mode: "Markdown" },
     );
   } catch (err) {
     logger.error(`[Telegram] notifyShipped error for ${orderId}:`, err.message);
@@ -515,17 +632,20 @@ async function notifyCancelled(orderId) {
     const meta = await getOrderMeta(orderId);
     await _send(
       `❌ *Order ${orderId} CANCELLED*\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-      `👤 *Customer:* ${meta.custDisplay}\n` +
-      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-      `🕒 *Cancelled At:* ${meta.timestamp}\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `Order has been cancelled via admin panel.`,
-      { parse_mode: 'Markdown' }
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+        `👤 *Customer:* ${meta.custDisplay}\n` +
+        (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : "") +
+        `🕒 *Cancelled At:* ${meta.timestamp}\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `Order has been cancelled via admin panel.`,
+      { parse_mode: "Markdown" },
     );
   } catch (err) {
-    logger.error(`[Telegram] notifyCancelled error for ${orderId}:`, err.message);
+    logger.error(
+      `[Telegram] notifyCancelled error for ${orderId}:`,
+      err.message,
+    );
   }
 }
 
@@ -539,17 +659,20 @@ async function notifyReturned(orderId) {
     const meta = await getOrderMeta(orderId);
     await _send(
       `📦 *Order ${orderId} marked as RETURNED*\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `🌐 *Facebook:* ${meta.fbDisplay}\n` +
-      `👤 *Customer:* ${meta.custDisplay}\n` +
-      (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : '') +
-      `🕒 *Returned At:* ${meta.timestamp}\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `Stock has been restored to inventory in database.`,
-      { parse_mode: 'Markdown' }
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `🌐 *Facebook:* ${meta.fbDisplay}\n` +
+        `👤 *Customer:* ${meta.custDisplay}\n` +
+        (meta.totalDisplay ? `💰 *Total:* ${meta.totalDisplay}\n` : "") +
+        `🕒 *Returned At:* ${meta.timestamp}\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `Stock has been restored to inventory in database.`,
+      { parse_mode: "Markdown" },
     );
   } catch (err) {
-    logger.error(`[Telegram] notifyReturned error for ${orderId}:`, err.message);
+    logger.error(
+      `[Telegram] notifyReturned error for ${orderId}:`,
+      err.message,
+    );
   }
 }
 
@@ -559,7 +682,7 @@ async function notifyReturned(orderId) {
 function shutdown() {
   if (bot) {
     bot.stopPolling();
-    logger.info('[Telegram] Bot polling stopped.');
+    logger.info("[Telegram] Bot polling stopped.");
   }
 }
 

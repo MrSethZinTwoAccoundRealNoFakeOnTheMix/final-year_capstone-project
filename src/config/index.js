@@ -15,11 +15,24 @@ for (const key of required) {
 }
 
 const ownerIds = [];
-if (process.env.TELEGRAM_OWNER_CHAT_ID) {
-  ownerIds.push(...process.env.TELEGRAM_OWNER_CHAT_ID.split(',').map((s) => s.trim()).filter(Boolean));
-}
-if (process.env.TELEGRAM_OWNER_CHAT_ID_2) {
-  ownerIds.push(...process.env.TELEGRAM_OWNER_CHAT_ID_2.split(',').map((s) => s.trim()).filter(Boolean));
+const ownerKeys = Object.keys(process.env).filter((key) =>
+  /^TELEGRAM_OWNER_CHAT_ID(?:S|_?\d+)?$/i.test(key)
+);
+
+ownerKeys.sort((a, b) => {
+  const getIndex = (k) => {
+    const match = k.match(/(?:_|ID)(\d+)$/i);
+    return match ? parseInt(match[1], 10) : 1;
+  };
+  return getIndex(a) - getIndex(b);
+});
+
+for (const key of ownerKeys) {
+  const val = process.env[key];
+  if (val) {
+    const parts = val.split(/[,\s;]+/).map((s) => s.trim()).filter(Boolean);
+    ownerIds.push(...parts);
+  }
 }
 const TELEGRAM_OWNER_CHAT_IDS = [...new Set(ownerIds)];
 
