@@ -4,6 +4,7 @@ const variantRepository = require('../repositories/variant.repository');
 const identityService = require('./identity.service');
 const messengerService = require('./messenger.service');
 const telegramService = require('./telegram.service');
+const bakongService = require('./bakong.service');
 const logger = require('../utils/logger');
 
 /**
@@ -128,6 +129,33 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
 
   logger.info(`[OrderService] Order ${orderId} created in PENDING status (${paymentMethod}). Total: $${totalAmount}`);
 
+  let payment = null;
+  if (paymentMethod === 'KHQR') {
+    try {
+      payment = await bakongService.createPaymentRequest({
+        orderId,
+        totalAmount,
+        customerName: customer_name,
+      });
+      logger.info(`[OrderService] Bakong payment generated for ${orderId}. Demo=${payment.demo}`);
+    } catch (err) {
+      logger.error(`[OrderService] Bakong payment generation failed for ${orderId}:`, err.message || err);
+      payment = {
+        enabled: false,
+        demo: true,
+        provider: 'BAKONG_DEMO',
+        orderId,
+        amount: totalAmount,
+        amountKHR: Math.round(totalAmount * 4100),
+        qrPayload: '',
+        qrCode: '',
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        message: 'Payment request failed; order remains pending until a real Bakong credential is configured.',
+      };
+    }
+  }
+
   // 7. Fire-and-forget: Send Messenger Receipt Carousel
   messengerService.sendOrderReceipt(psid, order, orderItemsData).catch((err) => {
     logger.error(`[OrderService] Failed sending receipt for ${orderId}:`, err);
@@ -143,6 +171,8 @@ async function placeOrder({ psid, sig, items, customer_name, phone, address, not
     orderId,
     total: totalAmount,
     status: 'PENDING',
+    paymentMethod,
+    payment,
   };
 }
 

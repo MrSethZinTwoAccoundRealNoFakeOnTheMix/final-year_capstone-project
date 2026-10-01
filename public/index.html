@@ -51,6 +51,9 @@
 
   <!-- Custom Mobile Luxury Stylesheet -->
   <link rel="stylesheet" href="/css/webview.css?v=1.3.1">
+
+  <!-- QR Code Generator for KHQR payment previews -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 </head>
 
 <body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
@@ -438,13 +441,11 @@
           </div>
 
           <div class="flex items-center space-x-3.5">
-            <!-- Static Clean QR Code Visual Box -->
             <div class="w-24 h-24 bg-white rounded-xl p-1.5 flex-shrink-0 flex items-center justify-center shadow-md">
-              <svg viewBox="0 0 100 100" class="w-full h-full text-slate-900" fill="currentColor">
-                <path
-                  d="M0 0h30v30H0zm4 4h22v22H4zm4 4h14v14H8zM70 0h30v30H70zm4 4h22v22H74zm4 4h14v14H78zM0 70h30v30H0zm4 4h22v22H4zm4 4h14v14H8zM40 10h10v10H40zm10 10h10v10H50zm-10 20h20v10H40zm30 10h10v10H70zm10 10h10v20H80zm-20 10h10v10H60zm-20 0h10v20H40zm10 10h10v10H50zm20 10h20v10H70z" />
-                <circle cx="50" cy="50" r="8" fill="#e11d48" />
-              </svg>
+              <canvas id="khqr-canvas" class="hidden w-full h-full"></canvas>
+              <div id="khqr-placeholder" class="w-full h-full rounded-lg bg-white flex items-center justify-center text-[10px] font-black text-slate-700">
+                QR
+              </div>
             </div>
 
             <div class="flex-1 text-xs">

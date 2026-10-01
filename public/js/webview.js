@@ -335,6 +335,8 @@
       if (boxKhqr) boxKhqr.classList.remove('hidden');
       if (boxVet) boxVet.classList.add('hidden');
 
+      renderKhqrCode();
+
       if (addressBranchHint) addressBranchHint.classList.add('hidden');
       if (addressInput) addressInput.placeholder = t('addressPlaceholderDefault');
     } else if (selectedPaymentMethod === 'VET') {
@@ -429,6 +431,66 @@
   function formatKHR(amountUSD) {
     const khr = Math.round(Number(amountUSD || 0) * EXCHANGE_RATE_KHR);
     return '៛' + khr.toLocaleString();
+  }
+
+  function buildKhqrPayload() {
+    const totalUSD = cart.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    const amountKHR = Math.round(totalUSD * EXCHANGE_RATE_KHR);
+    const customerName = (document.getElementById('cust-name')?.value || customerProfile.name || 'Customer').trim() || 'Customer';
+    const safeName = customerName.replace(/\|/g, ' ').replace(/\s+/g, ' ');
+    const merchantRef = (psid || 'guest').slice(0, 20);
+    const payload = `JOMROUS|${safeName}|${amountKHR}|${merchantRef}`;
+
+    return {
+      totalUSD,
+      amountKHR,
+      payload,
+      merchant: 'JOMROUS JEWELRY',
+    };
+  }
+
+  function renderKhqrCode() {
+    const canvas = document.getElementById('khqr-canvas');
+    const placeholder = document.getElementById('khqr-placeholder');
+    const totalUSD = cart.reduce((sum, it) => sum + it.price * it.quantity, 0);
+
+    if (!canvas || !placeholder) return;
+
+    if (!window.QRCode || totalUSD <= 0) {
+      canvas.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      placeholder.textContent = 'QR';
+      return;
+    }
+
+    const { payload, amountKHR } = buildKhqrPayload();
+    const khqrValue = `KHQR|${payload}|${amountKHR}`;
+
+    canvas.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+
+    try {
+      window.QRCode.toCanvas(canvas, khqrValue, {
+        width: 160,
+        margin: 1,
+        color: {
+          dark: '#111827',
+          light: '#ffffff',
+        },
+      }, (err) => {
+        if (err) {
+          canvas.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+          placeholder.textContent = 'QR';
+          console.error('[KHQR] QR render error:', err);
+        }
+      });
+    } catch (err) {
+      canvas.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      placeholder.textContent = 'QR';
+      console.error('[KHQR] QR generation error:', err);
+    }
   }
 
   // Toast Notifications
@@ -1702,6 +1764,7 @@
     summaryTotalKhr.textContent = formatKHR(totalUSD);
     khqrDueUsd.textContent = formatUSD(totalUSD);
     khqrDueKhr.textContent = formatKHR(totalUSD);
+    renderKhqrCode();
 
     if (cart.length === 0) {
       sheetCartItems.innerHTML = '';
