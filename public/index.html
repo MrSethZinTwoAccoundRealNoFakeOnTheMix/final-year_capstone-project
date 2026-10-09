@@ -496,7 +496,58 @@
 
     </div>
   </div>
+<div id="khqr-pay-modal"
+    class="modal-overlay hidden fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-[#151627] border border-[#c9a84c]/35 rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] overflow-y-auto shadow-2xl relative">
+      <div class="sticky top-0 bg-[#151627]/95 backdrop-blur border-b border-white/10 px-5 py-3.5 flex items-center justify-between z-10">
+        <div>
+          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Jomrous Jewelry</p>
+          <h2 class="text-base font-extrabold text-white">Scan to Pay</h2>
+        </div>
+        <button type="button" id="khqr-pay-close" onclick="window.closeKhqrPayModal()"
+          class="w-8 h-8 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-lg leading-none">×</button>
+      </div>
 
+      <div class="px-5 py-4 text-center space-y-3">
+        <p class="text-xs text-slate-400" id="khqr-pay-order-label">Order —</p>
+
+        <div class="mx-auto w-56 h-56 bg-white rounded-2xl p-3 flex items-center justify-center shadow-lg">
+          <img id="khqr-pay-img" alt="Bakong KHQR" class="w-full h-full object-contain hidden" />
+          <span id="khqr-pay-loading" class="text-sm font-bold text-slate-600">Generating QR…</span>
+        </div>
+
+        <div>
+          <p class="text-2xl font-extrabold text-white" id="khqr-pay-usd">$0.00</p>
+          <p class="text-sm font-semibold text-[#e5c36a]" id="khqr-pay-khr">៛0</p>
+          <p class="text-[11px] text-slate-500 mt-1">Amount is fixed in the QR — scan with ABA / Wing / Bakong</p>
+        </div>
+
+        <div class="rounded-xl bg-white/5 border border-white/10 p-3 text-left text-[11px] text-slate-300 space-y-1">
+          <p>1. Open <strong class="text-white">ABA / Wing / ACLEDA / Bakong</strong></p>
+          <p>2. Choose <strong class="text-white">Scan QR</strong></p>
+          <p>3. Amount appears automatically — confirm pay</p>
+          <p>4. Tap <strong class="text-white">I've Paid</strong> below</p>
+        </div>
+
+        <div id="khqr-pay-status" class="hidden rounded-xl p-3 text-xs font-semibold text-left"></div>
+
+        <button type="button" id="khqr-pay-btn-paid"
+          class="btn-gold w-full py-3.5 rounded-2xl text-sm font-bold shadow-lg">
+          ✓ I've Paid — Notify Shop
+        </button>
+
+        <button type="button" id="khqr-pay-btn-check"
+          class="w-full py-2.5 rounded-2xl text-xs font-semibold text-slate-300 bg-white/10 border border-white/10">
+          🔄 Check Payment Status
+        </button>
+
+        <button type="button" onclick="window.closeKhqrPayModal()"
+          class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-white">
+          Close · Continue Shopping
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- Order Success Celebration Modal -->
   <div id="success-modal"
     class="modal-overlay hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -562,8 +613,8 @@
   <div id="toast-container"
     class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
-  <!-- JavaScript Client Logic -->
-  <script src="/js/webview.js?v=1.3.4"></script>
+    <!-- JavaScript Client Logic -->
+  <script src="/js/webview.js?v=1.6.0"></script>
 
 </body>
 

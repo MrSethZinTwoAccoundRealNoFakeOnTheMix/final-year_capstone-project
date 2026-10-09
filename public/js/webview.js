@@ -1981,7 +1981,7 @@
     });
   }
 
-  // Order Submission
+    // Order Submission
   window.submitCustomerOrder = async function () {
     if (cart.length === 0) {
       showToast(t('emptyBag'), 'warning');
@@ -2047,12 +2047,17 @@
       cart = [];
       saveCartToStorage();
       updateCartUI();
-
       window.closeCartSheet();
-      successModal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-      pushModalState('#view-success');
       loadCatalog();
+
+      // KHQR → payment popup only (no new tab)
+      if (selectedPaymentMethod === 'KHQR') {
+        window.openKhqrPayModal(data.orderId, totalUSD, data.payment || null);
+      } else {
+        successModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        pushModalState('#view-success');
+      }
     } catch (err) {
       showToast(err.message || 'Error submitting order.', 'error');
     } finally {
@@ -2061,6 +2066,204 @@
       submitOrderText.textContent = t('confirmOrder');
     }
   };
+
+  // ── KHQR payment popup (OUTSIDE submitCustomerOrder) ─────────────────────
+  let _khqrPayState = { orderId: null, md5: null, pollTimer: null, paid: false };
+
+  function _khqrSetStatus(msg, type) {
+    const box = document.getElementById('khqr-pay-status');
+    if (!box) return;
+    box.classList.remove('hidden');
+    box.textContent = msg;
+    box.className =
+      'rounded-xl p-3 text-xs font-semibold text-left ' +
+      (type === 'success'
+        ? 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-200'
+        : type === 'error'
+        ? 'bg-rose-950/80 border border-rose-500/40 text-rose-200'
+        : 'bg-amber-950/80 border border-amber-500/40 text-amber-200');
+  }
+
+  window.openKhqrPayModal = async function (orderId, totalUSD, payment) {
+    const modal = document.getElementById('khqr-pay-modal');
+    const img = document.getElementById('khqr-pay-img');
+    const loading = document.getElementById('khqr-pay-loading');
+    const label = document.getElementById('khqr-pay-order-label');
+    const usdEl = document.getElementById('khqr-pay-usd');
+    const khrEl = document.getElementById('khqr-pay-khr');
+    const btnPaid = document.getElementById('khqr-pay-btn-paid');
+    const statusBox = document.getElementById('khqr-pay-status');
+
+    if (!modal) {
+      window.location.href = '/pay.html?orderId=' + encodeURIComponent(orderId);
+      return;
+    }
+
+    _khqrPayState = { orderId: orderId, md5: null, pollTimer: null, paid: false };
+
+    if (label) label.textContent = 'Order ' + orderId;
+    if (usdEl) usdEl.textContent = formatUSD(totalUSD);
+    if (khrEl) khrEl.textContent = formatKHR(totalUSD);
+    if (statusBox) {
+      statusBox.classList.add('hidden');
+      statusBox.textContent = '';
+    }
+    if (btnPaid) {
+      btnPaid.disabled = false;
+      btnPaid.textContent = "✓ I've Paid — Notify Shop";
+    }
+    if (img) img.classList.add('hidden');
+    if (loading) {
+      loading.classList.remove('hidden');
+      loading.textContent = 'Generating QR…';
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    let pay = payment;
+    if (!pay || !pay.qrImage) {
+      try {
+        const res = await fetch('/api/payments/order/' + encodeURIComponent(orderId));
+        const d = await res.json();
+        if (d.success) {
+          pay = d.payment;
+          if (d.total != null) {
+            if (usdEl) usdEl.textContent = formatUSD(d.total);
+            if (khrEl) khrEl.textContent = formatKHR(d.total);
+          }
+        }
+      } catch (e) {
+        if (loading) loading.textContent = 'Could not load QR';
+        _khqrSetStatus(e.message || 'Load failed', 'error');
+        return;
+      }
+    }
+
+    if (pay && pay.qrImage) {
+      img.src = pay.qrImage;
+      img.classList.remove('hidden');
+      if (loading) loading.classList.add('hidden');
+      if (pay.md5) _khqrPayState.md5 = pay.md5;
+      if (pay.demo) _khqrSetStatus('Demo QR — set BAKONG_ACCOUNT_ID for live QR.', 'error');
+      if (_khqrPayState.pollTimer) clearInterval(_khqrPayState.pollTimer);
+      _khqrPayState.pollTimer = setInterval(function () {
+        if (!_khqrPayState.paid) window.checkKhqrPaymentStatus(true);
+      }, 8000);
+    } else {
+      if (loading) loading.textContent = 'QR unavailable';
+      _khqrSetStatus('Could not generate KHQR.', 'error');
+    }
+  };
+
+  window.closeKhqrPayModal = function () {
+    const modal = document.getElementById('khqr-pay-modal');
+    if (modal) modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    if (_khqrPayState.pollTimer) {
+      clearInterval(_khqrPayState.pollTimer);
+      _khqrPayState.pollTimer = null;
+    }
+  };
+
+  window.checkKhqrPaymentStatus = async function (silent) {
+    var orderId = _khqrPayState.orderId;
+    var md5 = _khqrPayState.md5;
+    if (!orderId && !md5) return;
+    var btn = document.getElementById('khqr-pay-btn-check');
+    if (btn && !silent) btn.disabled = true;
+    try {
+      var res = await fetch('/api/payments/check-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ md5: md5 || undefined, orderId: orderId }),
+      });
+      var data = await res.json();
+      if (data.paid) {
+        _khqrPayState.paid = true;
+        if (_khqrPayState.pollTimer) {
+          clearInterval(_khqrPayState.pollTimer);
+          _khqrPayState.pollTimer = null;
+        }
+        _khqrSetStatus(data.message || 'Payment verified! Order confirmed.', 'success');
+        var btnPaid = document.getElementById('khqr-pay-btn-paid');
+        if (btnPaid) {
+          btnPaid.disabled = true;
+          btnPaid.textContent = '✓ Payment Confirmed';
+        }
+        setTimeout(function () {
+          window.closeKhqrPayModal();
+          if (successOrderId) successOrderId.textContent = orderId;
+          if (successModal) {
+            successModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            if (typeof pushModalState === 'function') pushModalState('#view-success');
+          }
+        }, 1200);
+      } else if (!silent) {
+        _khqrSetStatus(data.reason || 'Status: ' + (data.status || 'PENDING'), 'info');
+      }
+    } catch (e) {
+      if (!silent) _khqrSetStatus(e.message || 'Check failed', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  (function wireKhqrPayButtons() {
+    var btnPaid = document.getElementById('khqr-pay-btn-paid');
+    var btnCheck = document.getElementById('khqr-pay-btn-check');
+    if (btnCheck) {
+      btnCheck.addEventListener('click', function () {
+        window.checkKhqrPaymentStatus(false);
+      });
+    }
+    if (btnPaid) {
+      btnPaid.addEventListener('click', async function () {
+        btnPaid.disabled = true;
+        btnPaid.textContent = 'Notifying…';
+        var orderId = _khqrPayState.orderId;
+        var md5 = _khqrPayState.md5;
+        try {
+          if (md5) {
+            var res = await fetch('/api/payments/check-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ md5: md5, orderId: orderId }),
+            });
+            var data = await res.json();
+            if (data.paid) {
+              _khqrPayState.paid = true;
+              _khqrSetStatus(data.message || 'Payment verified!', 'success');
+              btnPaid.textContent = '✓ Payment Confirmed';
+              setTimeout(function () {
+                window.closeKhqrPayModal();
+                if (successOrderId) successOrderId.textContent = orderId;
+                if (successModal) {
+                  successModal.classList.remove('hidden');
+                  document.body.style.overflow = 'hidden';
+                  if (typeof pushModalState === 'function') pushModalState('#view-success');
+                }
+              }, 1200);
+              return;
+            }
+          }
+          var res2 = await fetch('/api/payments/customer-paid', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: orderId }),
+          });
+          var data2 = await res2.json();
+          _khqrSetStatus(data2.message || 'Shop notified. Wait for confirmation.', 'success');
+          btnPaid.textContent = '✓ Notified — Waiting';
+        } catch (e) {
+          _khqrSetStatus(e.message || 'Could not notify', 'error');
+          btnPaid.disabled = false;
+          btnPaid.textContent = "✓ I've Paid — Notify Shop";
+        }
+      });
+    }
+  })();
 
   function escapeHtml(str) {
     if (!str) return '';
