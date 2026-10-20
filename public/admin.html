@@ -1,14 +1,35 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
   <title>Jomrous Owner Admin</title>
+
+  <!-- Prevent FOUC: Set theme immediately before CSS/DOM render (Light mode is default) -->
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('theme') || 'light';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -37,37 +58,53 @@
   </script>
 
   <!-- Custom Admin Stylesheet -->
-  <link rel="stylesheet" href="/css/admin.css?v=1.1.1">
+  <link rel="stylesheet" href="/css/admin.css?v=1.1.2">
 </head>
-<body class="bg-[#0e101a] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
+
+<body
+  class="bg-[#f8f7f4] text-slate-900 dark:bg-[#0e101a] dark:text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black min-h-screen transition-colors duration-200">
 
   <!-- Top Sticky Header -->
-  <header class="sticky top-0 z-30 glass-header border-b border-white/10 px-4 py-3">
+  <header class="sticky top-0 z-30 glass-header border-b border-black/5 dark:border-white/10 px-4 py-3">
     <div class="max-w-2xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2.5">
         <div>
-          <h1 class="text-base font-extrabold tracking-tight text-white leading-none">
+          <h1 class="text-base font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
             JOMROUS <span class="text-[#c9a84c]">ADMIN</span>
           </h1>
-          <p class="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">Shop Owner Portal</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider mt-0.5">Shop
+            Owner Portal</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-2">
+        <!-- Theme Toggle (Light / Dark) -->
+        <button id="admin-theme-toggle" onclick="window.toggleAdminTheme()"
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-black/10 dark:border-white/15 hover:border-[#c9a84c] transition flex items-center space-x-1"
+          title="Toggle Light / Dark mode" aria-label="Toggle theme">
+          <span id="admin-theme-icon">🌙</span>
+          <span id="admin-theme-text" class="text-[10px]">Dark</span>
+        </button>
         <!-- Language Toggle -->
-        <button id="admin-lang-toggle" onclick="window.toggleAdminLanguage()" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-200 border border-white/15 hover:border-[#c9a84c] transition flex items-center space-x-1">
+        <button id="admin-lang-toggle" onclick="window.toggleAdminLanguage()"
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-black/10 dark:border-white/15 hover:border-[#c9a84c] transition flex items-center space-x-1">
           <span id="admin-lang-flag">🇰🇭</span>
           <span id="admin-lang-label">KM</span>
         </button>
         <!-- Live Polling Indicator -->
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+        <span
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 dark:border-emerald-800/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 mr-1.5 animate-pulse"></span>
           <span id="label-live">Live</span>
         </span>
-        <a href="/" target="_blank" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-white/5 border border-white/5 transition" title="Preview Customer Webview" id="link-storefront">
+        <a href="/" target="_blank"
+          class="text-xs text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 transition"
+          title="Preview Customer Webview" id="link-storefront">
           Storefront ↗
         </a>
-        <button onclick="adminLogout()" class="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded-lg bg-rose-950/40 border border-rose-800/40 transition" id="btn-signout">
+        <button onclick="adminLogout()"
+          class="text-xs text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-200 px-2 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-950/40 border border-rose-500/20 dark:border-rose-800/40 transition"
+          id="btn-signout">
           Sign Out
         </button>
       </div>
@@ -76,20 +113,27 @@
   </header>
 
   <!-- Mobile Tab Navigation Bar -->
-  <nav class="sticky top-[53px] z-20 bg-[#0e101a]/95 backdrop-blur-md border-b border-white/10">
+  <nav
+    class="sticky top-[53px] z-20 bg-[#f8f7f4]/95 dark:bg-[#0e101a]/95 backdrop-blur-md border-b border-black/5 dark:border-white/10">
     <div class="max-w-2xl mx-auto flex">
-      <button class="nav-tab active flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="orders">
+      <button class="nav-tab active flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition"
+        data-tab="orders">
         <span>📦 Orders</span>
-        <span id="tab-pending-badge" class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-500 text-black">0</span>
+        <span id="tab-pending-badge"
+          class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-500 text-black">0</span>
       </button>
-      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="inventory">
+      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition"
+        data-tab="inventory">
         <span>💎 Inventory</span>
-        <span id="tab-stock-badge" class="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-white/10 text-slate-300">0</span>
+        <span id="tab-stock-badge"
+          class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 text-slate-800 border border-slate-300/80 dark:bg-white/10 dark:text-slate-300 dark:border-transparent">0</span>
       </button>
-      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="quicksell">
+      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition"
+        data-tab="quicksell">
         <span>🛒 Quick Sell</span>
       </button>
-      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition" data-tab="overview">
+      <button class="nav-tab flex-1 py-3 text-xs flex items-center justify-center space-x-1.5 transition"
+        data-tab="overview">
         <span>📊 Overview</span>
       </button>
     </div>
@@ -102,20 +146,28 @@
     <!-- TAB 1: ORDERS QUEUE                                           -->
     <!-- ───────────────────────────────────────────────────────────── -->
     <section id="tab-content-orders" class="space-y-4">
-      
+
       <!-- Order Filter Pills -->
       <div class="flex space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-        <button class="filter-pill active flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ACTION_NEEDED">
-          <span class="filter-label">⚡ Action Needed</span> (<span id="count-action-orders" class="text-amber-300 font-bold">0</span>)
+        <button class="filter-pill active flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+          data-order-filter="ACTION_NEEDED">
+          <span class="filter-label">⚡ Action Needed</span> (<span id="count-action-orders"
+            class="text-amber-300 font-bold">0</span>)
         </button>
-        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="SHIPPED">
-          <span class="filter-label">🚚 In Transit</span> (<span id="count-shipped-orders" class="text-sky-300 font-bold">0</span>)
+        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+          data-order-filter="SHIPPED">
+          <span class="filter-label">🚚 In Transit</span> (<span id="count-shipped-orders"
+            class="text-sky-300 font-bold">0</span>)
         </button>
-        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ARCHIVE">
-          <span class="filter-label">✅ Archive</span> (<span id="count-archive-orders" class="text-slate-400 font-bold">0</span>)
+        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+          data-order-filter="ARCHIVE">
+          <span class="filter-label">✅ Archive</span> (<span id="count-archive-orders"
+            class="text-slate-400 font-bold">0</span>)
         </button>
-        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold" data-order-filter="ALL">
-          <span class="filter-label">📋 All Orders</span> (<span id="count-all-orders" class="text-slate-300 font-bold">0</span>)
+        <button class="filter-pill flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold"
+          data-order-filter="ALL">
+          <span class="filter-label">📋 All Orders</span> (<span id="count-all-orders"
+            class="text-slate-300 font-bold">0</span>)
         </button>
       </div>
 
@@ -126,10 +178,12 @@
         <div class="skeleton rounded-2xl h-44"></div>
       </div>
 
-      <div id="orders-empty" class="hidden text-center py-12 px-4 bg-white/5 rounded-2xl border border-white/5">
+      <div id="orders-empty"
+        class="hidden text-center py-12 px-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
         <span class="text-4xl block mb-2">📦</span>
-        <h4 class="text-sm font-bold text-white">No orders found</h4>
-        <p class="text-xs text-slate-400 mt-1">There are currently no orders in this status category.</p>
+        <h4 class="text-sm font-bold text-slate-900 dark:text-white">No orders found</h4>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">There are currently no orders in this status
+          category.</p>
       </div>
     </section>
 
@@ -137,17 +191,19 @@
     <!-- TAB 2: INVENTORY & PRODUCTS                                   -->
     <!-- ───────────────────────────────────────────────────────────── -->
     <section id="tab-content-inventory" class="hidden space-y-3.5">
-      
+
       <!-- Top Actions Bar -->
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
             <span>💎 Product Catalog</span>
-            <span id="inv-total-count" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#c9a84c]/20 text-[#f3d489]">0</span>
+            <span id="inv-total-count"
+              class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489]">0</span>
           </h3>
-          <p class="text-[11px] text-slate-400">Manage visuals, pricing, and stock levels</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Manage visuals, pricing, and stock levels</p>
         </div>
-        <button onclick="openProductModal()" class="btn-gold px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-md">
+        <button onclick="openProductModal()"
+          class="btn-gold px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-md">
           <span>+ Add Jewelry</span>
         </button>
       </div>
@@ -156,9 +212,10 @@
       <div class="space-y-2">
         <div class="relative">
           <input type="search" id="inv-search-input" placeholder="Search jewelry name or SKU..."
-            class="w-full bg-[#171928] border border-white/10 focus:border-[#c9a84c] rounded-xl px-3 py-2 pl-8 pr-8 text-xs text-white placeholder-slate-400 outline-none transition">
+            class="w-full bg-white dark:bg-[#171928] border border-black/10 dark:border-white/10 focus:border-[#c9a84c] rounded-xl px-3 py-2 pl-8 pr-8 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition shadow-sm">
           <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
-          <button type="button" id="inv-search-clear" onclick="window.clearInvSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold w-4 h-4 flex items-center justify-center">✕</button>
+          <button type="button" id="inv-search-clear" onclick="window.clearInvSearch()"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-bold w-4 h-4 flex items-center justify-center">✕</button>
         </div>
 
         <!-- Category Chip Row -->
@@ -181,13 +238,14 @@
     <section id="tab-content-quicksell" class="hidden space-y-3 pb-24">
 
       <!-- Sticky Search & Category Header -->
-      <div class="sticky top-[53px] bg-[#0e101a]/95 backdrop-blur-md pt-1 pb-2 z-10 space-y-2">
+      <div class="sticky top-[53px] bg-[#f8f7f4]/95 dark:bg-[#0e101a]/95 backdrop-blur-md pt-1 pb-2 z-10 space-y-2">
         <!-- Quick Search Bar -->
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
           <input type="text" id="qs-search-input" placeholder="Search by title, SKU, or category..."
-            class="w-full bg-[#171928] border border-white/15 focus:border-[#c9a84c] rounded-xl pl-8 pr-7 py-2 text-xs text-white placeholder-slate-400 outline-none transition">
-          <button type="button" id="qs-search-clear" onclick="window.clearQsSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold w-4 h-4 flex items-center justify-center">✕</button>
+            class="w-full bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl pl-8 pr-7 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 outline-none transition shadow-sm">
+          <button type="button" id="qs-search-clear" onclick="window.clearQsSearch()"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-bold w-4 h-4 flex items-center justify-center">✕</button>
         </div>
 
         <!-- Category Chip Row -->
@@ -197,9 +255,12 @@
       </div>
 
       <!-- Recent Deductions Bar -->
-      <div id="qs-deduction-bar" class="hidden bg-[#171928] border border-[#c9a84c]/30 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs">
-        <span class="text-slate-300">Deducted: <span id="qs-deduction-count" class="font-bold text-[#c9a84c]">0</span> item(s) this session</span>
-        <button onclick="window.openDeductionLog()" class="text-[#c9a84c] font-semibold hover:underline">Review / Undo →</button>
+      <div id="qs-deduction-bar"
+        class="hidden bg-white dark:bg-[#171928] border border-[#c9a84c]/40 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs shadow-sm">
+        <span class="text-slate-600 dark:text-slate-300">Deducted: <span id="qs-deduction-count"
+            class="font-bold text-[#b38c2b] dark:text-[#c9a84c]">0</span> item(s) this session</span>
+        <button onclick="window.openDeductionLog()"
+          class="text-[#b38c2b] dark:text-[#c9a84c] font-semibold hover:underline">Review / Undo →</button>
       </div>
 
       <!-- Compact 3-Column Product Grid -->
@@ -218,35 +279,54 @@
       <!-- 1. Header & Period Filter Controls -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
-          <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
             <span>Sales & Revenue Analytics</span>
-            <span id="overview-period-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#c9a84c]/20 text-[#f3d489]">Today</span>
+            <span id="overview-period-badge"
+              class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489]">Today</span>
           </h3>
-          <p class="text-[11px] text-slate-400">Combined tracking for Online Orders and Quick Sells</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Combined tracking for Online Orders and Quick Sells
+          </p>
         </div>
 
         <!-- Quick Range Pills -->
-        <div class="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 self-start sm:self-auto overflow-x-auto max-w-full no-scrollbar">
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#c9a84c] text-black transition" data-range="today">Today</button>
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition" data-range="yesterday">Yesterday</button>
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition" data-range="7d">7 Days</button>
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition" data-range="30d">30 Days</button>
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition" data-range="all">All Time</button>
-          <button type="button" class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition" data-range="custom">Custom</button>
+        <div
+          class="flex items-center space-x-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl border border-black/5 dark:border-white/10 self-start sm:self-auto overflow-x-auto max-w-full no-scrollbar">
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#c9a84c] text-black transition"
+            data-range="today">Today</button>
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+            data-range="yesterday">Yesterday</button>
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+            data-range="7d">7 Days</button>
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+            data-range="30d">30 Days</button>
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+            data-range="all">All Time</button>
+          <button type="button"
+            class="ov-range-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+            data-range="custom">Custom</button>
         </div>
       </div>
 
       <!-- Custom Date Range Picker (shown when 'custom' is active) -->
-      <div id="ov-custom-date-container" class="hidden flex items-center gap-2 p-3 bg-white/5 border border-white/10 rounded-2xl">
+      <div id="ov-custom-date-container"
+        class="hidden flex items-center gap-2 p-3 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl shadow-sm">
         <div class="flex-1">
-          <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">From</label>
-          <input type="date" id="ov-date-start" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none">
+          <label class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">From</label>
+          <input type="date" id="ov-date-start"
+            class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white outline-none">
         </div>
         <div class="flex-1">
-          <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">To</label>
-          <input type="date" id="ov-date-end" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none">
+          <label class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">To</label>
+          <input type="date" id="ov-date-end"
+            class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white outline-none">
         </div>
-        <button type="button" id="ov-apply-custom-btn" class="self-end px-3.5 py-1.5 bg-[#c9a84c] text-black text-xs font-bold rounded-xl hover:bg-[#f3d489] transition">
+        <button type="button" id="ov-apply-custom-btn"
+          class="self-end px-3.5 py-1.5 bg-[#c9a84c] text-black text-xs font-bold rounded-xl hover:bg-[#f3d489] transition">
           Apply
         </button>
       </div>
@@ -256,41 +336,52 @@
         <!-- Total Revenue -->
         <div class="admin-card p-4 relative overflow-hidden group">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gross Revenue</span>
+            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gross
+              Revenue</span>
           </div>
-          <div class="text-2xl font-extrabold text-white mt-1" id="stat-revenue-usd">$0.00</div>
-          <div class="text-xs font-semibold text-[#e5c36a] mt-0.5" id="stat-revenue-khr">៛0</div>
-          <span class="text-[10px] text-slate-400 mt-2 block" id="stat-revenue-subtitle">0 total transactions</span>
+          <div class="text-2xl font-extrabold text-slate-900 dark:text-white mt-1" id="stat-revenue-usd">$0.00</div>
+          <div class="text-xs font-semibold text-[#b38c2b] dark:text-[#e5c36a] mt-0.5" id="stat-revenue-khr">៛0</div>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 block" id="stat-revenue-subtitle">0 total
+            transactions</span>
         </div>
 
         <!-- Gross Profit & Margin -->
-        <div class="admin-card p-4 relative overflow-hidden group border-emerald-500/20 bg-emerald-950/10">
+        <div
+          class="admin-card p-4 relative overflow-hidden group border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/10">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Gross Profit</span>
+            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-300 uppercase tracking-wider">Gross
+              Profit</span>
           </div>
-          <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="stat-profit-usd">$0.00</div>
-          <div class="text-xs font-semibold text-emerald-300 mt-0.5" id="stat-profit-margin">0% margin</div>
-          <span class="text-[10px] text-slate-400 mt-2 block">Revenue minus wholesale cost</span>
+          <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1" id="stat-profit-usd">$0.00
+          </div>
+          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-300 mt-0.5" id="stat-profit-margin">0%
+            margin</div>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 block">Revenue minus wholesale cost</span>
         </div>
 
         <!-- Total Sales / Volume -->
         <div class="admin-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sales</span>
+            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total
+              Sales</span>
           </div>
-          <div class="text-2xl font-extrabold text-white mt-1" id="stat-sales-count">0</div>
-          <div class="text-xs font-semibold text-slate-300 mt-0.5" id="stat-units-count">0 pieces sold</div>
-          <span class="text-[10px] text-slate-400 mt-2 block" id="stat-aov">AOV: $0.00</span>
+          <div class="text-2xl font-extrabold text-slate-900 dark:text-white mt-1" id="stat-sales-count">0</div>
+          <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-0.5" id="stat-units-count">0 pieces
+            sold</div>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 block" id="stat-aov">AOV: $0.00</span>
         </div>
 
         <!-- Active Inventory Health -->
         <div class="admin-card p-4">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stock & Inventory</span>
+            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Stock &
+              Inventory</span>
           </div>
-          <div class="text-2xl font-extrabold text-white mt-1" id="stat-total-skus">0</div>
-          <div class="text-xs font-semibold text-rose-400 mt-0.5" id="stat-low-stock">0 low stock</div>
-          <span class="text-[10px] text-slate-400 mt-2 block" id="stat-pending-summary">0 pending orders</span>
+          <div class="text-2xl font-extrabold text-slate-900 dark:text-white mt-1" id="stat-total-skus">0</div>
+          <div class="text-xs font-semibold text-rose-500 dark:text-rose-400 mt-0.5" id="stat-low-stock">0 low stock
+          </div>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400 mt-2 block" id="stat-pending-summary">0 pending
+            orders</span>
         </div>
       </div>
 
@@ -298,16 +389,21 @@
       <div class="admin-card p-4 space-y-3">
         <div class="flex items-center justify-between">
           <div>
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+            <h4
+              class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
               <span>Sales Trend</span>
             </h4>
-            <p class="text-[10px] text-slate-400" id="chart-subtitle">Revenue over selected period</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400" id="chart-subtitle">Revenue over selected period
+            </p>
           </div>
 
           <!-- Metric Toggle -->
-          <div class="flex items-center space-x-1 bg-white/5 p-0.5 rounded-lg border border-white/10 text-[10px]">
-            <button type="button" id="chart-btn-revenue" class="px-2 py-1 rounded bg-[#c9a84c] text-black font-bold transition">Revenue ($)</button>
-            <button type="button" id="chart-btn-units" class="px-2 py-1 rounded text-slate-400 font-semibold hover:text-white transition">Units</button>
+          <div
+            class="flex items-center space-x-1 bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-black/5 dark:border-white/10 text-[10px]">
+            <button type="button" id="chart-btn-revenue"
+              class="px-2 py-1 rounded bg-[#c9a84c] text-black font-bold transition">Revenue ($)</button>
+            <button type="button" id="chart-btn-units"
+              class="px-2 py-1 rounded text-slate-500 dark:text-slate-400 font-semibold hover:text-black dark:hover:text-white transition">Units</button>
           </div>
         </div>
 
@@ -319,11 +415,12 @@
 
       <!-- 4. Top Selling Jewelry Pieces -->
       <div class="admin-card p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-white/10 pb-2">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+        <div class="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2">
+          <h4
+            class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
             <span>Top Selling Pieces</span>
           </h4>
-          <span class="text-[10px] text-slate-400">By quantity sold</span>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400">By quantity sold</span>
         </div>
         <div id="overview-top-products" class="space-y-2">
           <!-- Rendered by JS -->
@@ -332,11 +429,12 @@
 
       <!-- 5. Category Share Breakdown -->
       <div class="admin-card p-4 space-y-3">
-        <div class="flex items-center justify-between border-b border-white/10 pb-2">
-          <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+        <div class="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-2">
+          <h4
+            class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-1.5">
             <span>Sales by Category</span>
           </h4>
-          <span class="text-[10px] text-slate-400" id="overview-cat-total">$0.00 total</span>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400" id="overview-cat-total">$0.00 total</span>
         </div>
         <div id="overview-category-bars" class="space-y-2.5">
           <!-- Rendered by JS -->
@@ -344,15 +442,20 @@
       </div>
 
       <!-- 6. Quick Guidance Card -->
-      <div class="admin-card p-4 bg-gradient-to-r from-blue-950/20 to-purple-950/20 border-blue-500/20">
-        <h4 class="text-xs font-bold text-blue-200 mb-1 flex items-center space-x-1.5">
+      <div
+        class="admin-card p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-500/20">
+        <h4 class="text-xs font-bold text-blue-900 dark:text-blue-200 mb-1 flex items-center space-x-1.5">
           <span>Owner Workflow Guide</span>
         </h4>
-        <ul class="text-[11px] text-slate-300 space-y-1.5 list-disc pl-4 leading-relaxed">
-          <li><strong>Step 1 (Check Bakong):</strong> When an order is <code>PENDING</code>, verify the amount in your Bakong mobile app.</li>
-          <li><strong>Step 2 (Confirm & Pack):</strong> Tap <code>Confirm</code> to lock stock atomically. Stock decrements immediately.</li>
-          <li><strong>Step 3 (Ship):</strong> Tap <code>Ship</code> when handed to driver. An automated receipt alert sends to the customer's Messenger.</li>
-          <li><strong>Boom/Delivery Failed:</strong> Tap <code>Mark as Returned</code> to safely put the jewelry piece back into inventory.</li>
+        <ul class="text-[11px] text-slate-700 dark:text-slate-300 space-y-1.5 list-disc pl-4 leading-relaxed">
+          <li><strong>Step 1 (Check Bakong):</strong> When an order is <code>PENDING</code>, verify the amount in your
+            Bakong mobile app.</li>
+          <li><strong>Step 2 (Confirm & Pack):</strong> Tap <code>Confirm</code> to lock stock atomically. Stock
+            decrements immediately.</li>
+          <li><strong>Step 3 (Ship):</strong> Tap <code>Ship</code> when handed to driver. An automated receipt alert
+            sends to the customer's Messenger.</li>
+          <li><strong>Boom/Delivery Failed:</strong> Tap <code>Mark as Returned</code> to safely put the jewelry piece
+            back into inventory.</li>
         </ul>
       </div>
     </section>
@@ -362,14 +465,17 @@
   <!-- ───────────────────────────────────────────────────────────── -->
   <!-- ADD / EDIT PRODUCT MODAL (Single-Screen SPU + SKU Builder)   -->
   <!-- ───────────────────────────────────────────────────────────── -->
-  <div id="product-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#171928] border border-white/15 rounded-3xl max-w-lg w-full p-5 shadow-2xl overflow-y-auto max-h-[92vh]">
-      
-      <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+  <div id="product-modal"
+    class="hidden fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-3xl max-w-lg w-full p-5 shadow-2xl overflow-y-auto max-h-[92vh]">
+
+      <div class="flex items-center justify-between mb-4 border-b border-black/5 dark:border-white/10 pb-3">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
           <span>✨ Add Jewelry Product</span>
         </h3>
-        <button onclick="closeProductModal()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold">
+        <button onclick="closeProductModal()"
+          class="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold">
           ✕
         </button>
       </div>
@@ -382,84 +488,105 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-semibold text-slate-300">Category *</label>
-              <button type="button" id="btn-toggle-new-cat" class="text-[10px] text-[#c9a84c] hover:underline font-semibold">
+              <label class="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Category *</label>
+              <button type="button" id="btn-toggle-new-cat"
+                class="text-[10px] text-[#b38c2b] dark:text-[#c9a84c] hover:underline font-semibold">
                 ＋ New
               </button>
             </div>
-            <select id="prod-category" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <select id="prod-category" required
+              class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
               <!-- Dynamically populated from /api/admin/categories -->
             </select>
 
             <!-- Inline New Category Box (Zero-prefix, Name only) -->
-            <div id="new-cat-box" class="hidden mt-2 p-2.5 bg-white/5 border border-[#c9a84c]/30 rounded-xl space-y-2">
-              <p class="text-[10px] font-bold text-[#c9a84c] uppercase">Add Category</p>
-              <input type="text" id="new-cat-name-input" placeholder="e.g. Hairpin, Brooch, Bag" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none">
-              <div id="new-cat-error" class="hidden text-[10px] text-rose-400 font-semibold"></div>
+            <div id="new-cat-box"
+              class="hidden mt-2 p-2.5 bg-black/5 dark:bg-white/5 border border-[#c9a84c]/30 rounded-xl space-y-2">
+              <p class="text-[10px] font-bold text-[#b38c2b] dark:text-[#c9a84c] uppercase">Add Category</p>
+              <input type="text" id="new-cat-name-input" placeholder="e.g. Hairpin, Brooch, Bag"
+                class="w-full bg-white dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-white outline-none">
+              <div id="new-cat-error" class="hidden text-[10px] text-rose-500 dark:text-rose-400 font-semibold"></div>
               <div class="flex space-x-2">
-                <button type="button" id="new-cat-cancel-btn" class="flex-1 py-1.5 rounded-lg bg-white/10 text-slate-300 text-xs font-semibold">Cancel</button>
-                <button type="button" id="new-cat-save-btn" class="flex-1 py-1.5 rounded-lg bg-[#c9a84c] text-black text-xs font-bold">Save</button>
+                <button type="button" id="new-cat-cancel-btn"
+                  class="flex-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-semibold">Cancel</button>
+                <button type="button" id="new-cat-save-btn"
+                  class="flex-1 py-1.5 rounded-lg bg-[#c9a84c] text-black text-xs font-bold">Save</button>
               </div>
             </div>
           </div>
 
           <!-- Base Stock Quantity (Default: 1) -->
           <div id="main-stock-container">
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">
-              Stock Quantity <span class="text-slate-400 font-normal" id="stock-label-sub">*</span>
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Stock Quantity <span class="text-slate-500 dark:text-slate-400 font-normal" id="stock-label-sub">*</span>
             </label>
-            <input type="number" id="prod-stock" value="1" min="0" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <p id="stock-variants-hint" class="hidden text-[10px] text-slate-400 mt-1">Calculated automatically from colors below.</p>
+            <input type="number" id="prod-stock" value="1" min="0" required
+              class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
+            <p id="stock-variants-hint" class="hidden text-[10px] text-slate-500 dark:text-slate-400 mt-1">Calculated
+              automatically from colors below.</p>
           </div>
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Product Title *</label>
-          <input type="text" id="prod-name" placeholder="e.g. Vintage Butterfly Hairpin" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Product Title *</label>
+          <input type="text" id="prod-name" placeholder="e.g. Vintage Butterfly Hairpin" required
+            class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-300 mb-1">Description (Optional)</label>
-          <input type="text" id="prod-variants" placeholder="e.g. 18K Yellow Gold / Size 6-8" class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Description
+            (Optional)</label>
+          <input type="text" id="prod-variants" placeholder="e.g. 18K Yellow Gold / Size 6-8"
+            class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
         </div>
 
         <!-- Prices (Auto-fill Source) -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Cost / Import Price ($) *</label>
-            <input type="number" step="0.01" id="prod-import" placeholder="5.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Cost / Import Price
+              ($) *</label>
+            <input type="number" step="0.01" id="prod-import" placeholder="5.00" required
+              class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
           </div>
 
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Sell Price ($) *</label>
-            <input type="number" step="0.01" id="prod-sell" placeholder="15.00" required class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Sell Price ($)
+              *</label>
+            <input type="number" step="0.01" id="prod-sell" placeholder="15.00" required
+              class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none">
           </div>
         </div>
 
         <!-- Profit Margin Preview Badge -->
-        <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between text-xs">
-          <span class="text-slate-400">Profit Margin:</span>
-          <span id="margin-preview" class="font-bold text-slate-400">--%</span>
+        <div
+          class="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
+          <span class="text-slate-500 dark:text-slate-400">Profit Margin:</span>
+          <span id="margin-preview" class="font-bold text-slate-500 dark:text-slate-400">--%</span>
         </div>
 
         <!-- ─── Style Variations Section (Container SPU + SKU Builder) ───── -->
-        <div class="pt-2 border-t border-white/10">
+        <div class="pt-2 border-t border-black/5 dark:border-white/10">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-xs font-semibold text-white">Styles / Variations</span>
-              <p class="text-[10px] text-slate-400">Enable if this item comes in multiple styles/models</p>
+              <span class="text-xs font-semibold text-slate-900 dark:text-white">Styles / Variations</span>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Enable if this item comes in multiple
+                styles/models</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="prod-has-variants" class="sr-only peer">
-              <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c9a84c]"></div>
+              <div
+                class="w-9 h-5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#c9a84c]">
+              </div>
             </label>
           </div>
 
           <!-- Dynamic Variant Rows Container -->
           <div id="variants-section" class="hidden mt-3 space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold text-[#c9a84c] uppercase tracking-wider">Style Options & Individual Stock</span>
-              <button type="button" id="btn-add-variant" class="text-xs text-[#c9a84c] hover:underline font-semibold flex items-center space-x-1">
+              <span class="text-[10px] font-bold text-[#b38c2b] dark:text-[#c9a84c] uppercase tracking-wider">Style
+                Options & Individual Stock</span>
+              <button type="button" id="btn-add-variant"
+                class="text-xs text-[#b38c2b] dark:text-[#c9a84c] hover:underline font-semibold flex items-center space-x-1">
                 <span>＋ Add Style</span>
               </button>
             </div>
@@ -470,24 +597,30 @@
         </div>
 
         <!-- Main Photo Upload (Cover Image) -->
-        <div class="space-y-2 pt-2 border-t border-white/10">
-          <label class="block text-[11px] font-semibold text-slate-300">
-            Cover / Main Image <span class="text-rose-400">*</span>
+        <div class="space-y-2 pt-2 border-t border-black/5 dark:border-white/10">
+          <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+            Cover / Main Image <span class="text-rose-500 dark:text-rose-400">*</span>
           </label>
-          <div id="prod-photo-preview-container" class="hidden items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-xl">
-            <img id="prod-photo-preview" src="" alt="Preview" class="w-12 h-12 rounded-lg object-cover bg-black/40 border border-white/10">
+          <div id="prod-photo-preview-container"
+            class="hidden items-center gap-3 p-2 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl">
+            <img id="prod-photo-preview" src="" alt="Preview"
+              class="w-12 h-12 rounded-lg object-cover bg-black/10 dark:bg-black/40 border border-black/10 dark:border-white/10">
             <div class="flex-1 min-w-0">
-              <p class="text-[11px] text-slate-300 truncate font-medium">Selected / Current Image</p>
-              <p id="prod-photo-preview-text" class="text-[10px] text-slate-400 truncate"></p>
+              <p class="text-[11px] text-slate-800 dark:text-slate-300 truncate font-medium">Selected / Current Image
+              </p>
+              <p id="prod-photo-preview-text" class="text-[10px] text-slate-500 dark:text-slate-400 truncate"></p>
             </div>
           </div>
-          <input type="file" id="prod-file" accept="image/*" class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20">
+          <input type="file" id="prod-file" accept="image/*"
+            class="w-full text-xs text-slate-600 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-black/5 dark:file:bg-white/10 file:text-slate-800 dark:file:text-white hover:file:bg-black/10 dark:hover:file:bg-white/20">
           <input type="text" id="prod-photo-url" class="hidden" tabindex="-1" aria-hidden="true">
-          <p id="prod-photo-error" class="hidden text-[11px] text-rose-400 font-semibold">⚠ A photo is required. Please upload an image.</p>
+          <p id="prod-photo-error" class="hidden text-[11px] text-rose-500 dark:text-rose-400 font-semibold">⚠ A photo
+            is required. Please upload an image.</p>
         </div>
 
         <div class="pt-3 flex items-center space-x-2">
-          <button type="button" onclick="closeProductModal()" class="w-1/3 py-2.5 rounded-xl bg-white/10 text-slate-300 font-bold text-xs">
+          <button type="button" onclick="closeProductModal()"
+            class="w-1/3 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs">
             Cancel
           </button>
           <button type="submit" id="save-product-btn" class="btn-gold flex-1 py-2.5 rounded-xl text-xs font-bold">
@@ -499,23 +632,31 @@
   </div>
 
   <!-- ─── Confirm Dialog (Reusable Modal) ────────────────────────────────── -->
-  <div id="confirm-dialog" class="hidden fixed inset-0 z-[70] bg-black/75 backdrop-blur-sm flex items-end justify-center p-4">
-    <div class="bg-[#171928] border border-white/15 rounded-3xl w-full max-w-sm p-5 shadow-2xl">
-      <p id="confirm-dialog-message" class="text-sm font-semibold text-white text-center mb-1"></p>
-      <p id="confirm-dialog-sub" class="text-xs text-slate-400 text-center mb-5"></p>
+  <div id="confirm-dialog"
+    class="hidden fixed inset-0 z-[70] bg-black/60 dark:bg-black/75 backdrop-blur-sm flex items-end justify-center p-4">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-3xl w-full max-w-sm p-5 shadow-2xl">
+      <p id="confirm-dialog-message" class="text-sm font-semibold text-slate-900 dark:text-white text-center mb-1"></p>
+      <p id="confirm-dialog-sub" class="text-xs text-slate-500 dark:text-slate-400 text-center mb-5"></p>
       <div class="flex space-x-2">
-        <button id="confirm-dialog-no" class="flex-1 py-3 rounded-xl bg-white/10 text-slate-300 font-bold text-xs">Cancel</button>
-        <button id="confirm-dialog-yes" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">Confirm</button>
+        <button id="confirm-dialog-no"
+          class="flex-1 py-3 rounded-xl bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-xs">Cancel</button>
+        <button id="confirm-dialog-yes"
+          class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition">Confirm</button>
       </div>
     </div>
   </div>
 
   <!-- ─── Quick Sell: Deduction Log Drawer ──────────────────────────────── -->
-  <div id="qs-log-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[70vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="flex-shrink-0 bg-[#171928] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between z-10">
-        <h3 class="text-sm font-bold text-white">📋 Deduction Log</h3>
-        <button onclick="window.closeDeductionLog()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition">✕</button>
+  <div id="qs-log-drawer"
+    class="hidden fixed inset-0 z-[55] bg-black/60 dark:bg-black/70 backdrop-blur-sm flex items-end">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[70vh] flex flex-col overflow-hidden shadow-2xl">
+      <div
+        class="flex-shrink-0 bg-white dark:bg-[#171928] px-5 pt-5 pb-3 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white">📋 Deduction Log</h3>
+        <button onclick="window.closeDeductionLog()"
+          class="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold transition">✕</button>
       </div>
       <div id="qs-log-list" class="flex-1 overflow-y-auto p-4 space-y-2 overscroll-contain">
         <!-- Rendered by JS -->
@@ -524,14 +665,20 @@
   </div>
 
   <!-- ─── Quick Sell: POS Cart Drawer (Review & Complete Sale) ───────────── -->
-  <div id="qs-cart-drawer" class="hidden fixed inset-0 z-[65] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto p-5 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
-      <div class="flex items-center justify-between pb-3 border-b border-white/10 flex-shrink-0">
-        <h3 class="text-sm font-bold text-white flex items-center space-x-2" id="qs-cart-drawer-title">
+  <div id="qs-cart-drawer"
+    class="hidden fixed inset-0 z-[65] bg-black/60 dark:bg-black/70 backdrop-blur-sm flex items-end">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto p-5 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/10 flex-shrink-0">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2"
+          id="qs-cart-drawer-title">
           <span>🛒 Quick Sell Cart</span>
-          <span id="qs-cart-drawer-badge" class="px-2 py-0.5 rounded-full bg-[#c9a84c]/20 text-[#f3d489] text-[10px] font-extrabold">0 items</span>
+          <span id="qs-cart-drawer-badge"
+            class="px-2 py-0.5 rounded-full bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489] text-[10px] font-extrabold">0
+            items</span>
         </h3>
-        <button onclick="window.closeQsCartDrawer()" class="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center text-xs font-bold transition hover:bg-white/20">✕</button>
+        <button onclick="window.closeQsCartDrawer()"
+          class="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold transition hover:bg-black/10 dark:hover:bg-white/20">✕</button>
       </div>
 
       <!-- Cart Item List Container -->
@@ -539,14 +686,17 @@
         <!-- Rendered by JS -->
       </div>
 
-      <div class="pt-3 border-t border-white/10 flex-shrink-0 space-y-3">
+      <div class="pt-3 border-t border-black/5 dark:border-white/10 flex-shrink-0 space-y-3">
         <div class="flex items-center justify-between text-xs px-1">
-          <span class="text-slate-400 font-semibold">Total to Deduct & Collect:</span>
-          <span class="text-base font-extrabold text-[#c9a84c]" id="qs-cart-total-badge">$0.00</span>
+          <span class="text-slate-500 dark:text-slate-400 font-semibold">Total to Deduct & Collect:</span>
+          <span class="text-base font-extrabold text-[#b38c2b] dark:text-[#c9a84c]"
+            id="qs-cart-total-badge">$0.00</span>
         </div>
         <div class="flex space-x-2">
-          <button onclick="window.clearQsCart()" class="py-3 px-4 rounded-xl bg-white/10 hover:bg-rose-950/40 hover:text-rose-300 text-slate-300 font-bold text-xs transition">Clear</button>
-          <button id="qs-cart-confirm-btn" onclick="window.executePosCheckout()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg transition">
+          <button onclick="window.clearQsCart()"
+            class="py-3 px-4 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 text-slate-700 dark:text-slate-300 font-bold text-xs transition">Clear</button>
+          <button id="qs-cart-confirm-btn" onclick="window.executePosCheckout()"
+            class="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg transition">
             ✓ Confirm Sale & Deduct
           </button>
         </div>
@@ -555,21 +705,29 @@
   </div>
 
   <!-- ─── Quick Sell: Variant Style Drawer (Compact 3-Column Grid) ────────── -->
-  <div id="qs-variant-drawer" class="hidden fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-end">
-    <div class="bg-[#171928] border border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[82vh] flex flex-col overflow-hidden shadow-2xl">
-      <div class="flex-shrink-0 bg-[#171928] px-4 pt-4 pb-2.5 border-b border-white/10 flex items-center justify-between z-10">
+  <div id="qs-variant-drawer"
+    class="hidden fixed inset-0 z-[55] bg-black/60 dark:bg-black/70 backdrop-blur-sm flex items-end">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-t-3xl w-full max-w-2xl mx-auto max-h-[82vh] flex flex-col overflow-hidden shadow-2xl">
+      <div
+        class="flex-shrink-0 bg-white dark:bg-[#171928] px-4 pt-4 pb-2.5 border-b border-black/5 dark:border-white/10 flex items-center justify-between z-10">
         <div class="min-w-0 pr-2">
-          <h3 class="text-sm font-bold text-white truncate" id="qs-variant-drawer-title">Choose Style</h3>
-          <p class="text-[10px] text-slate-400" id="qs-variant-drawer-sub">Tap styles to add to cart</p>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate" id="qs-variant-drawer-title">Choose
+            Style</h3>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400" id="qs-variant-drawer-sub">Tap styles to add to cart
+          </p>
         </div>
-        <button onclick="window.closeVariantDrawer()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center text-xs font-bold transition flex-shrink-0">✕</button>
+        <button onclick="window.closeVariantDrawer()"
+          class="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-bold transition flex-shrink-0">✕</button>
       </div>
       <div id="qs-variant-list" class="flex-1 min-h-0 overflow-y-auto p-2.5 gap-2 overscroll-contain">
         <!-- Rendered by JS as compact 3-column style cards -->
       </div>
-      <div class="flex-shrink-0 p-3 border-t border-white/10 bg-[#171928] flex items-center justify-between">
-        <span class="text-[11px] text-slate-400">Tap cards to add · Adjust in cart</span>
-        <button onclick="window.closeVariantDrawer()" class="btn-gold px-4 py-1.5 rounded-xl text-xs font-bold shadow-md">
+      <div
+        class="flex-shrink-0 p-3 border-t border-black/5 dark:border-white/10 bg-white dark:bg-[#171928] flex items-center justify-between">
+        <span class="text-[11px] text-slate-500 dark:text-slate-400">Tap cards to add · Adjust in cart</span>
+        <button onclick="window.closeVariantDrawer()"
+          class="btn-gold px-4 py-1.5 rounded-xl text-xs font-bold shadow-md">
           Done ✓
         </button>
       </div>
@@ -577,56 +735,70 @@
   </div>
 
   <!-- ─── Quick Sell: Floating Admin Cart Bar ─────────────────────────────── -->
-  <div id="qs-cart-bar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-[#171928]/95 backdrop-blur-md border border-[#c9a84c] rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform cursor-pointer" onclick="window.openQsCartDrawer()">
+  <div id="qs-cart-bar"
+    class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-white/95 dark:bg-[#171928]/95 backdrop-blur-md border border-[#c9a84c] rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform cursor-pointer"
+    onclick="window.openQsCartDrawer()">
     <div class="flex items-center space-x-2.5 min-w-0">
-      <div class="w-9 h-9 rounded-xl bg-[#c9a84c]/20 border border-[#c9a84c]/40 flex items-center justify-center text-base">
+      <div
+        class="w-9 h-9 rounded-xl bg-[#c9a84c]/20 border border-[#c9a84c]/40 flex items-center justify-center text-base">
         🛒
       </div>
       <div class="min-w-0">
-        <p class="text-xs font-bold text-white leading-tight">
-          <span id="qs-cart-count" class="text-[#c9a84c]">0</span> items in cart
+        <p class="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+          <span id="qs-cart-count" class="text-[#b38c2b] dark:text-[#c9a84c]">0</span> items in cart
         </p>
-        <p class="text-[11px] font-extrabold text-slate-300" id="qs-cart-total">$0.00</p>
+        <p class="text-[11px] font-extrabold text-slate-700 dark:text-slate-300" id="qs-cart-total">$0.00</p>
       </div>
     </div>
     <div class="flex items-center space-x-1.5" onclick="event.stopPropagation()">
-      <button onclick="window.clearQsCart()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold transition">
+      <button onclick="window.clearQsCart()"
+        class="px-2.5 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-300 text-xs font-semibold transition">
         Clear
       </button>
-      <button onclick="window.openQsCartDrawer()" class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition">
+      <button onclick="window.openQsCartDrawer()"
+        class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition">
         <span>Review & Sell ➔</span>
       </button>
     </div>
   </div>
 
   <!-- ─── Inventory: Floating Staged Stock Changes Bar ───────────────────── -->
-  <div id="inv-staged-bar" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-[#171928]/95 backdrop-blur-md border border-amber-500/60 rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform">
+  <div id="inv-staged-bar"
+    class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-lg bg-white/95 dark:bg-[#171928]/95 backdrop-blur-md border border-amber-500/60 rounded-2xl p-2.5 shadow-2xl flex items-center justify-between transition-all transform">
     <div class="flex items-center space-x-2.5 min-w-0">
-      <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base">
+      <div
+        class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base">
         📝
       </div>
       <div class="min-w-0">
-        <p class="text-xs font-bold text-white leading-tight">
-          <span id="inv-staged-count" class="text-amber-400 font-black">0</span> changes staged
+        <p class="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+          <span id="inv-staged-count" class="text-amber-500 dark:text-amber-400 font-black">0</span> changes staged
         </p>
-        <p class="text-[10px] text-slate-300 truncate" id="inv-staged-preview">Tap Save to commit</p>
+        <p class="text-[10px] text-slate-600 dark:text-slate-300 truncate" id="inv-staged-preview">Tap Save to commit
+        </p>
       </div>
     </div>
     <div class="flex items-center space-x-1.5 flex-shrink-0">
-      <button type="button" onclick="window.resetAllInvChanges()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-rose-950/60 hover:text-rose-200 text-slate-300 text-xs font-semibold transition active:scale-95">
+      <button type="button" onclick="window.resetAllInvChanges()"
+        class="px-2.5 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-950/60 dark:hover:text-rose-200 text-slate-700 dark:text-slate-300 text-xs font-semibold transition active:scale-95">
         Reset
       </button>
-      <button type="button" id="inv-save-btn" onclick="window.commitAllInvChanges()" class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition active:scale-95">
+      <button type="button" id="inv-save-btn" onclick="window.commitAllInvChanges()"
+        class="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center space-x-1 transition active:scale-95">
         <span>Save Changes ✓</span>
       </button>
     </div>
   </div>
 
   <!-- ─── Image Lightbox Zoom Modal (High-Res Detail Preview) ────────── -->
-  <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[75] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4" onclick="window.closeImageLightbox()">
+  <div id="image-lightbox-modal"
+    class="hidden fixed inset-0 z-[75] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4"
+    onclick="window.closeImageLightbox()">
     <div class="relative max-w-lg w-full flex flex-col items-center" onclick="event.stopPropagation()">
-      <button onclick="window.closeImageLightbox()" class="absolute -top-12 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition">✕</button>
-      <img id="lightbox-img" src="" alt="High resolution preview" class="w-full max-h-[75vh] object-contain rounded-2xl border border-white/15 bg-black/60 shadow-2xl">
+      <button onclick="window.closeImageLightbox()"
+        class="absolute -top-12 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition">✕</button>
+      <img id="lightbox-img" src="" alt="High resolution preview"
+        class="w-full max-h-[75vh] object-contain rounded-2xl border border-white/15 bg-black/60 shadow-2xl">
       <div class="mt-3 text-center px-4">
         <p id="lightbox-title" class="text-sm font-bold text-white"></p>
         <p id="lightbox-sub" class="text-xs text-slate-400 mt-0.5"></p>
@@ -637,19 +809,25 @@
   <!-- ───────────────────────────────────────────────────────────── -->
   <!-- OWNER AUTHENTICATION MODAL                                    -->
   <!-- ───────────────────────────────────────────────────────────── -->
-  <div id="login-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-[#171928] border border-white/15 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
-      <div class="w-14 h-14 rounded-2xl bg-[#c9a84c]/20 border border-[#c9a84c]/40 flex items-center justify-center text-2xl mx-auto mb-3">
+  <div id="login-modal"
+    class="hidden fixed inset-0 z-50 bg-black/80 dark:bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-[#171928] border border-black/10 dark:border-white/15 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+      <div
+        class="w-14 h-14 rounded-2xl bg-[#c9a84c]/20 border border-[#c9a84c]/40 flex items-center justify-center text-2xl mx-auto mb-3">
         🔒
       </div>
-      <h3 class="text-lg font-bold text-white mb-1">Owner Sign In</h3>
-      <p class="text-xs text-slate-400 mb-4">Enter your admin password to access the management portal.</p>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Owner Sign In</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Enter your admin password to access the management
+        portal.</p>
 
-      <div id="login-error" class="hidden p-2.5 rounded-xl bg-rose-950/80 border border-rose-800/80 text-rose-200 text-xs mb-3 text-left"></div>
+      <div id="login-error"
+        class="hidden p-2.5 rounded-xl bg-rose-500/10 dark:bg-rose-950/80 border border-rose-500/30 dark:border-rose-800/80 text-rose-700 dark:text-rose-200 text-xs mb-3 text-left">
+      </div>
 
       <form id="login-form" class="space-y-3">
         <input type="password" id="admin-password-input" placeholder="Admin Password" required autofocus
-          class="w-full bg-[#0e101a] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-3 text-xs text-white placeholder-slate-500 outline-none transition text-center tracking-widest">
+          class="w-full bg-[#f8f7f4] dark:bg-[#0e101a] border border-black/10 dark:border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition text-center tracking-widest">
         <button type="submit" id="login-submit-btn" class="btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg">
           Sign In
         </button>
@@ -658,9 +836,11 @@
   </div>
 
   <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] pointer-events-none w-11/12 max-w-sm space-y-2"></div>
+  <div id="toast-container"
+    class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] pointer-events-none w-11/12 max-w-sm space-y-2"></div>
 
   <!-- Admin JavaScript -->
-  <script src="/js/admin.js?v=1.1.1"></script>
+  <script src="/js/admin.js?v=1.1.2"></script>
 </body>
+
 </html>

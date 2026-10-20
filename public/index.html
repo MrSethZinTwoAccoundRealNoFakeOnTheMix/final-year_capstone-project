@@ -1,11 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
   <title>Jomrous Boutique</title>
+
+  <!-- Early Theme Detection (Default: Light Mode) -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('theme') || 'light';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Meta Messenger Extensions JS SDK -->
   <script>
@@ -50,38 +65,48 @@
   </script>
 
   <!-- Custom Mobile Luxury Stylesheet -->
-  <link rel="stylesheet" href="/css/webview.css?v=1.3.1">
+  <link rel="stylesheet" href="/css/webview.css?v=1.4.0">
 
   <!-- QR Code Generator for KHQR payment previews -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 </head>
 
-<body class="bg-[#11121d] text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black">
+<body class="bg-[#f8f7f4] text-slate-900 dark:bg-[#11121d] dark:text-slate-100 antialiased selection:bg-[#c9a84c] selection:text-black transition-colors duration-200">
 
   <!-- Sticky Luxury Header -->
-  <header class="sticky top-0 z-30 glass-header border-b border-white/10 px-4 py-3.5 transition-all">
+  <header class="sticky top-0 z-30 glass-header border-b border-slate-200/80 dark:border-white/10 px-4 py-3.5 transition-all">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <div>
-          <h1 class="text-lg font-extrabold tracking-tight text-white leading-none">
-            JOMROUS <span class="text-[#c9a84c]">JEWELRY</span>
+          <h1 class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white leading-none">
+            JOMROUS <span class="text-[#b38c2b] dark:text-[#c9a84c]">JEWELRY</span>
           </h1>
-          <p class="text-[10px] text-slate-400 font-medium tracking-wider uppercase mt-0.5">Phnom Penh Boutique</p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase mt-0.5">Phnom Penh Boutique</p>
         </div>
       </div>
 
-      <!-- Quick Actions / Language & Admin -->
-      <div class="flex items-center space-x-2">
+      <!-- Quick Actions / Theme, Language & Admin -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <!-- Theme Toggle Button (Light/Dark) -->
+        <button id="theme-toggle-btn" onclick="window.toggleTheme()"
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 hover:border-[#b38c2b] dark:bg-white/10 dark:text-slate-200 dark:border-white/15 dark:hover:border-[#c9a84c] transition flex items-center space-x-1"
+          title="Toggle Light or Dark Mode" aria-label="Toggle theme">
+          <span id="theme-icon">☀️</span>
+          <span id="theme-label" class="text-[10px] hidden xs:inline">Light</span>
+        </button>
+
+        <!-- Language Toggle -->
         <button id="lang-toggle-btn" onclick="window.toggleLanguage()"
-          class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-200 border border-white/15 hover:border-[#c9a84c] transition flex items-center space-x-1">
+          class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 hover:border-[#b38c2b] dark:bg-white/10 dark:text-slate-200 dark:border-white/15 dark:hover:border-[#c9a84c] transition flex items-center space-x-1">
           <span id="lang-flag">🇰🇭</span>
           <span id="lang-label">KM</span>
         </button>
+
         <span id="header-conn-badge"
-          class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#121316] text-white border border-[#27272a] shadow-sm dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
           <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span> Connecting…
         </span>
-        <a href="/admin" class="text-xs text-slate-400 hover:text-white p-1 rounded-lg transition"
+        <a href="/admin" class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white p-1 rounded-lg transition"
           title="Shop Owner Login">
           🔒
         </a>
@@ -92,7 +117,7 @@
 
   <!-- Identity Verification Status Banner -->
   <div id="auth-banner"
-    class="max-w-md mx-auto px-4 py-2.5 text-xs flex items-center justify-between border-b transition-colors bg-amber-950/40 text-amber-300 border-amber-800/50">
+    class="max-w-md mx-auto px-4 py-2.5 text-xs flex items-center justify-between border-b transition-colors bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50">
     <div class="flex items-center space-x-2">
       <span id="auth-banner-icon" class="text-base">⏳</span>
       <span id="auth-banner-text" class="font-medium">Validating Messenger connection…</span>
@@ -104,14 +129,14 @@
 
     <!-- Hero / Promo Banner -->
     <div
-      class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#211d38] to-[#171930] p-4 border border-[#c9a84c]/20 shadow-lg mb-4">
+      class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50/90 via-stone-50 to-orange-50/50 dark:from-[#211d38] dark:to-[#171930] p-4 border border-amber-200/60 dark:border-[#c9a84c]/20 shadow-sm dark:shadow-lg mb-4 transition-colors">
       <div class="relative z-10">
         <span
-          class="inline-block px-2 py-0.5 rounded-full bg-[#c9a84c]/20 text-[#f3d489] text-[10px] font-bold uppercase tracking-wider mb-1.5">
+          class="inline-block px-2 py-0.5 rounded-full bg-amber-200/60 text-amber-900 dark:bg-[#c9a84c]/20 dark:text-[#f3d489] text-[10px] font-bold uppercase tracking-wider mb-1.5">
           Authentic Collection
         </span>
-        <h2 class="text-base font-bold text-white leading-snug">Precious Collection</h2>
-        <p class="text-xs text-slate-300 mt-0.5">Direct checkout via KHQR & verified Messenger delivery.</p>
+        <h2 class="text-base font-bold text-slate-900 dark:text-white leading-snug">Precious Collection</h2>
+        <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">Direct checkout via KHQR & verified Messenger delivery.</p>
       </div>
       <div class="absolute -right-4 -bottom-6 text-6xl opacity-15 select-none pointer-events-none">
         💎
@@ -128,15 +153,15 @@
       <input type="text" id="customer-search-input"
         placeholder="Search collection or style..."
         autocomplete="off"
-        class="w-full pl-10 pr-9 py-2.5 bg-[#171829] border border-white/10 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#c9a84c] focus:ring-1 focus:ring-[#c9a84c] transition shadow-inner">
+        class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#171829] border border-slate-200 dark:border-white/10 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#b38c2b] dark:focus:border-[#c9a84c] focus:ring-1 focus:ring-[#b38c2b] dark:focus:ring-[#c9a84c] transition shadow-sm">
       <button id="search-clear-btn" type="button" onclick="window.clearCustomerSearch()"
-        class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition">
-        <span class="text-[11px] font-bold bg-white/10 w-4 h-4 rounded-full inline-flex items-center justify-center">✕</span>
+        class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+        <span class="text-[11px] font-bold bg-slate-100 dark:bg-white/10 w-4 h-4 rounded-full inline-flex items-center justify-center">✕</span>
       </button>
     </div>
 
     <!-- Category Filter Tabs (Horizontal Scrollable Pills) -->
-    <div class="sticky top-[61px] z-20 py-2 -mx-4 px-4 bg-[#11121d]/95 backdrop-blur-md mb-2">
+    <div class="sticky top-[61px] z-20 py-2 -mx-4 px-4 bg-[#f8f7f4]/95 dark:bg-[#11121d]/95 backdrop-blur-md mb-2 transition-colors">
       <div class="flex space-x-2 overflow-x-auto no-scrollbar py-0.5" id="category-pills">
         <button class="category-pill active flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold"
           data-category="ALL">
@@ -147,9 +172,9 @@
 
     <!-- Catalog Section Header -->
     <div class="flex items-center justify-between mb-3 px-1" id="catalog-header-bar">
-      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" id="catalog-count-label">Loading
+      <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" id="catalog-count-label">Loading
         jewelry…</span>
-      <span class="text-[11px] text-[#e5c36a] font-medium">1 USD = ៛4,100</span>
+      <span class="text-[11px] text-[#996e16] dark:text-[#e5c36a] font-medium">1 USD = ៛4,100</span>
     </div>
 
     <!-- Curated Section Stack View (Active when Category === 'ALL' and not searching) -->
@@ -171,8 +196,8 @@
     <!-- Empty State (Hidden by default) -->
     <div id="empty-state" class="hidden text-center py-16 px-4">
       <span class="text-5xl block mb-3">🔍</span>
-      <h3 class="text-base font-bold text-white mb-1" id="empty-state-title">No jewelry found</h3>
-      <p class="text-xs text-slate-400" id="empty-state-desc">There are no items currently available in this category.</p>
+      <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1" id="empty-state-title">No jewelry found</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400" id="empty-state-desc">There are no items currently available in this category.</p>
       <button type="button" onclick="window.resetCatalogView()" class="mt-4 px-4 py-2 rounded-xl text-xs font-bold btn-gold-outline inline-block">
         Explore All Pieces
       </button>
@@ -182,19 +207,19 @@
 
   <!-- Persistent Floating Bottom Bar -->
   <div id="bottom-bar"
-    class="fixed bottom-0 left-0 right-0 z-40 glass-bottom-bar border-t border-white/10 px-4 pt-3 transition-transform">
+    class="fixed bottom-0 left-0 right-0 z-40 glass-bottom-bar border-t border-slate-200/80 dark:border-white/10 px-4 pt-3 transition-all">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div class="cursor-pointer" onclick="openCartSheet()">
         <div class="flex items-center space-x-1.5">
-          <span class="text-xs font-semibold text-slate-300">Bag:</span>
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Bag:</span>
           <span id="bar-cart-count"
             class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-[#c9a84c] text-black">
             0
           </span>
         </div>
         <div class="flex items-baseline space-x-1.5 mt-0.5">
-          <span id="bar-cart-usd" class="text-base font-extrabold text-white leading-none">$0.00</span>
-          <span id="bar-cart-khr" class="text-xs font-medium text-[#e5c36a]">៛0</span>
+          <span id="bar-cart-usd" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">$0.00</span>
+          <span id="bar-cart-khr" class="text-xs font-medium text-[#996e16] dark:text-[#e5c36a]">៛0</span>
         </div>
       </div>
 
@@ -208,13 +233,13 @@
 
   <!-- Slide-up Bottom Sheet Modal (Product Detail & Style Selection) -->
   <div id="style-modal"
-    class="modal-overlay hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center">
+    class="modal-overlay hidden fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-sm flex items-end justify-center">
     <div class="modal-sheet glass-modal-sheet w-full max-w-md rounded-t-3xl max-h-[92vh] flex flex-col overflow-hidden">
       <!-- Drag handle & close header -->
-      <div class="relative px-5 pt-3 pb-2 border-b border-white/10 flex-shrink-0 flex items-center justify-center">
+      <div class="relative px-5 pt-3 pb-2 border-b border-slate-200/80 dark:border-white/10 flex-shrink-0 flex items-center justify-center">
         <div class="drag-handle mx-auto mb-0"></div>
         <button onclick="window.closeStyleModal()"
-          class="absolute right-4 top-2.5 w-7 h-7 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition">
+          class="absolute right-4 top-2.5 w-7 h-7 rounded-full bg-slate-100 text-slate-700 hover:text-slate-900 dark:bg-white/10 dark:text-slate-300 dark:hover:text-white flex items-center justify-center text-xs font-bold transition">
           &#x2715;
         </button>
       </div>
@@ -225,7 +250,7 @@
       </div>
 
       <!-- Sticky Bottom CTA -->
-      <div class="p-4 border-t border-white/10 bg-[#171829] flex-shrink-0">
+      <div class="p-4 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#171829] flex-shrink-0 transition-colors">
         <button id="style-modal-add-btn" type="button" onclick="window.confirmAddStyleToCart()"
           class="btn-gold-outline w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2">
           <span>Select a style above to add to bag</span>
@@ -237,23 +262,23 @@
 
   <!-- Slide-up Bottom Sheet Modal (Cart & Checkout) -->
   <div id="cart-modal"
-    class="modal-overlay hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center">
+    class="modal-overlay hidden fixed inset-0 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-sm flex items-end justify-center">
     <div class="modal-sheet glass-modal-sheet w-full max-w-md rounded-t-3xl max-h-[92vh] flex flex-col overflow-hidden">
 
       <!-- Sheet Header with Drag Handle -->
-      <div class="px-5 pt-3 pb-3 border-b border-white/10 flex-shrink-0">
+      <div class="px-5 pt-3 pb-3 border-b border-slate-200/80 dark:border-white/10 flex-shrink-0">
         <div class="drag-handle"></div>
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <span>Your Shopping Bag</span>
               <span id="sheet-items-count"
-                class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-semibold">0</span>
+                class="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold">0</span>
             </h3>
-            <p class="text-[11px] text-slate-400 mt-0.5">Review items & complete delivery details</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Review items & complete delivery details</p>
           </div>
           <button onclick="closeCartSheet()"
-            class="w-8 h-8 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold">
+            class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 hover:text-slate-900 dark:bg-white/10 dark:text-slate-300 dark:hover:text-white flex items-center justify-center text-sm font-bold transition">
             ✕
           </button>
         </div>
@@ -265,46 +290,46 @@
         <!-- Cart Items List Container -->
         <div class="w-full min-w-0">
           <div class="flex items-center justify-between mb-2">
-            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Selected Pieces</h4>
-            <button onclick="clearCart()" class="text-[11px] text-rose-400 hover:underline">Clear all</button>
+            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Selected Pieces</h4>
+            <button onclick="clearCart()" class="text-[11px] text-rose-500 hover:underline font-semibold">Clear all</button>
           </div>
 
           <div id="sheet-cart-items" class="space-y-2.5 w-full min-w-0">
             <!-- Rendered by JS -->
           </div>
 
-          <div id="sheet-cart-empty" class="hidden py-8 text-center bg-white/5 rounded-xl border border-white/5">
-            <p class="text-xs font-semibold text-slate-300">Your bag is empty</p>
+          <div id="sheet-cart-empty" class="hidden py-8 text-center bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5">
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Your bag is empty</p>
             <p class="text-[11px] text-slate-500 mt-0.5">Add fine jewelry pieces from the catalog to order.</p>
           </div>
         </div>
 
         <!-- Price Summary Breakdown -->
-        <div class="bg-white/5 rounded-xl p-3.5 border border-white/10 space-y-2">
-          <div class="flex justify-between text-xs text-slate-400">
+        <div class="bg-slate-50 dark:bg-white/5 rounded-xl p-3.5 border border-slate-200/90 dark:border-white/10 space-y-2 transition-colors">
+          <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Subtotal</span>
-            <span id="summary-subtotal-usd" class="font-medium text-slate-200">$0.00</span>
+            <span id="summary-subtotal-usd" class="font-medium text-slate-800 dark:text-slate-200">$0.00</span>
           </div>
-          <div class="flex justify-between text-xs text-slate-400">
+          <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Delivery (Phnom Penh & Provinces)</span>
-            <span class="font-medium text-emerald-400">Free / Standard</span>
+            <span class="font-medium text-emerald-600 dark:text-emerald-400 font-semibold">Free / Standard</span>
           </div>
-          <div class="pt-2 border-t border-white/10 flex justify-between items-baseline">
-            <span class="text-xs font-bold text-white">Total Amount</span>
+          <div class="pt-2 border-t border-slate-200 dark:border-white/10 flex justify-between items-baseline">
+            <span class="text-xs font-bold text-slate-900 dark:text-white">Total Amount</span>
             <div class="text-right">
-              <span id="summary-total-usd" class="text-base font-extrabold text-white block leading-tight">$0.00</span>
-              <span id="summary-total-khr" class="text-xs font-medium text-[#e5c36a]">៛0</span>
+              <span id="summary-total-usd" class="text-base font-extrabold text-slate-900 dark:text-white block leading-tight">$0.00</span>
+              <span id="summary-total-khr" class="text-xs font-medium text-[#996e16] dark:text-[#e5c36a]">៛0</span>
             </div>
           </div>
         </div>
 
         <!-- Identity Warning (Visible if not verified via Messenger) -->
         <div id="checkout-auth-alert"
-          class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
+          class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs">
           <div class="flex items-start space-x-2">
             <span class="text-base leading-none">📱</span>
             <div>
-              <strong class="font-bold block text-amber-300 mb-0.5">Messenger Verified Link Required</strong>
+              <strong class="font-bold block text-amber-900 dark:text-amber-300 mb-0.5">Messenger Verified Link Required</strong>
               <span>To protect your order and receive instant receipts, please open this shop link directly from your
                 chat with our Facebook Page.</span>
             </div>
@@ -313,102 +338,102 @@
 
         <!-- Customer Delivery Information Form -->
         <div class="space-y-3">
-          <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+          <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
             <span>Delivery Information</span>
             <span class="text-[10px] text-slate-500 lowercase">* required for shipping</span>
           </h4>
 
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-[11px] font-semibold text-slate-300" id="name-label">Your Full Name *</label>
-              <span id="cust-name-badge" class="hidden text-[10px] text-emerald-400 font-medium flex items-center space-x-1">
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300" id="name-label">Your Full Name *</label>
+              <span id="cust-name-badge" class="hidden text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center space-x-1">
                 <span>✓</span> <span id="cust-name-badge-text">Auto-filled via Messenger</span>
               </span>
             </div>
             <input type="text" id="cust-name" required placeholder="e.g. Sreysros Keo"
-              class="w-full bg-[#11121d] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition">
+              class="w-full bg-slate-50 dark:bg-[#11121d] border border-slate-300 dark:border-white/15 focus:border-[#b38c2b] dark:focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition">
           </div>
 
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Phone Number (Cell / Telegram) *</label>
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number (Cell / Telegram) *</label>
             <input type="tel" id="cust-phone" required placeholder="e.g. 012 345 678"
-              class="w-full bg-[#11121d] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition">
+              class="w-full bg-slate-50 dark:bg-[#11121d] border border-slate-300 dark:border-white/15 focus:border-[#b38c2b] dark:focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition">
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-[11px] font-semibold text-slate-300" id="address-label">Delivery Address
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300" id="address-label">Delivery Address
                 *</label>
-              <span id="address-branch-hint" class="hidden text-[10px] text-indigo-300">💡 Branch / Campus or
+              <span id="address-branch-hint" class="hidden text-[10px] text-indigo-600 dark:text-indigo-300">💡 Branch / Campus or
                 Home</span>
             </div>
             <textarea id="cust-address" required rows="2" placeholder="House #, Street, Sangkat/Khan or Province..."
-              class="w-full bg-[#11121d] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition resize-none"></textarea>
+              class="w-full bg-slate-50 dark:bg-[#11121d] border border-slate-300 dark:border-white/15 focus:border-[#b38c2b] dark:focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition resize-none"></textarea>
           </div>
 
           <div>
-            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Order Notes (Optional)</label>
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Order Notes (Optional)</label>
             <input type="text" id="cust-note" placeholder="Ring size (e.g. Size 7), gift wrapping, etc."
-              class="w-full bg-[#11121d] border border-white/15 focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition">
+              class="w-full bg-slate-50 dark:bg-[#11121d] border border-slate-300 dark:border-white/15 focus:border-[#b38c2b] dark:focus:border-[#c9a84c] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition">
           </div>
         </div>
 
         <!-- Delivery & Payment Method Selection -->
         <div class="space-y-2">
           <label
-            class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
             <span id="payment-method-title">Delivery & Payment Method</span>
-            <span class="text-[10px] text-amber-400 font-normal">Choose Option</span>
+            <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold">Choose Option</span>
           </label>
 
           <div class="space-y-2">
             <!-- Option 1: COD (Grab) - DEFAULT ACTIVE -->
             <button type="button" id="pay-opt-cod" onclick="selectPaymentMethod('COD')"
-              class="payment-method-pill active w-full flex items-center justify-between p-3 rounded-xl border border-amber-400 bg-amber-500/15 text-white transition text-left shadow-sm">
+              class="payment-method-pill active w-full flex items-center justify-between p-3 rounded-xl border border-amber-500 bg-amber-500/15 text-slate-900 dark:text-white transition text-left shadow-sm">
               <div class="flex items-center space-x-3">
                 <span class="text-xl flex-shrink-0">🛵</span>
                 <div>
-                  <div class="text-xs font-bold text-white" id="pay-opt-cod-title">Cash on Delivery (Grab)</div>
-                  <div class="text-[10px] text-amber-300 mt-0.5" id="pay-opt-cod-sub">Phnom Penh only</div>
+                  <div class="text-xs font-bold text-slate-900 dark:text-white" id="pay-opt-cod-title">Cash on Delivery (Grab)</div>
+                  <div class="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5" id="pay-opt-cod-sub">Phnom Penh only</div>
                 </div>
               </div>
               <div
-                class="radio-indicator w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center flex-shrink-0">
-                <div class="radio-dot w-2 h-2 rounded-full bg-amber-400"></div>
+                class="radio-indicator w-4 h-4 rounded-full border-2 border-amber-500 flex items-center justify-center flex-shrink-0">
+                <div class="radio-dot w-2 h-2 rounded-full bg-amber-500"></div>
               </div>
             </button>
 
             <!-- Option 2: Bakong KHQR -->
             <button type="button" id="pay-opt-khqr" onclick="selectPaymentMethod('KHQR')"
-              class="payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left">
+              class="payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-left">
               <div class="flex items-center space-x-3">
                 <span class="text-xl flex-shrink-0">📲</span>
                 <div>
-                  <div class="text-xs font-bold text-white" id="pay-opt-khqr-title">Bakong KHQR</div>
-                  <div class="text-[10px] text-slate-400 mt-0.5" id="pay-opt-khqr-sub">Scan to Pay via Bakong / ABA
+                  <div class="text-xs font-bold text-slate-900 dark:text-white" id="pay-opt-khqr-title">Bakong KHQR</div>
+                  <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5" id="pay-opt-khqr-sub">Scan to Pay via Bakong / ABA
                   </div>
                 </div>
               </div>
               <div
-                class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-500 flex items-center justify-center flex-shrink-0">
+                class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-400 dark:border-slate-500 flex items-center justify-center flex-shrink-0">
                 <div class="radio-dot hidden w-2 h-2 rounded-full bg-[#c9a84c]"></div>
               </div>
             </button>
 
             <!-- Option 3: Virak Buntham / J&T -->
             <button type="button" id="pay-opt-vet" onclick="selectPaymentMethod('VET')"
-              class="payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white transition text-left">
+              class="payment-method-pill w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition text-left">
               <div class="flex items-center space-x-3">
                 <span class="text-xl flex-shrink-0">📦</span>
                 <div>
-                  <div class="text-xs font-bold text-white" id="pay-opt-vet-title">VET / J&T Express</div>
-                  <div class="text-[10px] text-slate-400 mt-0.5" id="pay-opt-vet-sub">Delivery across all 25 provinces
+                  <div class="text-xs font-bold text-slate-900 dark:text-white" id="pay-opt-vet-title">VET / J&T Express</div>
+                  <div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5" id="pay-opt-vet-sub">Delivery across all 25 provinces
                   </div>
                 </div>
               </div>
               <div
-                class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-500 flex items-center justify-center flex-shrink-0">
-                <div class="radio-dot hidden w-2 h-2 rounded-full bg-indigo-400"></div>
+                class="radio-indicator w-4 h-4 rounded-full border-2 border-slate-400 dark:border-slate-500 flex items-center justify-center flex-shrink-0">
+                <div class="radio-dot hidden w-2 h-2 rounded-full bg-indigo-500"></div>
               </div>
             </button>
           </div>
@@ -416,32 +441,32 @@
 
         <!-- COD Presentation Card (Default) -->
         <div id="payment-cod-box"
-          class="rounded-2xl bg-gradient-to-b from-[#241f17] to-[#161412] border border-amber-400/30 p-3.5 relative overflow-hidden transition-all">
-          <div class="flex items-center space-x-2 text-amber-400 mb-1">
+          class="rounded-2xl bg-gradient-to-b from-amber-50 to-stone-50 dark:from-[#241f17] dark:to-[#161412] border border-amber-300 dark:border-amber-400/30 p-3.5 relative overflow-hidden transition-all shadow-sm">
+          <div class="flex items-center space-x-2 text-amber-700 dark:text-amber-400 mb-1">
             <span class="text-base">🛵</span>
-            <span class="text-xs font-bold text-white" id="cod-pay-heading">Cash on Delivery (Grab Express)</span>
+            <span class="text-xs font-bold text-slate-900 dark:text-white" id="cod-pay-heading">Cash on Delivery (Grab Express)</span>
           </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed" id="cod-pay-desc">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed" id="cod-pay-desc">
             Cash on Delivery (Grab Express): For Phnom Penh only.
           </p>
         </div>
 
         <!-- KHQR Presentation Card -->
         <div id="payment-khqr-box"
-          class="hidden rounded-2xl bg-gradient-to-b from-[#1e2038] to-[#151627] border border-[#c9a84c]/30 p-4 relative overflow-hidden transition-all">
-          <div class="flex items-center justify-between mb-3 border-b border-white/10 pb-2.5">
+          class="hidden rounded-2xl bg-gradient-to-b from-stone-50 to-amber-50/50 dark:from-[#1e2038] dark:to-[#151627] border border-amber-200 dark:border-[#c9a84c]/30 p-4 relative overflow-hidden transition-all shadow-sm">
+          <div class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-white/10 pb-2.5">
             <div class="flex items-center space-x-2">
               <span
                 class="px-2 py-0.5 rounded bg-red-600 font-extrabold text-white text-[10px] tracking-widest uppercase">
                 KHQR
               </span>
-              <span class="text-xs font-bold text-white">Bakong Pay</span>
+              <span class="text-xs font-bold text-slate-900 dark:text-white">Bakong Pay</span>
             </div>
-            <span class="text-[11px] font-medium text-[#e5c36a]" id="khqr-scan-label">Scan to Pay</span>
+            <span class="text-[11px] font-semibold text-[#996e16] dark:text-[#e5c36a]" id="khqr-scan-label">Scan to Pay</span>
           </div>
 
           <div class="flex items-center space-x-3.5">
-            <div class="w-24 h-24 bg-white rounded-xl p-1.5 flex-shrink-0 flex items-center justify-center shadow-md">
+            <div class="w-24 h-24 bg-white rounded-xl p-1.5 flex-shrink-0 flex items-center justify-center shadow-md border border-slate-200 dark:border-transparent">
               <canvas id="khqr-canvas" class="hidden w-full h-full"></canvas>
               <div id="khqr-placeholder" class="w-full h-full rounded-lg bg-white flex items-center justify-center text-[10px] font-black text-slate-700">
                 QR
@@ -449,30 +474,30 @@
             </div>
 
             <div class="flex-1 text-xs">
-              <p class="text-slate-400 text-[11px]" id="merchant-label">Merchant:</p>
-              <p class="font-bold text-white text-xs">JOMROUS JEWELRY</p>
-              <div class="mt-2 py-1 px-2 rounded-lg bg-black/30 border border-white/5">
-                <span class="text-[10px] text-slate-400 block" id="total-due-label">Total Due:</span>
-                <span id="khqr-due-usd" class="font-extrabold text-sm text-white">$0.00</span>
-                <span id="khqr-due-khr" class="text-[11px] font-semibold text-[#e5c36a] ml-1.5">៛0</span>
+              <p class="text-slate-500 dark:text-slate-400 text-[11px]" id="merchant-label">Merchant:</p>
+              <p class="font-bold text-slate-900 dark:text-white text-xs">JOMROUS JEWELRY</p>
+              <div class="mt-2 py-1 px-2 rounded-lg bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/5">
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 block" id="total-due-label">Total Due:</span>
+                <span id="khqr-due-usd" class="font-extrabold text-sm text-slate-900 dark:text-white">$0.00</span>
+                <span id="khqr-due-khr" class="text-[11px] font-semibold text-[#996e16] dark:text-[#e5c36a] ml-1.5">៛0</span>
               </div>
             </div>
           </div>
 
-          <p class="text-[10px] text-slate-400 mt-2.5 leading-relaxed" id="khqr-note-text">
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed" id="khqr-note-text">
             Pay via any Bakong-enabled app (ABA, Wing, ACLEDA). The shop owner manually confirms receipt before shipping!
           </p>
         </div>
 
         <!-- VET / J&T Presentation Card -->
         <div id="payment-vet-box"
-          class="hidden rounded-2xl bg-gradient-to-b from-[#1b1c35] to-[#121325] border border-indigo-500/30 p-3.5 relative overflow-hidden transition-all">
-          <div class="flex items-center space-x-2 text-indigo-400 mb-1">
+          class="hidden rounded-2xl bg-gradient-to-b from-indigo-50/70 to-stone-50 dark:from-[#1b1c35] dark:to-[#121325] border border-indigo-200 dark:border-indigo-500/30 p-3.5 relative overflow-hidden transition-all shadow-sm">
+          <div class="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 mb-1">
             <span class="text-base">📦</span>
-            <span class="text-xs font-bold text-white" id="vet-pay-heading">Provincial Delivery (Virak Buntham /
+            <span class="text-xs font-bold text-slate-900 dark:text-white" id="vet-pay-heading">Provincial Delivery (Virak Buntham /
               J&T)</span>
           </div>
-          <p class="text-[11px] text-slate-300 leading-relaxed" id="vet-pay-desc">
+          <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed" id="vet-pay-desc">
             Provincial Delivery (Virak Buntham / J&T): Delivery across all 25 provinces.
           </p>
         </div>
@@ -480,10 +505,10 @@
       </div>
 
       <!-- Sheet Sticky Footer Submit -->
-      <div class="px-5 py-3.5 border-t border-white/10 bg-[#141524] flex-shrink-0">
+      <div class="px-5 py-3.5 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#141524] flex-shrink-0 transition-colors">
         <div class="flex items-center space-x-3">
           <button type="button" onclick="closeCartSheet()"
-            class="w-1/3 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-bold text-xs transition">
+            class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/10 dark:hover:bg-white/15 dark:text-slate-300 font-bold text-xs transition">
             Keep Shopping
           </button>
           <button type="button" id="submit-order-btn" onclick="submitCustomerOrder()"
@@ -496,37 +521,39 @@
 
     </div>
   </div>
-<div id="khqr-pay-modal"
-    class="modal-overlay hidden fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-[#151627] border border-[#c9a84c]/35 rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] overflow-y-auto shadow-2xl relative">
-      <div class="sticky top-0 bg-[#151627]/95 backdrop-blur border-b border-white/10 px-5 py-3.5 flex items-center justify-between z-10">
+
+  <!-- Bakong KHQR Modal -->
+  <div id="khqr-pay-modal"
+    class="modal-overlay hidden fixed inset-0 z-[60] bg-black/75 dark:bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white dark:bg-[#151627] border border-slate-200 dark:border-[#c9a84c]/35 rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] overflow-y-auto shadow-2xl relative transition-colors">
+      <div class="sticky top-0 bg-white/95 dark:bg-[#151627]/95 backdrop-blur border-b border-slate-200/80 dark:border-white/10 px-5 py-3.5 flex items-center justify-between z-10">
         <div>
-          <p class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Jomrous Jewelry</p>
-          <h2 class="text-base font-extrabold text-white">Scan to Pay</h2>
+          <p class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold">Jomrous Jewelry</p>
+          <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Scan to Pay</h2>
         </div>
         <button type="button" id="khqr-pay-close" onclick="window.closeKhqrPayModal()"
-          class="w-8 h-8 rounded-full bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-lg leading-none">×</button>
+          class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 hover:text-slate-900 dark:bg-white/10 dark:text-slate-300 dark:hover:text-white flex items-center justify-center text-lg leading-none transition">×</button>
       </div>
 
       <div class="px-5 py-4 text-center space-y-3">
-        <p class="text-xs text-slate-400" id="khqr-pay-order-label">Order —</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400" id="khqr-pay-order-label">Order —</p>
 
-        <div class="mx-auto w-56 h-56 bg-white rounded-2xl p-3 flex items-center justify-center shadow-lg">
+        <div class="mx-auto w-56 h-56 bg-white rounded-2xl p-3 flex items-center justify-center shadow-lg border border-slate-200 dark:border-transparent">
           <img id="khqr-pay-img" alt="Bakong KHQR" class="w-full h-full object-contain hidden" />
           <span id="khqr-pay-loading" class="text-sm font-bold text-slate-600">Generating QR…</span>
         </div>
 
         <div>
-          <p class="text-2xl font-extrabold text-white" id="khqr-pay-usd">$0.00</p>
-          <p class="text-sm font-semibold text-[#e5c36a]" id="khqr-pay-khr">៛0</p>
+          <p class="text-2xl font-extrabold text-slate-900 dark:text-white" id="khqr-pay-usd">$0.00</p>
+          <p class="text-sm font-semibold text-[#996e16] dark:text-[#e5c36a]" id="khqr-pay-khr">៛0</p>
           <p class="text-[11px] text-slate-500 mt-1">Amount is fixed in the QR — scan with ABA / Wing / Bakong</p>
         </div>
 
-        <div class="rounded-xl bg-white/5 border border-white/10 p-3 text-left text-[11px] text-slate-300 space-y-1">
-          <p>1. Open <strong class="text-white">ABA / Wing / ACLEDA / Bakong</strong></p>
-          <p>2. Choose <strong class="text-white">Scan QR</strong></p>
+        <div class="rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-3 text-left text-[11px] text-slate-700 dark:text-slate-300 space-y-1">
+          <p>1. Open <strong class="text-slate-900 dark:text-white">ABA / Wing / ACLEDA / Bakong</strong></p>
+          <p>2. Choose <strong class="text-slate-900 dark:text-white">Scan QR</strong></p>
           <p>3. Amount appears automatically — confirm pay</p>
-          <p>4. Tap <strong class="text-white">I've Paid</strong> below</p>
+          <p>4. Tap <strong class="text-slate-900 dark:text-white">I've Paid</strong> below</p>
         </div>
 
         <div id="khqr-pay-status" class="hidden rounded-xl p-3 text-xs font-semibold text-left"></div>
@@ -537,58 +564,59 @@
         </button>
 
         <button type="button" id="khqr-pay-btn-check"
-          class="w-full py-2.5 rounded-2xl text-xs font-semibold text-slate-300 bg-white/10 border border-white/10">
+          class="w-full py-2.5 rounded-2xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 border border-slate-200 dark:border-white/10 transition">
           🔄 Check Payment Status
         </button>
 
         <button type="button" onclick="window.closeKhqrPayModal()"
-          class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-white">
+          class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
           Close · Continue Shopping
         </button>
       </div>
     </div>
   </div>
+
   <!-- Order Success Celebration Modal -->
   <div id="success-modal"
-    class="modal-overlay hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    class="modal-overlay hidden fixed inset-0 z-50 bg-black/75 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div
-      class="bg-[#1b1c2e] border border-[#c9a84c]/40 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative overflow-hidden">
+      class="bg-white dark:bg-[#1b1c2e] border border-slate-200 dark:border-[#c9a84c]/40 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative overflow-hidden transition-colors">
       <!-- Glow effect -->
       <div class="absolute -top-16 -left-16 w-32 h-32 bg-[#c9a84c]/20 rounded-full blur-2xl pointer-events-none"></div>
 
       <div
-        class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
+        class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
         ✓
       </div>
 
       <span
-        class="inline-block px-3 py-1 rounded-full bg-[#c9a84c]/15 text-[#f3d489] text-[11px] font-bold uppercase tracking-wider mb-2">
+        class="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-[#c9a84c]/15 dark:text-[#f3d489] text-[11px] font-bold uppercase tracking-wider mb-2">
         Order Received
       </span>
 
-      <h3 class="text-xl font-extrabold text-white mb-1">Thank You!</h3>
-      <p class="text-xs text-slate-300 mb-4">Your jewelry order has been submitted successfully.</p>
+      <h3 class="text-xl font-extrabold text-slate-900 dark:text-white mb-1">Thank You!</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 mb-4">Your jewelry order has been submitted successfully.</p>
 
-      <div class="bg-black/30 rounded-2xl p-4 border border-white/10 mb-4 text-left space-y-2">
+      <div class="bg-slate-50 dark:bg-black/30 rounded-2xl p-4 border border-slate-200 dark:border-white/10 mb-4 text-left space-y-2">
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">Order Reference:</span>
-          <span id="success-order-id" class="font-mono font-bold text-[#f3d489] text-xs">ORD-XXXXXX</span>
+          <span class="text-slate-500 dark:text-slate-400">Order Reference:</span>
+          <span id="success-order-id" class="font-mono font-bold text-[#b38c2b] dark:text-[#f3d489] text-xs">ORD-XXXXXX</span>
         </div>
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">Total Amount:</span>
-          <span id="success-order-total" class="font-extrabold text-white text-xs">$0.00 / ៛0</span>
+          <span class="text-slate-500 dark:text-slate-400">Total Amount:</span>
+          <span id="success-order-total" class="font-extrabold text-slate-900 dark:text-white text-xs">$0.00 / ៛0</span>
         </div>
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400">Status:</span>
+          <span class="text-slate-500 dark:text-slate-400">Status:</span>
           <span
-            class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30">
             PENDING VERIFICATION
           </span>
         </div>
       </div>
 
       <div
-        class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-200 text-xs text-left mb-5 flex items-start space-x-2">
+        class="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 text-blue-900 dark:text-blue-200 text-xs text-left mb-5 flex items-start space-x-2">
         <span class="text-base leading-none">💬</span>
         <p class="text-[11px] leading-relaxed">
           A receipt carousel has been sent to your <strong>Messenger chat</strong>! Our shop owner will verify payment
@@ -603,7 +631,7 @@
       </button>
 
       <button type="button" onclick="window.closeSuccessModal()" id="btn-continue-shopping"
-        class="w-full mt-2.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition">
+        class="w-full mt-2.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition">
         <span id="btn-continue-shopping-text">Continue Browsing Catalog</span>
       </button>
     </div>

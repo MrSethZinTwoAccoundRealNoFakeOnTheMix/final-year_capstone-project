@@ -414,6 +414,49 @@
     });
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // THEME MANAGEMENT (Light Mode Default)
+  // ─────────────────────────────────────────────────────────────
+  let currentTheme = localStorage.getItem('theme') || 'light';
+
+  function applyAdminTheme(theme) {
+    currentTheme = theme === 'dark' ? 'dark' : 'light';
+    const htmlEl = document.documentElement;
+    const themeIcon = document.getElementById('admin-theme-icon');
+    const themeText = document.getElementById('admin-theme-text');
+
+    if (currentTheme === 'dark') {
+      htmlEl.classList.add('dark');
+      if (themeIcon) themeIcon.textContent = '☀️';
+      if (themeText) themeText.textContent = currentLang === 'km' ? 'ពន្លឺ' : 'Light';
+    } else {
+      htmlEl.classList.remove('dark');
+      if (themeIcon) themeIcon.textContent = '🌙';
+      if (themeText) themeText.textContent = currentLang === 'km' ? 'ងងឹត' : 'Dark';
+    }
+
+    // Refresh Overview Chart if it's initialized
+    if (overviewChartInstance && typeof updateOverviewStats === 'function') {
+      try {
+        updateOverviewStats();
+      } catch (_) {}
+    }
+  }
+
+  window.toggleAdminTheme = function () {
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', nextTheme);
+    applyAdminTheme(nextTheme);
+    showToast(nextTheme === 'dark' ? 'Dark mode enabled 🌙' : 'Light mode enabled ☀️', 'info');
+  };
+
+  // Cross-tab sync for theme changes
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme') {
+      applyAdminTheme(e.newValue || 'light');
+    }
+  });
+
   // Language Toggle Handler
   window.toggleAdminLanguage = function () {
     currentLang = currentLang === 'en' ? 'km' : 'en';
@@ -428,6 +471,16 @@
     if (labelLive) labelLive.textContent = t('live');
     if (linkStorefront) linkStorefront.textContent = t('storefront');
     if (btnSignout) btnSignout.textContent = t('signOut');
+
+    // Update Theme toggle button text according to current language
+    const themeText = document.getElementById('admin-theme-text');
+    if (themeText) {
+      if (currentTheme === 'dark') {
+        themeText.textContent = currentLang === 'km' ? 'ពន្លឺ' : 'Light';
+      } else {
+        themeText.textContent = currentLang === 'km' ? 'ងងឹត' : 'Dark';
+      }
+    }
 
     // Tab buttons text
     tabButtons.forEach((btn) => {
@@ -1185,8 +1238,8 @@
         <button type="button" onclick="window.setInvCategory('${escapeHtml(cat)}')"
           class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition ${
             isActive
-              ? 'bg-[#c9a84c] text-black shadow-md'
-              : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+              ? 'bg-[#121316] text-white border border-[#27272a] shadow-sm dark:bg-[#c9a84c] dark:text-black dark:border-transparent'
+              : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-300 dark:border-white/10'
           }">
           ${escapeHtml(cat)}
         </button>
@@ -1423,12 +1476,12 @@
 
       return `
         <div class="admin-card p-3 flex flex-col space-y-3 border ${
-          staged || hasAnyStyleStaged ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30' : 'border-white/10'
-        } transition hover:border-white/20">
+          staged || hasAnyStyleStaged ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30' : 'border-black/10 dark:border-white/10'
+        } transition hover:border-black/20 dark:hover:border-white/20">
           <!-- Top Row: Large Image + Details & Actions -->
           <div class="flex items-start space-x-3.5 min-w-0">
             <!-- Large Image with Tap-To-Zoom -->
-            <div class="relative w-24 h-24 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer group"
+            <div class="relative w-24 h-24 rounded-2xl overflow-hidden bg-black/5 dark:bg-slate-900 border border-black/10 dark:border-white/10 flex-shrink-0 cursor-pointer group"
               onclick="window.openImageLightbox('${product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)}', '${product.id} · ${escapeHtml(product.category)}')">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
               <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/75 text-[9px] text-slate-300 font-bold flex items-center space-x-0.5 pointer-events-none">
@@ -1440,30 +1493,30 @@
             <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
               <div>
                 <div class="flex items-center space-x-1.5 flex-wrap">
-                  <span class="font-mono text-[10px] font-bold text-[#c9a84c]">${product.id}</span>
-                  <span class="text-[10px] text-slate-400 uppercase font-semibold">· ${escapeHtml(product.category)}</span>
+                  <span class="font-mono text-[10px] font-bold text-[#b38c2b] dark:text-[#c9a84c]">${product.id}</span>
+                  <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-semibold">· ${escapeHtml(product.category)}</span>
                 </div>
-                <h4 class="text-xs font-bold text-white leading-tight mt-1 truncate" title="${escapeHtml(product.name)}">
+                <h4 class="text-xs font-bold text-slate-900 dark:text-white leading-tight mt-1 truncate" title="${escapeHtml(product.name)}">
                   ${escapeHtml(product.name)}
                 </h4>
               </div>
 
               <!-- Price & Cost (clean, no alert badges) -->
-              <div class="text-[11px] text-slate-300 mt-1">
-                Sell: <strong class="text-white">${formatUSD(product.sell_price)}</strong>
-                <span class="text-slate-500 mx-1">·</span>
-                Cost: <span class="text-slate-400">${formatUSD(product.import_price)}</span>
-                <span class="text-emerald-400 font-semibold text-[10px] ml-1">(+${margin})</span>
+              <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
+                Sell: <strong class="text-slate-900 dark:text-white">${formatUSD(product.sell_price)}</strong>
+                <span class="text-slate-400 mx-1">·</span>
+                Cost: <span class="text-slate-500 dark:text-slate-400">${formatUSD(product.import_price)}</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px] ml-1">(+${margin})</span>
               </div>
 
               <!-- Actions row: Edit & Delete -->
               <div class="flex items-center space-x-1.5 mt-2">
                 <button onclick="window.editProduct('${product.id}')"
-                  class="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] text-slate-200 font-bold flex items-center space-x-1 transition active:scale-95">
+                  class="px-3 py-1 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[11px] text-slate-700 dark:text-slate-200 font-bold flex items-center space-x-1 transition active:scale-95">
                   <span>✏️ Edit</span>
                 </button>
                 <button onclick="window.deleteProduct('${product.id}')"
-                  class="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-[11px] text-rose-300 font-bold flex items-center space-x-1 transition active:scale-95">
+                  class="px-2.5 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-950/40 hover:bg-rose-500/20 dark:hover:bg-rose-900/60 text-[11px] text-rose-700 dark:text-rose-300 font-bold flex items-center space-x-1 transition active:scale-95">
                   <span>🗑️ Delete</span>
                 </button>
               </div>
@@ -1472,26 +1525,26 @@
 
           <!-- Bottom Row: Stock Levels & Quick Stepper / Style Accordion -->
           ${hasVars ? `
-            <div class="pt-2 border-t border-white/5 flex flex-col space-y-2">
+            <div class="pt-2 border-t border-black/5 dark:border-white/5 flex flex-col space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-1.5">
                   ${hasAnyStyleStaged ? `
-                    <span class="text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
+                    <span class="text-amber-700 dark:text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
                       Total: ${product.stock} → ${parentDisplayStock}
                     </span>
                   ` : `
-                    <span class="text-slate-300 font-medium">
-                      Total Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+                    <span class="text-slate-600 dark:text-slate-300 font-medium">
+                      Total Stock: <strong class="text-slate-900 dark:text-white font-bold ml-1">${product.stock} units</strong>
                     </span>
                   `}
                 </div>
                 <button type="button" onclick="window.toggleInvStyles('${product.id}', event)"
                   class="px-2.5 py-1 rounded-lg ${
                     hasAnyStyleStaged
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
                       : isExpanded
-                      ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/40'
-                      : 'bg-white/10 text-slate-200 border-white/10'
+                      ? 'bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489] border-[#c9a84c]/40'
+                      : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-200 border-black/10 dark:border-white/10'
                   } border text-[11px] font-bold flex items-center space-x-1 transition active:scale-95">
                   <span>✨ ${varCount} Styles</span>
                   <span class="text-[10px]">${isExpanded ? '▲ Hide' : '▼ View'}</span>
@@ -1500,40 +1553,40 @@
 
               <!-- Accordion Content -->
               ${isExpanded ? `
-                <div class="mt-1 bg-black/40 border border-white/10 rounded-xl p-2.5 space-y-2.5">
+                <div class="mt-1 bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl p-2.5 space-y-2.5">
                   ${(product.variant_list || []).map((v) => {
                     const vStaged = invStagedChanges.get(getInvChangeKey(product.id, v.id));
                     const vDisplayStock = vStaged ? vStaged.newStock : v.stock;
 
                     return `
-                      <div class="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-b-0">
+                      <div class="flex items-center justify-between text-xs py-1 border-b border-black/5 dark:border-white/5 last:border-b-0">
                         <div class="flex items-center space-x-2.5 min-w-0 flex-1">
                           <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}"
                             onclick="window.openImageLightbox('${v.photo_url || product.photo_url || DEFAULT_IMAGE}', '${escapeHtml(product.name)} (${escapeHtml(v.color_name)})', '${formatUSD(v.sell_price)} · ${v.stock} in stock')"
-                            class="w-12 h-12 rounded-xl object-cover bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer hover:scale-105 transition"
+                            class="w-12 h-12 rounded-xl object-cover bg-black/5 dark:bg-slate-900 border border-black/10 dark:border-white/10 flex-shrink-0 cursor-pointer hover:scale-105 transition"
                             title="Tap to zoom">
                           <div class="min-w-0 pr-2">
-                            <p class="font-bold text-white text-xs truncate leading-tight">${escapeHtml(v.color_name)}</p>
+                            <p class="font-bold text-slate-900 dark:text-white text-xs truncate leading-tight">${escapeHtml(v.color_name)}</p>
                             <div class="flex items-center space-x-1 mt-0.5">
-                              <span class="text-[11px] text-[#c9a84c] font-extrabold">${formatUSD(v.sell_price)}</span>
+                              <span class="text-[11px] text-[#b38c2b] dark:text-[#c9a84c] font-extrabold">${formatUSD(v.sell_price)}</span>
                               ${vStaged ? `
-                                <span class="text-amber-300 font-black text-[10px] bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
+                                <span class="text-amber-700 dark:text-amber-300 font-black text-[10px] bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
                                   ${vStaged.originalStock} → ${vStaged.newStock} (${vStaged.delta > 0 ? '+' : ''}${vStaged.delta})
                                 </span>
-                                <button type="button" onclick="window.revertInvChange('${product.id}', '${v.id}', event)" class="text-slate-400 hover:text-rose-300 text-[10px] font-bold" title="Revert">✕</button>
+                                <button type="button" onclick="window.revertInvChange('${product.id}', '${v.id}', event)" class="text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-300 text-[10px] font-bold" title="Revert">✕</button>
                               ` : ''}
                             </div>
                           </div>
                         </div>
 
                         <!-- Stepper for Style (stages changes) -->
-                        <div class="flex items-center space-x-1 bg-black/50 border ${vStaged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-white/10'} rounded-xl p-0.5 flex-shrink-0">
+                        <div class="flex items-center space-x-1 bg-black/5 dark:bg-black/50 border ${vStaged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-black/10 dark:border-white/10'} rounded-xl p-0.5 flex-shrink-0">
                           <button type="button" onclick="window.stageInvStockChange('${product.id}', '${v.id}', -1, event)"
-                            class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                            class="w-7 h-7 rounded-lg bg-black/10 dark:bg-white/10 hover:bg-rose-600 text-slate-900 dark:text-white hover:text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
                             title="Decrease count">
                             −
                           </button>
-                          <span class="min-w-[24px] text-center font-extrabold ${vStaged ? 'text-amber-300' : 'text-[#f3d489]'} text-xs select-none">
+                          <span class="min-w-[24px] text-center font-extrabold ${vStaged ? 'text-amber-700 dark:text-amber-300' : 'text-[#b38c2b] dark:text-[#f3d489]'} text-xs select-none">
                             ${vDisplayStock}
                           </span>
                           <button type="button" onclick="window.stageInvStockChange('${product.id}', '${v.id}', 1, event)"
@@ -1549,32 +1602,32 @@
               ` : ''}
             </div>
           ` : `
-            <div class="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+            <div class="pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
               <div class="flex items-center space-x-1.5">
                 ${staged ? `
-                  <span class="text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
+                  <span class="text-amber-700 dark:text-amber-300 font-black text-xs bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/40">
                     ${staged.originalStock} → ${staged.newStock} (${staged.delta > 0 ? '+' : ''}${staged.delta})
                   </span>
                   <button type="button" onclick="window.revertInvChange('${product.id}', null, event)"
-                    class="w-5 h-5 rounded-md bg-white/10 hover:bg-rose-900/60 hover:text-rose-200 text-slate-400 text-[10px] font-bold flex items-center justify-center transition"
+                    class="w-5 h-5 rounded-md bg-black/5 dark:bg-white/10 hover:bg-rose-500/20 hover:text-rose-600 dark:hover:bg-rose-900/60 dark:hover:text-rose-200 text-slate-500 dark:text-slate-400 text-[10px] font-bold flex items-center justify-center transition"
                     title="Revert to ${staged.originalStock}">
                     ✕
                   </button>
                 ` : `
-                  <span class="text-slate-300 font-medium">
-                    In Stock: <strong class="text-white font-bold ml-1">${product.stock} units</strong>
+                  <span class="text-slate-600 dark:text-slate-300 font-medium">
+                    In Stock: <strong class="text-slate-900 dark:text-white font-bold ml-1">${product.stock} units</strong>
                   </span>
                 `}
               </div>
 
               <!-- Stepper for Standalone Product (stages changes) -->
-              <div class="flex items-center space-x-1 bg-black/40 border ${staged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-white/10'} rounded-xl p-0.5">
+              <div class="flex items-center space-x-1 bg-black/5 dark:bg-black/40 border ${staged ? 'border-amber-500/50 ring-1 ring-amber-500/40' : 'border-black/10 dark:border-white/10'} rounded-xl p-0.5">
                 <button type="button" onclick="window.stageInvStockChange('${product.id}', null, -1, event)"
-                  class="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                  class="w-7 h-7 rounded-lg bg-black/10 dark:bg-white/10 hover:bg-rose-600 text-slate-900 dark:text-white hover:text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
                   title="Decrease count">
                   −
                 </button>
-                <span class="min-w-[28px] text-center font-extrabold ${staged ? 'text-amber-300' : 'text-[#f3d489]'} text-xs select-none">
+                <span class="min-w-[28px] text-center font-extrabold ${staged ? 'text-amber-700 dark:text-amber-300' : 'text-[#b38c2b] dark:text-[#f3d489]'} text-xs select-none">
                   ${displayStock}
                 </span>
                 <button type="button" onclick="window.stageInvStockChange('${product.id}', null, 1, event)"
@@ -1622,8 +1675,8 @@
         <button type="button" onclick="window.setQsCategory('${escapeHtml(cat)}')"
           class="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition ${
             isActive
-              ? 'bg-[#c9a84c] text-black shadow-md'
-              : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+              ? 'bg-[#121316] text-white border border-[#27272a] shadow-sm dark:bg-[#c9a84c] dark:text-black dark:border-transparent'
+              : 'bg-white text-slate-800 border border-slate-300 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-300 dark:border-white/10'
           }">
           ${escapeHtml(cat)}
         </button>
@@ -1980,13 +2033,13 @@
           <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
             isInCart
               ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
-              : 'border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
+              : 'border-black/10 dark:border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
           }" onclick="window.qsOpenVariantDrawer('${product.id}')">
-            <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+            <div class="relative w-full aspect-square bg-black/5 dark:bg-slate-900 overflow-hidden">
               <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
               
               <!-- Style Count Pill -->
-              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#0e101a]/90 text-[#f3d489] border border-[#c9a84c]/40 backdrop-blur-sm">
+              <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#f8f7f4]/90 dark:bg-[#0e101a]/90 text-[#b38c2b] dark:text-[#f3d489] border border-[#c9a84c]/40 backdrop-blur-sm">
                 ✨ ${varCount}
               </span>
 
@@ -2000,20 +2053,20 @@
 
             <div class="p-2 flex-1 flex flex-col justify-between">
               <div class="min-w-0">
-                <p class="text-[9px] text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
-                <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
+                <p class="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
+                <h4 class="text-[11px] font-bold text-slate-900 dark:text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
               </div>
 
-              <div class="mt-1 pt-1 border-t border-white/5">
+              <div class="mt-1 pt-1 border-t border-black/5 dark:border-white/5">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
-                  <span class="text-[9px] text-slate-400 font-semibold">${product.stock} total</span>
+                  <span class="text-xs font-black text-[#b38c2b] dark:text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
+                  <span class="text-[9px] text-slate-500 dark:text-slate-400 font-semibold">${product.stock} total</span>
                 </div>
                 <button type="button" onclick="window.qsOpenVariantDrawer('${product.id}')"
                   class="w-full h-7 mt-1.5 rounded-lg ${
                     isInCart 
-                      ? 'bg-[#c9a84c]/20 text-[#f3d489] border-[#c9a84c]/50' 
-                      : 'bg-white/10 text-slate-200 border-white/10'
+                      ? 'bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489] border-[#c9a84c]/50' 
+                      : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-slate-200 border-black/10 dark:border-white/10'
                   } hover:bg-[#c9a84c] hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border active:scale-95 transition-all shadow-sm">
                   <span>${isInCart ? `🛒 ${cartQty} in cart` : `Styles (${varCount})`}</span>
                   <span class="text-[10px]">➔</span>
@@ -2029,14 +2082,14 @@
         <div class="admin-card p-0 overflow-hidden flex flex-col cursor-pointer border transition-all duration-200 select-none ${
           isInCart
             ? 'border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
-            : 'border-white/10 hover:border-white/20 active:scale-98 shadow'
+            : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20 active:scale-98 shadow'
         }" onclick="window.togglePosCartItem('${product.id}')">
-          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+          <div class="relative w-full aspect-square bg-black/5 dark:bg-slate-900 overflow-hidden">
             <img src="${product.photo_url || DEFAULT_IMAGE}" alt="" loading="lazy" class="w-full h-full object-cover">
             
             <!-- Stock Badge -->
             <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-              isLow ? 'bg-rose-950/90 text-rose-300 border border-rose-800/80' : 'bg-slate-950/80 text-slate-300 border border-white/15'
+              isLow ? 'bg-rose-500/10 dark:bg-rose-950/90 text-rose-700 dark:text-rose-300 border border-rose-500/30 dark:border-rose-800/80' : 'bg-black/5 dark:bg-slate-950/80 text-slate-700 dark:text-slate-300 border border-black/10 dark:border-white/15'
             }">
               ${product.stock} stk
             </span>
@@ -2051,24 +2104,24 @@
 
           <div class="p-2 flex-1 flex flex-col justify-between">
             <div class="min-w-0">
-              <p class="text-[9px] text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
-              <h4 class="text-[11px] font-bold text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
+              <p class="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-semibold truncate leading-tight">${escapeHtml(product.category)}</p>
+              <h4 class="text-[11px] font-bold text-slate-900 dark:text-white truncate leading-tight mt-0.5" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</h4>
             </div>
             
-            <div class="mt-1 pt-1 border-t border-white/5">
+            <div class="mt-1 pt-1 border-t border-black/5 dark:border-white/5">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
-                <span class="text-[9px] text-slate-400 font-semibold">${product.stock} stk</span>
+                <span class="text-xs font-black text-[#b38c2b] dark:text-[#c9a84c] tracking-tight">${formatUSD(product.sell_price)}</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 font-semibold">${product.stock} stk</span>
               </div>
               
               ${isInCart ? `
-                <div class="flex items-center justify-between bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between bg-black/5 dark:bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, -1, event)"
-                    class="flex-1 h-7 rounded-lg bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
+                    class="flex-1 h-7 rounded-lg bg-black/10 dark:bg-white/15 hover:bg-rose-600 text-slate-900 dark:text-white hover:text-white flex items-center justify-center text-sm font-black active:scale-90 transition"
                     title="Decrease quantity">
                     −
                   </button>
-                  <span class="text-xs font-black text-[#f3d489] px-2 text-center select-none min-w-[24px]">
+                  <span class="text-xs font-black text-[#b38c2b] dark:text-[#f3d489] px-2 text-center select-none min-w-[24px]">
                     ${cartQty}
                   </span>
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', null, 1, event)"
@@ -2079,7 +2132,7 @@
                 </div>
               ` : `
                 <button type="button" onclick="window.togglePosCartItem('${product.id}', null, event)"
-                  class="w-full h-7 mt-1.5 rounded-lg bg-white/10 hover:bg-[#c9a84c] text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-white/10 active:scale-95 transition-all shadow-sm">
+                  class="w-full h-7 mt-1.5 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-[#c9a84c] text-slate-700 dark:text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-black/10 dark:border-white/10 active:scale-95 transition-all shadow-sm">
                   <span class="text-sm font-black leading-none">+</span>
                   <span>Select</span>
                 </button>
@@ -2106,17 +2159,17 @@
       return `
         <div class="qs-variant-card admin-card p-0 overflow-hidden flex flex-col flex-shrink-0 border transition-all duration-200 select-none ${
           isOut
-            ? 'opacity-40 cursor-not-allowed border-white/5'
+            ? 'opacity-40 cursor-not-allowed border-black/5 dark:border-white/5'
             : isInCart
             ? 'cursor-pointer border-[#c9a84c] ring-2 ring-[#c9a84c]/60 bg-[#c9a84c]/10 shadow-lg'
-            : 'cursor-pointer border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
+            : 'cursor-pointer border-black/10 dark:border-white/10 hover:border-[#c9a84c]/50 active:scale-98 shadow'
         }" ${isOut ? '' : `onclick="window.togglePosCartItem('${product.id}', '${v.id}')"`}>
-          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden flex-shrink-0">
+          <div class="relative w-full aspect-square bg-black/5 dark:bg-slate-900 overflow-hidden flex-shrink-0">
             <img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" class="w-full h-full object-cover">
             
             <!-- Stock Pill -->
             <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-              v.stock <= 1 ? 'bg-rose-950/90 text-rose-300' : 'bg-slate-950/80 text-slate-300'
+              v.stock <= 1 ? 'bg-rose-500/10 dark:bg-rose-950/90 text-rose-700 dark:text-rose-300' : 'bg-black/5 dark:bg-slate-950/80 text-slate-700 dark:text-slate-300'
             }">
               ${v.stock} stk
             </span>
@@ -2130,25 +2183,25 @@
           </div>
 
           <div class="qs-card-info p-2 flex-shrink-0 flex flex-col justify-between">
-            <h5 class="text-[11px] font-bold text-white truncate leading-tight" title="${escapeHtml(v.color_name)}">${escapeHtml(v.color_name)}</h5>
+            <h5 class="text-[11px] font-bold text-slate-900 dark:text-white truncate leading-tight" title="${escapeHtml(v.color_name)}">${escapeHtml(v.color_name)}</h5>
             
-            <div class="mt-1 pt-1 border-t border-white/5">
+            <div class="mt-1 pt-1 border-t border-black/5 dark:border-white/5">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-black text-[#c9a84c] tracking-tight">${formatUSD(v.sell_price)}</span>
-                <span class="text-[9px] text-slate-400 font-semibold">${v.stock} stk</span>
+                <span class="text-xs font-black text-[#b38c2b] dark:text-[#c9a84c] tracking-tight">${formatUSD(v.sell_price)}</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 font-semibold">${v.stock} stk</span>
               </div>
               
               ${isOut ? `
-                <span class="w-full h-7 mt-1.5 rounded-lg bg-white/5 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-white/5">
+                <span class="w-full h-7 mt-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-slate-500 flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5">
                   Sold Out
                 </span>
               ` : isInCart ? `
-                <div class="flex items-center justify-between bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between bg-black/5 dark:bg-black/60 border border-[#c9a84c]/50 rounded-xl p-0.5 mt-1.5" onclick="event.stopPropagation()">
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', -1, event)"
-                    class="flex-1 h-7 rounded-lg bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center text-sm font-black active:scale-90 transition">
+                    class="flex-1 h-7 rounded-lg bg-black/10 dark:bg-white/15 hover:bg-rose-600 text-slate-900 dark:text-white hover:text-white flex items-center justify-center text-sm font-black active:scale-90 transition">
                     −
                   </button>
-                  <span class="text-xs font-black text-[#f3d489] px-2 text-center select-none min-w-[24px]">
+                  <span class="text-xs font-black text-[#b38c2b] dark:text-[#f3d489] px-2 text-center select-none min-w-[24px]">
                     ${cartQty}
                   </span>
                   <button type="button" onclick="window.modifyPosCartQty('${product.id}', '${v.id}', 1, event)"
@@ -2158,7 +2211,7 @@
                 </div>
               ` : `
                 <button type="button" onclick="window.togglePosCartItem('${product.id}', '${v.id}', event)"
-                  class="w-full h-7 mt-1.5 rounded-lg bg-white/10 hover:bg-[#c9a84c] text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-white/10 active:scale-95 transition-all shadow-sm">
+                  class="w-full h-7 mt-1.5 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-[#c9a84c] text-slate-700 dark:text-slate-200 hover:text-black flex items-center justify-center text-xs font-bold space-x-1 border border-black/10 dark:border-white/10 active:scale-95 transition-all shadow-sm">
                   <span class="text-sm font-black leading-none">+</span>
                   <span>Select</span>
                 </button>
@@ -2447,30 +2500,30 @@
             const itemPhoto = i.photo_url || DEFAULT_IMAGE;
 
             return `
-              <div class="flex items-center justify-between text-xs py-2 border-b border-white/5 last:border-0 gap-2.5">
+              <div class="flex items-center justify-between text-xs py-2 border-b border-black/5 dark:border-white/5 last:border-0 gap-2.5">
                 <div class="flex items-center space-x-2.5 min-w-0">
-                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-900 border border-white/10 flex-shrink-0 cursor-pointer"
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-black/5 dark:bg-slate-900 border border-black/10 dark:border-white/10 flex-shrink-0 cursor-pointer"
                     onclick="window.openImageLightbox('${itemPhoto}', '${escapeHtml(itemName)}', '${itemStyle ? escapeHtml(itemStyle) : escapeHtml(i.product_id)}')">
                     <img src="${itemPhoto}" alt="" class="w-full h-full object-cover" onerror="this.src='${DEFAULT_IMAGE}'">
                   </div>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center space-x-1.5 flex-wrap">
-                      <span class="font-bold text-[#c9a84c] text-xs">${i.quantity}x</span>
-                      <span class="text-white font-semibold truncate leading-tight">${escapeHtml(itemName)}</span>
+                      <span class="font-bold text-[#b38c2b] dark:text-[#c9a84c] text-xs">${i.quantity}x</span>
+                      <span class="text-slate-900 dark:text-white font-semibold truncate leading-tight">${escapeHtml(itemName)}</span>
                     </div>
                     <div class="flex items-center space-x-2 mt-0.5 flex-wrap">
                       ${itemStyle ? `
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#c9a84c]/20 text-[#f3d489] border border-[#c9a84c]/30">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#c9a84c]/20 text-[#b38c2b] dark:text-[#f3d489] border border-[#c9a84c]/30">
                           ✨ ${escapeHtml(itemStyle)}
                         </span>
                       ` : ''}
-                      <span class="text-[9px] font-mono text-slate-400">#${escapeHtml(i.variant_id || i.product_id)}</span>
+                      <span class="text-[9px] font-mono text-slate-500 dark:text-slate-400">#${escapeHtml(i.variant_id || i.product_id)}</span>
                     </div>
                   </div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <span class="font-bold text-white text-xs block">${formatUSD(lineTotal)}</span>
-                  ${i.quantity > 1 ? `<span class="text-[10px] text-slate-400 block">${formatUSD(unitPrice)} ea</span>` : ''}
+                  <span class="font-bold text-slate-900 dark:text-white text-xs block">${formatUSD(lineTotal)}</span>
+                  ${i.quantity > 1 ? `<span class="text-[10px] text-slate-500 dark:text-slate-400 block">${formatUSD(unitPrice)} ea</span>` : ''}
                 </div>
               </div>
             `;
@@ -2478,14 +2531,14 @@
         : `<p class="text-xs text-slate-500 italic">No item details available</p>`;
 
       const itemsCollapsible = `
-        <details class="group bg-white/5 rounded-xl border border-white/5 overflow-hidden mb-3">
-          <summary class="flex items-center justify-between px-3 py-2 cursor-pointer text-xs font-semibold text-slate-300 group-open:border-b group-open:border-white/10 transition">
+        <details class="group bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 overflow-hidden mb-3">
+          <summary class="flex items-center justify-between px-3 py-2 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300 group-open:border-b group-open:border-black/5 dark:group-open:border-white/10 transition">
             <span class="flex items-center space-x-1.5">
               <span>🛍️ Order Items (${order.items ? order.items.length : 0})</span>
             </span>
             <span class="text-[10px] text-slate-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-3 bg-black/20 space-y-1.5">
+          <div class="p-3 bg-black/5 dark:bg-black/20 space-y-1.5">
             ${itemsList}
           </div>
         </details>
@@ -2495,17 +2548,17 @@
       if (!['COMPLETED', 'CANCELLED', 'RETURNED'].includes(order.status)) {
         deliverySwitcher = `
           <div class="flex items-center space-x-1 pt-1.5 text-[10px]">
-            <span class="text-slate-400 mr-1 font-semibold">Change to:</span>
+            <span class="text-slate-500 dark:text-slate-400 mr-1 font-semibold">Change to:</span>
             <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'COD')"
-              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'COD' ? 'bg-amber-500/30 text-amber-300 border border-amber-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'COD' ? 'bg-amber-500/30 text-amber-700 dark:text-amber-300 border border-amber-400' : 'bg-black/5 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white border border-black/10 dark:border-white/10'}">
               🛵 COD
             </button>
             <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'KHQR')"
-              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'KHQR' ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'KHQR' ? 'bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 border border-emerald-400' : 'bg-black/5 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white border border-black/10 dark:border-white/10'}">
               💳 KHQR
             </button>
             <button type="button" onclick="window.changeOrderDeliveryType('${order.id}', 'VET')"
-              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'VET' ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-400' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'}">
+              class="px-2 py-0.5 rounded-md font-bold transition ${rawMethod === 'VET' ? 'bg-indigo-500/30 text-indigo-700 dark:text-indigo-300 border border-indigo-400' : 'bg-black/5 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white border border-black/10 dark:border-white/10'}">
               📦 VET
             </button>
           </div>
@@ -2515,26 +2568,26 @@
       let actionButtons = '';
       if (order.status === 'PENDING') {
         actionButtons = `
-          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
             <button onclick="window.confirmOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
               <span>${t('confirmAndPack')}</span>
             </button>
             <button onclick="window.cancelOrderAction('${order.id}')"
-              class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-rose-950/80 hover:text-rose-200 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
+              class="py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-950/80 dark:hover:text-rose-200 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
               <span>${t('cancelOrder')}</span>
             </button>
           </div>
         `;
       } else if (order.status === 'CONFIRMED') {
         actionButtons = `
-          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
             <button onclick="window.shipOrderAction('${order.id}')"
               class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-md transition">
               <span>${t('markShipped')}</span>
             </button>
             <button onclick="window.cancelOrderAction('${order.id}')"
-              class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-rose-950/80 hover:text-rose-200 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
+              class="py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-950/80 dark:hover:text-rose-200 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition">
               <span>${t('cancelRefund')}</span>
             </button>
           </div>
@@ -2546,12 +2599,12 @@
         const daysLeft = Math.max(0, 7 - daysInTransit);
 
         actionButtons = `
-          <div class="mt-2.5 pt-2 border-t border-white/10 space-y-2">
-            <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <div class="mt-2.5 pt-2 border-t border-black/5 dark:border-white/10 space-y-2">
+            <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span class="inline-flex items-center space-x-1">
                 <span>🚚 Shipped ${daysInTransit === 0 ? 'today' : daysInTransit + 'd ago'}</span>
               </span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
                 ⏳ Auto-delivers in ${daysLeft === 0 ? '<1 day' : daysLeft + 'd'}
               </span>
             </div>
@@ -2561,7 +2614,7 @@
                 <span>🎉 ${t('markDelivered')}</span>
               </button>
               <button onclick="window.returnOrderAction('${order.id}')"
-                class="col-span-1 py-2.5 px-2 rounded-xl bg-white/5 hover:bg-rose-950/80 hover:text-rose-200 border border-white/10 text-slate-400 font-semibold text-[11px] flex items-center justify-center space-x-1 transition">
+                class="col-span-1 py-2.5 px-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-950/80 dark:hover:text-rose-200 border border-black/10 dark:border-white/10 text-slate-600 dark:text-slate-400 font-semibold text-[11px] flex items-center justify-center space-x-1 transition">
                 <span>📦 ${t('markReturnedSecondary')}</span>
               </button>
             </div>
@@ -2569,14 +2622,14 @@
         `;
       } else if (order.status === 'COMPLETED') {
         actionButtons = `
-          <div class="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-xs">
-            <span class="text-[11px] text-emerald-400 font-semibold">✅ ${t('completedState')}</span>
-            <span class="text-[10px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">${t('archivedState')}</span>
+          <div class="mt-2 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
+            <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">✅ ${t('completedState')}</span>
+            <span class="text-[10px] text-slate-500 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5">${t('archivedState')}</span>
           </div>
         `;
       } else {
         actionButtons = `
-          <div class="mt-2 pt-2 border-t border-white/5 text-right">
+          <div class="mt-2 pt-2 border-t border-black/5 dark:border-white/5 text-right">
             <span class="text-[11px] text-slate-500 font-medium">${t('archivedState')}</span>
           </div>
         `;
@@ -2591,14 +2644,14 @@
         const win = get24hWindowStatus(order.last_interaction_at);
         if (win.active) {
           windowChipHtml = `
-            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window is OPEN (${win.text}). Automated Messenger shipping notice will be delivered.">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window is OPEN (${win.text}). Automated Messenger shipping notice will be delivered.">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
               <span>24h: ${win.text}</span>
             </span>
           `;
         } else {
           windowChipHtml = `
-            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-amber-300/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window has EXPIRED. Outbound automated notice will be safely skipped to prevent Meta flags.">
+            <span class="inline-flex items-center space-x-1 text-[9px] font-semibold text-amber-700 dark:text-amber-300/90 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0" title="Meta 24h Window has EXPIRED. Outbound automated notice will be safely skipped to prevent Meta flags.">
               <span>⏳</span>
               <span>24h Expired</span>
             </span>
@@ -2610,8 +2663,8 @@
       if (fbName && fbName.trim().toLowerCase() !== filledName.trim().toLowerCase()) {
         nameBadgeHtml = `
           <div class="flex items-center flex-wrap gap-1.5 min-w-0">
-            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
-            <span class="inline-flex items-center space-x-1 text-[10px] text-blue-300 font-medium px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 flex-shrink-0" title="Facebook Messenger Profile: ${escapeHtml(fbName)}">
+            <span class="font-bold text-slate-900 dark:text-white truncate">${escapeHtml(filledName)}</span>
+            <span class="inline-flex items-center space-x-1 text-[10px] text-blue-700 dark:text-blue-300 font-medium px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/30 flex-shrink-0" title="Facebook Messenger Profile: ${escapeHtml(fbName)}">
               <span>💬</span>
               <span>FB: ${escapeHtml(fbName)}</span>
             </span>
@@ -2621,8 +2674,8 @@
       } else if (fbName) {
         nameBadgeHtml = `
           <div class="flex items-center flex-wrap gap-1.5 min-w-0">
-            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
-            <span class="inline-flex items-center space-x-0.5 text-[9px] text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0" title="Verified via Facebook Messenger">
+            <span class="font-bold text-slate-900 dark:text-white truncate">${escapeHtml(filledName)}</span>
+            <span class="inline-flex items-center space-x-0.5 text-[9px] text-emerald-700 dark:text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0" title="Verified via Facebook Messenger">
               <span>✓</span>
               <span>FB Verified</span>
             </span>
@@ -2632,7 +2685,7 @@
       } else {
         nameBadgeHtml = `
           <div class="flex items-center flex-wrap gap-1.5 min-w-0">
-            <span class="font-bold text-white truncate">${escapeHtml(filledName)}</span>
+            <span class="font-bold text-slate-900 dark:text-white truncate">${escapeHtml(filledName)}</span>
             ${windowChipHtml}
           </div>
         `;
@@ -2642,32 +2695,32 @@
         <div class="admin-card p-4">
           <div class="flex items-center justify-between mb-2.5">
             <div class="flex items-center space-x-2">
-              <span class="text-xs font-mono font-extrabold text-[#f3d489]">${order.id}</span>
+              <span class="text-xs font-mono font-extrabold text-[#b38c2b] dark:text-[#f3d489]">${order.id}</span>
               ${deliveryBadge}
-              <span class="text-[10px] text-slate-400">· ${createdDate}</span>
+              <span class="text-[10px] text-slate-500 dark:text-slate-400">· ${createdDate}</span>
             </div>
             <span class="badge-status status-${order.status}">
               ${order.status}
             </span>
           </div>
 
-          <div class="bg-black/25 rounded-xl p-2.5 border border-white/5 mb-3 text-xs space-y-1">
+          <div class="bg-black/5 dark:bg-black/25 rounded-xl p-2.5 border border-black/5 dark:border-white/5 mb-3 text-xs space-y-1">
             <div class="flex items-center justify-between gap-2">
               ${nameBadgeHtml}
               ${
                 order.phone
-                  ? `<a href="tel:${escapeHtml(order.phone)}" class="text-[#c9a84c] hover:underline font-semibold text-[11px] flex items-center space-x-1 flex-shrink-0">
+                  ? `<a href="tel:${escapeHtml(order.phone)}" class="text-[#b38c2b] dark:text-[#c9a84c] hover:underline font-semibold text-[11px] flex items-center space-x-1 flex-shrink-0">
                       <span>📞</span><span>${escapeHtml(order.phone)}</span>
                     </a>`
                   : ''
               }
             </div>
-            <div class="text-[11px] text-slate-300 leading-snug">
+            <div class="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
               📍 ${escapeHtml(order.address || 'No address specified')}
             </div>
             ${
               order.note
-                ? `<div class="text-[10px] text-amber-300 italic pt-0.5">
+                ? `<div class="text-[10px] text-amber-700 dark:text-amber-300 italic pt-0.5">
                     📝 Note: "${escapeHtml(order.note)}"
                   </div>`
                 : ''
@@ -2677,11 +2730,11 @@
 
           ${itemsCollapsible}
 
-          <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
-            <span class="text-slate-400 font-medium">${t('orderTotal')}</span>
+          <div class="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/10 text-xs">
+            <span class="text-slate-500 dark:text-slate-400 font-medium">${t('orderTotal')}</span>
             <div class="text-right">
-              <span class="text-sm font-extrabold text-white">${formatUSD(order.total_amount)}</span>
-              <span class="text-[11px] font-semibold text-[#e5c36a] ml-1">(${formatKHR(order.total_amount)})</span>
+              <span class="text-sm font-extrabold text-slate-900 dark:text-white">${formatUSD(order.total_amount)}</span>
+              <span class="text-[11px] font-semibold text-[#b38c2b] dark:text-[#e5c36a] ml-1">(${formatKHR(order.total_amount)})</span>
             </div>
           </div>
 
@@ -3205,6 +3258,7 @@
     }
 
     const isRevenue = metricType === 'revenue';
+    const isDark = document.documentElement.classList.contains('dark');
 
     overviewChartInstance = new Chart(ctx, {
       type: 'bar',
@@ -3213,9 +3267,9 @@
         datasets: [{
           label: isRevenue ? 'Gross Revenue ($)' : 'Units Sold',
           data: values,
-          backgroundColor: 'rgba(201, 168, 76, 0.45)',
-          hoverBackgroundColor: 'rgba(243, 212, 137, 0.85)',
-          borderColor: '#c9a84c',
+          backgroundColor: isDark ? 'rgba(201, 168, 76, 0.45)' : 'rgba(179, 140, 43, 0.35)',
+          hoverBackgroundColor: isDark ? 'rgba(243, 212, 137, 0.85)' : 'rgba(179, 140, 43, 0.75)',
+          borderColor: isDark ? '#c9a84c' : '#b38c2b',
           borderWidth: 1.5,
           borderRadius: 6,
           borderSkipped: false,
@@ -3228,10 +3282,10 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#171928',
-            titleColor: '#f3d489',
-            bodyColor: '#ffffff',
-            borderColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: isDark ? '#171928' : '#ffffff',
+            titleColor: isDark ? '#f3d489' : '#b38c2b',
+            bodyColor: isDark ? '#ffffff' : '#18181b',
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
             borderWidth: 1,
             padding: 10,
             displayColors: false,
@@ -3246,12 +3300,12 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#94a3b8', font: { size: 10, family: 'Inter' } },
+            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10, family: 'Inter' } },
           },
           y: {
-            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            grid: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)' },
             ticks: {
-              color: '#94a3b8',
+              color: isDark ? '#94a3b8' : '#64748b',
               font: { size: 10, family: 'Inter' },
               callback: function (val) {
                 return isRevenue ? `$${val}` : val;
@@ -3402,6 +3456,7 @@
   }
 
   // Initial Boot
+  applyAdminTheme(currentTheme);
   applyLanguage();
   if (!adminToken) {
     showLoginModal();

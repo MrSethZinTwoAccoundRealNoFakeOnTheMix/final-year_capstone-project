@@ -1,10 +1,59 @@
 /* Luxe Jewelry - Admin Dashboard Mobile-First Stylesheet */
 
 :root {
+  color-scheme: light dark;
+
+  /* LIGHT MODE (Default) */
+  --bg-dark: #f8f7f4;
+  --bg-card: #ffffff;
+  --bg-sheet: #ffffff;
+  --bg-input: #ffffff;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.14);
+  --border-gold: rgba(180, 140, 50, 0.35);
+
+  --gold-primary: #b38c2b;
+  --gold-light: #d4af37;
+  --gold-dark: #8c6a15;
+  --gold-gradient: linear-gradient(135deg, #e5c46e 0%, #b38c2b 50%, #8c6a15 100%);
+
+  --status-pending-bg: rgba(217, 119, 6, 0.12);
+  --status-pending-text: #b45309;
+  --status-pending-border: rgba(217, 119, 6, 0.3);
+
+  --status-confirmed-bg: rgba(16, 185, 129, 0.12);
+  --status-confirmed-text: #047857;
+  --status-confirmed-border: rgba(16, 185, 129, 0.3);
+
+  --status-shipped-bg: rgba(59, 130, 246, 0.12);
+  --status-shipped-text: #1d4ed8;
+  --status-shipped-border: rgba(59, 130, 246, 0.3);
+
+  --status-cancelled-bg: rgba(239, 68, 68, 0.12);
+  --status-cancelled-text: #b91c1c;
+  --status-cancelled-border: rgba(239, 68, 68, 0.3);
+
+  --status-returned-bg: rgba(168, 85, 247, 0.12);
+  --status-returned-text: #7e22ce;
+  --status-returned-border: rgba(168, 85, 247, 0.3);
+
+  --text-primary: #09090b;
+  --text-secondary: #27272a;
+  --text-muted: #3f3f46;
+  --card-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+:root.dark,
+html.dark {
+  /* DARK MODE */
   --bg-dark: #0e101a;
   --bg-card: #171928;
   --bg-sheet: #151726;
+  --bg-input: #0e101a;
   --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
   --border-gold: rgba(201, 168, 76, 0.35);
 
   --gold-primary: #c9a84c;
@@ -32,7 +81,10 @@
   --status-returned-text: #d8b4fe;
   --status-returned-border: rgba(168, 85, 247, 0.4);
 
-  --safe-bottom: env(safe-area-inset-bottom, 16px);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -42,10 +94,11 @@
 
 body {
   background-color: var(--bg-dark);
-  color: #f8fafc;
+  color: var(--text-primary);
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
   padding-bottom: calc(40px + var(--safe-bottom));
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom Scrollbar */
@@ -65,7 +118,7 @@ body {
   align-content: start;
   max-height: 440px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(201, 168, 76, 0.35) transparent;
+  scrollbar-color: rgba(180, 140, 50, 0.35) transparent;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -82,11 +135,11 @@ body {
   background: transparent;
 }
 #qs-variant-list::-webkit-scrollbar-thumb {
-  background: rgba(201, 168, 76, 0.25);
+  background: rgba(180, 140, 50, 0.25);
   border-radius: 9999px;
 }
 #qs-variant-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 168, 76, 0.5);
+  background: rgba(180, 140, 50, 0.5);
 }
 
 .qs-variant-card {
@@ -101,35 +154,78 @@ body {
 
 /* Glass Header */
 .glass-header {
-  background: rgba(14, 16, 26, 0.92);
+  background: rgba(248, 247, 244, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Gold Gradient Button */
+html.dark .glass-header {
+  background: rgba(14, 16, 26, 0.92);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Primary Action Button (Midnight Obsidian in Light Mode, Gold Gradient in Dark Mode) */
 .btn-gold {
-  background: var(--gold-gradient);
-  color: #0e101a;
+  background: linear-gradient(135deg, #1f2024 0%, #121316 100%);
+  color: #ffffff;
+  border: 1px solid rgba(179, 140, 43, 0.45);
   font-weight: 700;
+  box-shadow: 0 4px 14px rgba(18, 19, 22, 0.2);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, #27282e 0%, #17181c 100%);
+  border-color: rgba(179, 140, 43, 0.75);
+  box-shadow: 0 6px 18px rgba(18, 19, 22, 0.28);
 }
 
 .btn-gold:active {
   transform: scale(0.98);
-  filter: brightness(0.95);
+  filter: brightness(0.92);
+}
+
+html.dark .btn-gold {
+  background: var(--gold-gradient);
+  color: #11121d;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
+html.dark .btn-gold:hover {
+  filter: brightness(1.08);
 }
 
 /* Navigation Tabs */
 .nav-tab.active {
-  background: rgba(201, 168, 76, 0.15);
-  color: var(--gold-light);
+  background: rgba(180, 140, 50, 0.15);
+  color: var(--gold-dark);
   border-bottom: 2px solid var(--gold-primary);
   font-weight: 700;
 }
 
+html.dark .nav-tab.active {
+  color: var(--gold-light);
+}
+
 .nav-tab:not(.active) {
-  color: #94a3b8;
+  color: #3f3f46;
+  font-weight: 600;
   border-bottom: 2px solid transparent;
+}
+
+.nav-tab:not(.active):hover {
+  color: #09090b;
+}
+
+html.dark .nav-tab:not(.active) {
+  color: #94a3b8;
+}
+
+html.dark .nav-tab:not(.active):hover {
+  color: #f1f5f9;
 }
 
 /* Card Styling */
@@ -137,7 +233,8 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--card-shadow);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 /* Order Status Badges */
@@ -181,17 +278,76 @@ body {
   border-color: var(--status-returned-border);
 }
 
-/* Filter Pills */
+/* Filter Pills (Midnight Obsidian in Light Mode, Slate in Dark Mode) */
 .filter-pill.active {
+  background: linear-gradient(135deg, #1f2024 0%, #121316 100%);
+  color: #ffffff;
+  border: 1px solid rgba(179, 140, 43, 0.45);
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(18, 19, 22, 0.2);
+}
+
+html.dark .filter-pill.active {
   background: #334155;
   color: #ffffff;
-  font-weight: 700;
+  border: 1px solid transparent;
+  box-shadow: none;
 }
 
 .filter-pill:not(.active) {
-  background: rgba(255, 255, 255, 0.04);
-  color: #94a3b8;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  color: #18181b;
+  border: 1.5px solid #d4d4d8;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.18s ease;
+}
+
+.filter-pill:not(.active):hover {
+  background: #f4f4f5;
+  color: #09090b;
+  border-color: #a1a1aa;
+}
+
+html.dark .filter-pill:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+html.dark .filter-pill:not(.active):hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Filter pill count colors */
+.filter-pill.active #count-action-orders { color: #fcd34d; }
+.filter-pill:not(.active) #count-action-orders { color: #d97706; }
+
+.filter-pill.active #count-shipped-orders { color: #7dd3fc; }
+.filter-pill:not(.active) #count-shipped-orders { color: #0284c7; }
+
+.filter-pill.active #count-archive-orders { color: #cbd5e1; }
+.filter-pill:not(.active) #count-archive-orders { color: #475569; }
+
+.filter-pill.active #count-all-orders { color: #e2e8f0; }
+.filter-pill:not(.active) #count-all-orders { color: #334155; }
+
+html.dark .filter-pill:not(.active) #count-action-orders { color: #fcd34d; }
+html.dark .filter-pill:not(.active) #count-shipped-orders { color: #7dd3fc; }
+html.dark .filter-pill:not(.active) #count-archive-orders { color: #94a3b8; }
+html.dark .filter-pill:not(.active) #count-all-orders { color: #cbd5e1; }
+
+/* High-Contrast Readability for Light Mode */
+html:not(.dark) .text-slate-400 {
+  color: #4b5563 !important;
+}
+html:not(.dark) .text-slate-500 {
+  color: #374151 !important;
+}
+html:not(.dark) .text-slate-600 {
+  color: #1f2937 !important;
 }
 
 /* Shimmer Skeleton */
@@ -201,9 +357,14 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #171928 25%, #24273f 50%, #171928 75%);
+  background: linear-gradient(90deg, #eae8e1 25%, #f4f3ed 50%, #eae8e1 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+html.dark .skeleton {
+  background: linear-gradient(90deg, #171928 25%, #24273f 50%, #171928 75%);
+  background-size: 200% 100%;
 }
 
 /* Delivery Badges */
@@ -216,19 +377,33 @@ body {
   align-items: center;
 }
 .badge-delivery-cod {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
+html.dark .badge-delivery-cod {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
 .badge-delivery-khqr {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
+html.dark .badge-delivery-khqr {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
 .badge-delivery-vet {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+html.dark .badge-delivery-vet {
   background: rgba(99, 102, 241, 0.15);
   color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 /* Quick Sell Touch Optimization */

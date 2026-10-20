@@ -42,6 +42,7 @@
       onlyLeft: 'Only {n} left',
       soldOut: 'Sold Out',
       addToBag: '+ Add to Bag',
+      selectStyle: 'Select Style',
       bagLabel: 'Bag:',
       viewCart: 'View Cart',
       bagTitle: 'Your Shopping Bag',
@@ -136,6 +137,7 @@
       onlyLeft: 'នៅសល់តែ {n}',
       soldOut: 'អស់ពីស្តុក',
       addToBag: '+ ដាក់ចូលកន្ត្រក',
+      selectStyle: 'ជ្រើសរើសម៉ូដ',
       bagLabel: 'កន្ត្រក:',
       viewCart: 'មើលកន្ត្រក',
       bagTitle: 'កន្ត្រកទិញទំនិញរបស់អ្នក',
@@ -519,6 +521,45 @@
     }, 2800);
   }
 
+  // Theme Management (Light Mode Default, Dark Mode Toggle)
+  window.toggleTheme = function () {
+    const isDark = document.documentElement.classList.contains('dark');
+    const newTheme = isDark ? 'light' : 'dark';
+    applyTheme(newTheme);
+    try {
+      localStorage.setItem('theme', newTheme);
+    } catch (e) {}
+    showToast(newTheme === 'dark' ? 'Switched to Dark Mode 🌙' : 'Switched to Light Mode ☀️', 'info');
+  };
+
+  function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    const themeIcon = document.getElementById('theme-icon');
+    const themeLabel = document.getElementById('theme-label');
+    if (themeIcon) themeIcon.textContent = isDark ? '🌙' : '☀️';
+    if (themeLabel) themeLabel.textContent = isDark ? 'Dark' : 'Light';
+  }
+
+  function initTheme() {
+    let savedTheme = 'light';
+    try {
+      savedTheme = localStorage.getItem('theme') || 'light';
+    } catch (e) {}
+    applyTheme(savedTheme);
+  }
+
+  // Cross-tab theme sync
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'theme' && e.newValue) {
+      applyTheme(e.newValue);
+    }
+  });
+
   // Language Toggle Handler
   window.toggleLanguage = function () {
     currentLang = currentLang === 'en' ? 'km' : 'en';
@@ -661,10 +702,10 @@
   function renderAuthStatus(verified, customMsg) {
     if (verified) {
       const displayId = psid && psid.length > 10 ? `${psid.slice(0, 6)}…${psid.slice(-4)}` : (psid || '');
-      headerConnBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60';
-      headerConnBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span> ${t('connected')}`;
+      headerConnBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700/60 shadow-sm';
+      headerConnBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> ${t('connected')}`;
 
-      authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-emerald-950/40 text-emerald-300 border-emerald-800/40';
+      authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40';
       authBannerIcon.textContent = '✅';
       if (customerProfile.name) {
         authBannerText.innerHTML = `<strong>${t('connectedBannerName', { name: escapeHtml(customerProfile.name) })}</strong>`;
@@ -675,10 +716,10 @@
       checkoutAuthAlert.classList.add('hidden');
       submitOrderBtn.disabled = false;
     } else {
-      headerConnBadge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-700/60';
+      headerConnBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#121316] text-white border border-[#27272a] shadow-sm dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700/60';
       headerConnBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span> ${t('guestMode')}`;
 
-      authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-amber-950/30 text-amber-300/90 border-amber-800/30';
+      authBanner.className = 'max-w-md mx-auto px-4 py-2 text-xs flex items-center justify-between border-b transition-colors bg-[#18181b] text-slate-100 border-[#27272a] dark:bg-amber-950/30 dark:text-amber-300/90 dark:border-amber-800/30';
       authBannerIcon.textContent = '📱';
       authBannerText.innerHTML = `<strong>${customMsg || t('guestBanner')}</strong>`;
 
@@ -825,7 +866,7 @@
         onclick="window.openStyleModal('${product.id}')">
         <div>
           <!-- Image Container -->
-          <div class="relative w-full aspect-square bg-slate-900 overflow-hidden">
+          <div class="relative w-full aspect-square bg-slate-100 dark:bg-slate-900 overflow-hidden">
             <img id="card-img-${product.id}" src="${displayPhoto}" alt="${escapeHtml(product.name)}" loading="lazy"
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
@@ -853,16 +894,16 @@
 
           <!-- Details -->
           <div class="p-2 pb-0.5">
-            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
               ${escapeHtml(getCategoryDisplay(product.category))}
             </span>
-            <h3 class="text-xs font-bold text-white leading-snug line-clamp-1 mb-1">
+            <h3 class="text-xs font-bold text-slate-900 dark:text-white leading-snug line-clamp-1 mb-1">
               ${escapeHtml(product.name)}
             </h3>
 
             <!-- Dual Currency Pricing -->
             <div class="mt-1.5">
-              <div class="text-sm font-extrabold text-white leading-tight" id="card-price-usd-${product.id}">
+              <div class="text-sm font-extrabold text-slate-900 dark:text-white leading-tight" id="card-price-usd-${product.id}">
                 ${priceUsdText}
               </div>
             </div>
@@ -874,8 +915,8 @@
           <button type="button"
             ${isSoldOut ? 'disabled' : ''}
             onclick="event.stopPropagation(); window.openStyleModal('${product.id}')"
-            class="${isSoldOut ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-1.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
-            <span>${isSoldOut ? t('soldOut') : (hasVariants ? 'Select Style' : t('addToBag'))}</span>
+            class="${isSoldOut ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed' : 'btn-gold'} w-full py-1.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1">
+            <span>${isSoldOut ? t('soldOut') : (hasVariants ? t('selectStyle') : t('addToBag'))}</span>
           </button>
         </div>
       </div>
@@ -960,9 +1001,9 @@
         <section class="category-curated-block">
           <div class="section-header">
             <div class="flex items-center space-x-2">
-              <h3 class="text-sm font-bold text-white tracking-wide">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white tracking-wide">
                 ${escapeHtml(label)}
-                <span class="text-[11px] font-normal text-slate-400 ml-1">(${items.length})</span>
+                <span class="text-[11px] font-normal text-slate-500 dark:text-slate-400 ml-1">(${items.length})</span>
               </h3>
             </div>
             <button type="button" onclick="window.selectCategory('${escapeHtml(catName)}')"
@@ -1398,7 +1439,7 @@
       const price = Number(product.sell_price);
       if (product.stock <= 0) {
         btn.disabled = true;
-        btn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-500 cursor-not-allowed';
+        btn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed';
         btn.innerHTML = `<span>${t('soldOut')}</span>`;
       } else {
         btn.disabled = false;
@@ -2276,6 +2317,7 @@
   }
 
   // Initial Boot
+  initTheme();
   applyLanguage();
   autoFillCustomerDetails();
   verifyIdentity();
