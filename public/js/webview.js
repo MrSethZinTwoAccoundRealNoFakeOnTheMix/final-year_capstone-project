@@ -1035,13 +1035,6 @@
       product,
       selectedVariants: new Map(),
       focusedVariantIndex: 0,
-      currentTrackPos: 1,
-      isAnimating: false,
-      swipeStartX: 0,
-      swipeStartY: 0,
-      swipeCurrentX: 0,
-      isSwiping: false,
-      isScrollLocked: false,
     };
 
     // Find default focused index & pre-select first in-stock variant
@@ -1055,7 +1048,6 @@
         if (firstAvail >= 0) defaultIdx = firstAvail;
       }
       styleModalState.focusedVariantIndex = defaultIdx;
-      styleModalState.currentTrackPos = product.variant_list.length > 1 ? defaultIdx + 1 : 0;
 
       const defVariant = product.variant_list[defaultIdx];
       if (defVariant && defVariant.stock > 0) {
@@ -1070,6 +1062,10 @@
   };
 
   window.closeStyleModal = function (syncHistory = true) {
+    if (window.smSwiperInstance) {
+      try { window.smSwiperInstance.destroy(true, true); } catch (e) {}
+      window.smSwiperInstance = null;
+    }
     if (styleModal) styleModal.classList.add('hidden');
     document.body.style.overflow = '';
     if (syncHistory) {
@@ -1077,7 +1073,7 @@
     }
   };
 
-  // ── Gallery Infinite Carousel Helpers ─────────────────────────────────────
+  // ── Gallery Carousel Helpers (Powered by Swiper.js) ────────────────────────
   function updateGalleryDetails(focusedIdx) {
     const { product } = styleModalState;
     if (!product) return;
@@ -1086,6 +1082,8 @@
 
     const v = product.variant_list[focusedIdx];
     if (!v) return;
+
+    styleModalState.focusedVariantIndex = focusedIdx;
 
     // 1. Stock badge
     const badge = document.getElementById('sm-stock-badge');
@@ -1103,23 +1101,17 @@
     const skuEl = document.getElementById('sm-sku');
     if (skuEl) skuEl.textContent = v.id;
 
-    // 3. Dots
-    const dots = document.querySelectorAll('.sm-dot');
-    dots.forEach((dot, i) => {
-      dot.classList.toggle('sm-dot-active', i === focusedIdx);
-    });
-
-    // 4. Prices
+    // 3. Prices
     const priceUsd = document.getElementById('sm-price-usd');
     const priceKhr = document.getElementById('sm-price-khr');
     if (priceUsd) priceUsd.textContent = formatUSD(v.sell_price);
     if (priceKhr) priceKhr.textContent = formatKHR(v.sell_price);
 
-    // 5. Name
+    // 4. Name
     const nameLabel = document.getElementById('sm-focused-name');
     if (nameLabel) nameLabel.innerHTML = `<span>${escapeHtml(v.color_name)}</span>`;
 
-    // 5b. Auto-select variant on gallery swipe if in stock
+    // 5. Auto-select variant on gallery swipe if in stock
     const { selectedVariants } = styleModalState;
     if (v.stock > 0) {
       const qtyEl = document.getElementById('sm-qty');
@@ -1146,73 +1138,21 @@
   }
 
   function galleryGoTo(targetIdx) {
-    const { product } = styleModalState;
-    if (!product || !Array.isArray(product.variant_list)) return;
-    const N = product.variant_list.length;
-    if (N < 2) return;
-    const track = document.getElementById('sm-gallery-track');
-    if (!track) return;
-
-    styleModalState.isAnimating = true;
-    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
-
-    styleModalState.focusedVariantIndex = targetIdx;
-    styleModalState.currentTrackPos = targetIdx + 1;
-    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-    track.style.transform = `translateX(-${(targetIdx + 1) * 100}%)`;
-    updateGalleryDetails(targetIdx);
+    if (window.smSwiperInstance) {
+      window.smSwiperInstance.slideTo(targetIdx);
+    }
   }
 
   window.galleryGoTo = galleryGoTo;
 
   window.smGalleryNext = function (e) {
     if (e && e.stopPropagation) e.stopPropagation();
-    const { product, isAnimating } = styleModalState;
-    if (!product || !Array.isArray(product.variant_list)) return;
-    const N = product.variant_list.length;
-    if (N < 2 || isAnimating) return;
-
-    const track = document.getElementById('sm-gallery-track');
-    if (!track) return;
-
-    styleModalState.isAnimating = true;
-    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
-
-    styleModalState.currentTrackPos += 1;
-    const nextPos = styleModalState.currentTrackPos;
-
-    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-    track.style.transform = `translateX(-${nextPos * 100}%)`;
-
-    // Seamless loop logical index: if beyond real slides, it's slide 0
-    const logicalIdx = nextPos > N ? 0 : nextPos - 1;
-    styleModalState.focusedVariantIndex = logicalIdx;
-    updateGalleryDetails(logicalIdx);
+    if (window.smSwiperInstance) window.smSwiperInstance.slideNext();
   };
 
   window.smGalleryPrev = function (e) {
     if (e && e.stopPropagation) e.stopPropagation();
-    const { product, isAnimating } = styleModalState;
-    if (!product || !Array.isArray(product.variant_list)) return;
-    const N = product.variant_list.length;
-    if (N < 2 || isAnimating) return;
-
-    const track = document.getElementById('sm-gallery-track');
-    if (!track) return;
-
-    styleModalState.isAnimating = true;
-    setTimeout(() => { styleModalState.isAnimating = false; }, 350);
-
-    styleModalState.currentTrackPos -= 1;
-    const prevPos = styleModalState.currentTrackPos;
-
-    track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-    track.style.transform = `translateX(-${prevPos * 100}%)`;
-
-    // Seamless loop logical index: if before real slides, it's slide N-1
-    const logicalIdx = prevPos < 1 ? N - 1 : prevPos - 1;
-    styleModalState.focusedVariantIndex = logicalIdx;
-    updateGalleryDetails(logicalIdx);
+    if (window.smSwiperInstance) window.smSwiperInstance.slidePrev();
   };
 
   // ── Build the full modal DOM (called once per open) ─────────────────────
@@ -1223,33 +1163,22 @@
     const variants = hasVariants ? product.variant_list : [];
     const N = variants.length;
 
-    // ── Gallery images with infinite clones when N > 1 ──
     let gallerySlides = '';
-    let initialTransform = 'translateX(0)';
-
-    if (hasVariants) {
-      if (N > 1) {
-        const lastV = variants[N - 1];
-        const firstV = variants[0];
-        const cloneLast = `<div class="sm-slide" data-clone="last"><img src="${lastV.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(lastV.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-        const cloneFirst = `<div class="sm-slide" data-clone="first"><img src="${firstV.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(firstV.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-        const realSlides = variants.map((v, i) => {
-          const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
-          return `<div class="sm-slide" data-index="${i}"><img src="${photo}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-        }).join('');
-        gallerySlides = cloneLast + realSlides + cloneFirst;
-        styleModalState.currentTrackPos = focusedVariantIndex + 1;
-        initialTransform = `translateX(-${(focusedVariantIndex + 1) * 100}%)`;
-      } else {
-        const v = variants[0];
-        gallerySlides = `<div class="sm-slide" data-index="0"><img src="${v.photo_url || product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-        styleModalState.currentTrackPos = 0;
-        initialTransform = 'translateX(0)';
-      }
+    if (hasVariants && N > 0) {
+      gallerySlides = variants.map((v, i) => {
+        const photo = v.photo_url || product.photo_url || DEFAULT_IMAGE;
+        return `
+          <div class="swiper-slide" data-index="${i}">
+            <img src="${photo}" alt="${escapeHtml(v.color_name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+          </div>
+        `;
+      }).join('');
     } else {
-      gallerySlides = `<div class="sm-slide" data-index="0"><img src="${product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'"></div>`;
-      styleModalState.currentTrackPos = 0;
-      initialTransform = 'translateX(0)';
+      gallerySlides = `
+        <div class="swiper-slide" data-index="0">
+          <img src="${product.photo_url || DEFAULT_IMAGE}" alt="${escapeHtml(product.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${DEFAULT_IMAGE}'">
+        </div>
+      `;
     }
 
     const initialV = hasVariants ? variants[focusedVariantIndex] : null;
@@ -1262,12 +1191,7 @@
       ? `<span class="sm-badge sm-badge-amber">${t('onlyLeft', { n: initStock })}</span>`
       : `<span class="sm-badge sm-badge-green">${t('inStock')}</span>`;
 
-    // ── Pagination dots (visual indicator only, non-clickable) ──
-    const dotsHtml = hasVariants && N > 1
-      ? `<div class="sm-dots">${variants.map((_, i) => `<span class="sm-dot ${i === focusedVariantIndex ? 'sm-dot-active' : ''}"></span>`).join('')}</div>`
-      : '';
-
-    // ── Nav arrows (modern luxury glass buttons with SVG chevrons) ──
+    // ── Nav arrows ──
     const arrowsHtml = hasVariants && N > 1 ? `
       <button type="button" class="sm-arrow sm-arrow-left" onclick="window.smGalleryPrev(event)" aria-label="Previous style">
         <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1281,7 +1205,7 @@
       </button>
     ` : '';
 
-    // ── Style tiles (multi-select) ──
+    // ── Style tiles ──
     const tilesHtml = hasVariants
       ? `<div id="sm-tiles" class="sm-tiles-grid">${variants.map((v) => renderStyleTileHTML(v)).join('')}</div>`
       : '';
@@ -1307,23 +1231,19 @@
     if (!scrollEl) return;
 
     scrollEl.innerHTML = `
-      <!-- Swipeable Gallery -->
-      <div class="sm-gallery" id="sm-gallery"
-        data-product-id="${product.id}"
-        ontouchstart="window.smTouchStart(event)"
-        ontouchmove="window.smTouchMove(event)"
-        ontouchend="window.smTouchEnd(event)">
-
-        <div class="sm-gallery-track" id="sm-gallery-track"
-          style="transform: ${initialTransform}; transition: none;">
+      <!-- Swiper Mobile-Optimized Gallery -->
+      <div class="sm-gallery swiper" id="sm-gallery">
+        <div class="swiper-wrapper">
           ${gallerySlides}
         </div>
 
         <!-- Stock badge -->
-        <div id="sm-stock-badge" class="absolute top-2.5 left-2.5">${stockBadgeHtml}</div>
+        <div id="sm-stock-badge" class="absolute top-2.5 left-2.5 z-10">${stockBadgeHtml}</div>
 
         ${arrowsHtml}
-        ${dotsHtml}
+
+        <!-- Standard Clickable Pagination Bullets (matching swiperjs.com/demos#pagination) -->
+        ${hasVariants && N > 1 ? '<div class="swiper-pagination"></div>' : ''}
       </div>
 
       <!-- Product Info (Split Two-Column Luxury Layout) -->
@@ -1353,35 +1273,36 @@
       ${qtyStepperHtml}
     `;
 
-    // Seamless loop transitionend listener
-    const track = document.getElementById('sm-gallery-track');
-    if (track && hasVariants && N > 1) {
-      track.addEventListener('transitionend', (e) => {
-        if (e.target !== track || e.propertyName !== 'transform') return;
-        const { product, currentTrackPos } = styleModalState;
-        if (!product || !Array.isArray(product.variant_list)) return;
-        const total = product.variant_list.length;
-        if (total < 2) return;
-
-        if (currentTrackPos >= total + 1) {
-          // Wrapped past the end to cloned first slide -> silently jump to real first slide
-          track.style.transition = 'none';
-          styleModalState.currentTrackPos = 1;
-          track.style.transform = 'translateX(-100%)';
-          void track.offsetHeight;
-        } else if (currentTrackPos <= 0) {
-          // Wrapped before the start to cloned last slide -> silently jump to real last slide
-          track.style.transition = 'none';
-          styleModalState.currentTrackPos = total;
-          track.style.transform = `translateX(-${total * 100}%)`;
-          void track.offsetHeight;
-        }
-        styleModalState.isAnimating = false;
-      });
-    }
-
     renderStyleTiles();
     renderModalAddBtn();
+
+    // ── Instantiate Swiper with Standard Pagination ──
+    if (window.smSwiperInstance) {
+      try { window.smSwiperInstance.destroy(true, true); } catch (e) {}
+      window.smSwiperInstance = null;
+    }
+
+    if (hasVariants && N > 1 && typeof Swiper !== 'undefined') {
+      window.smSwiperInstance = new Swiper('#sm-gallery', {
+        initialSlide: focusedVariantIndex,
+        slidesPerView: 1,
+        spaceBetween: 0,
+        speed: 280,
+        resistanceRatio: 0.85,
+        grabCursor: true,
+        touchEventsTarget: 'wrapper',
+        passiveListeners: true,
+        pagination: {
+          el: '#sm-gallery .swiper-pagination',
+          clickable: true,
+        },
+        on: {
+          slideChange: function () {
+            updateGalleryDetails(this.activeIndex);
+          },
+        },
+      });
+    }
   }
 
   function renderStyleTileHTML(v) {
@@ -1522,68 +1443,6 @@
       entry.qty = next;
     }
     renderModalAddBtn();
-  };
-
-  // ── Touch swipe handlers (with seamless looping) ──────────────────────────
-  window.smTouchStart = function (e) {
-    if (!e.touches || e.touches.length === 0) return;
-    styleModalState.swipeStartX = e.touches[0].clientX;
-    styleModalState.swipeStartY = e.touches[0].clientY;
-    styleModalState.swipeCurrentX = e.touches[0].clientX;
-    styleModalState.isSwiping = true;
-    styleModalState.isScrollLocked = false;
-    const track = document.getElementById('sm-gallery-track');
-    if (track) track.style.transition = 'none';
-  };
-
-  window.smTouchMove = function (e) {
-    if (!styleModalState.isSwiping || !e.touches || e.touches.length === 0) return;
-    styleModalState.swipeCurrentX = e.touches[0].clientX;
-    const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
-    const dy = e.touches[0].clientY - styleModalState.swipeStartY;
-
-    if (!styleModalState.isScrollLocked) {
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
-        styleModalState.isScrollLocked = true;
-      }
-    }
-
-    if (styleModalState.isScrollLocked) {
-      if (e.cancelable) e.preventDefault();
-      const { product, currentTrackPos } = styleModalState;
-      if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
-      const gallery = document.getElementById('sm-gallery');
-      const galleryW = gallery ? gallery.offsetWidth : 340;
-      const baseOffset = (currentTrackPos || 1) * galleryW;
-      const track = document.getElementById('sm-gallery-track');
-      if (track) {
-        track.style.transform = `translateX(${-baseOffset + dx}px)`;
-      }
-    }
-  };
-
-  window.smTouchEnd = function (e) {
-    if (!styleModalState.isSwiping) return;
-    styleModalState.isSwiping = false;
-    const dx = styleModalState.swipeCurrentX - styleModalState.swipeStartX;
-    const threshold = 35;
-    const { product, currentTrackPos } = styleModalState;
-    if (!product || !Array.isArray(product.variant_list) || product.variant_list.length < 2) return;
-
-    if (dx < -threshold) {
-      // Swiped right-to-left -> Next slide
-      window.smGalleryNext();
-    } else if (dx > threshold) {
-      // Swiped left-to-right -> Prev slide
-      window.smGalleryPrev();
-    } else {
-      // Snap back to current slide
-      const track = document.getElementById('sm-gallery-track');
-      if (track) {
-        track.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
-        track.style.transform = `translateX(-${(currentTrackPos || 1) * 100}%)`;
-      }
-    }
   };
 
   window.confirmAddStyleToCart = function () {

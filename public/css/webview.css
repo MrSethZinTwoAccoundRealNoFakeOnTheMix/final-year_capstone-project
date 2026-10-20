@@ -462,8 +462,8 @@ html.dark .style-tile-badge {
   text-decoration: underline;
 }
 
-/* ── Swipeable Style Gallery ─────────────────────────────────────────────── */
-.sm-gallery {
+/* ── Swipeable Style Gallery (Swiper.js Self-Hosted) ─────────────────────── */
+.sm-gallery.swiper {
   position: relative;
   width: 100%;
   max-width: 340px;
@@ -474,30 +474,29 @@ html.dark .style-tile-badge {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-medium);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  touch-action: pan-y;
   user-select: none;
 }
 
-html.dark .sm-gallery {
+html.dark .sm-gallery.swiper {
   background: #121324;
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
 }
 
-.sm-gallery-track {
+.sm-gallery .swiper-wrapper {
   display: flex;
+  width: 100%;
   height: 100%;
-  will-change: transform;
 }
 
-.sm-slide {
-  flex: 0 0 100%;
+.sm-gallery .swiper-slide {
+  flex-shrink: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
-.sm-slide img {
+.sm-gallery .swiper-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -560,38 +559,38 @@ html.dark .sm-arrow svg {
 .sm-arrow-left { left: 8px; }
 .sm-arrow-right { right: 8px; }
 
-/* Dot indicators (visual page indicator only, non-clickable) */
-.sm-dots {
+/* Swiper Standard Pagination (Classic Dots matching swiperjs.com/demos#pagination) */
+.sm-gallery .swiper-pagination {
   position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 8px !important;
+  left: 0;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 6px;
   z-index: 10;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  pointer-events: none;
-  user-select: none;
+  pointer-events: auto;
 }
 
-.sm-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  pointer-events: none;
+.sm-gallery .swiper-pagination-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0.45;
+  margin: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.sm-dot-active {
-  background: var(--gold-primary);
-  width: 14px;
+.sm-gallery .swiper-pagination-bullet-active {
+  background: var(--gold-primary, #c9a84c) !important;
+  opacity: 1 !important;
+  transform: scale(1.25);
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.7);
 }
 
 /* Stock badge variants */
