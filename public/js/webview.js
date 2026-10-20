@@ -1044,7 +1044,7 @@
       isScrollLocked: false,
     };
 
-    // Find default focused index
+    // Find default focused index & pre-select first in-stock variant
     if (hasVariants) {
       let defaultIdx = 0;
       if (defaultVariantId) {
@@ -1056,6 +1056,11 @@
       }
       styleModalState.focusedVariantIndex = defaultIdx;
       styleModalState.currentTrackPos = product.variant_list.length > 1 ? defaultIdx + 1 : 0;
+
+      const defVariant = product.variant_list[defaultIdx];
+      if (defVariant && defVariant.stock > 0) {
+        styleModalState.selectedVariants.set(defVariant.id, { variant: defVariant, qty: 1 });
+      }
     }
 
     buildStyleModalDOM();
@@ -1113,6 +1118,20 @@
     // 5. Name
     const nameLabel = document.getElementById('sm-focused-name');
     if (nameLabel) nameLabel.innerHTML = `<span>${escapeHtml(v.color_name)}</span>`;
+
+    // 5b. Auto-select variant on gallery swipe if in stock
+    const { selectedVariants } = styleModalState;
+    if (v.stock > 0) {
+      const qtyEl = document.getElementById('sm-qty');
+      let currentQty = qtyEl ? (parseInt(qtyEl.textContent, 10) || 1) : 1;
+      if (currentQty > v.stock) currentQty = v.stock;
+      if (qtyEl) qtyEl.textContent = currentQty;
+
+      selectedVariants.clear();
+      selectedVariants.set(v.id, { variant: v, qty: currentQty });
+      renderStyleTiles();
+      renderModalAddBtn();
+    }
 
     // 6. Highlight focused tile ring & auto-scroll into view in horizontal reel
     product.variant_list.forEach((variant, i) => {
@@ -1267,17 +1286,21 @@
       ? `<div id="sm-tiles" class="sm-tiles-grid">${variants.map((v) => renderStyleTileHTML(v)).join('')}</div>`
       : '';
 
-    // ── Global quantity stepper (only for single-variant/no-variant products) ──
-    const qtyStepperHtml = !hasVariants ? `
+    // ── Global quantity stepper ──
+    const initQty = (hasVariants && styleModalState.selectedVariants.size > 0)
+      ? [...styleModalState.selectedVariants.values()][0].qty
+      : 1;
+
+    const qtyStepperHtml = `
       <div class="sm-qty-row">
-        <span class="text-xs font-semibold text-slate-300">Quantity</span>
+        <span class="text-xs font-semibold text-slate-900 dark:text-slate-300">Quantity</span>
         <div class="flex items-center space-x-3">
           <button type="button" onclick="window.smChangeQty(-1)" class="sm-qty-btn">−</button>
-          <span id="sm-qty" class="text-xs font-extrabold text-white w-5 text-center">1</span>
+          <span id="sm-qty" class="text-xs font-extrabold text-slate-900 dark:text-white w-6 text-center">${initQty}</span>
           <button type="button" onclick="window.smChangeQty(1)" class="sm-qty-btn">+</button>
         </div>
       </div>
-    ` : '';
+    `;
 
     // ── Assemble into the modal scrollable content ──
     const scrollEl = document.querySelector('#style-modal .modal-sheet > div.overflow-y-auto');
@@ -1306,24 +1329,24 @@
       <!-- Product Info (Split Two-Column Luxury Layout) -->
       <div class="flex items-start justify-between gap-3 pt-0.5">
         <div class="min-w-0 flex-1">
-          <h2 id="style-modal-title" class="text-sm font-extrabold text-white leading-snug truncate">${escapeHtml(product.name)}</h2>
-          ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-[#f3d489] font-semibold mt-0.5 flex items-center space-x-1 truncate"><span>${escapeHtml(initialV ? initialV.color_name : '')}</span></p>` : ''}
+          <h2 id="style-modal-title" class="text-sm font-extrabold text-slate-900 dark:text-white leading-snug truncate">${escapeHtml(product.name)}</h2>
+          ${hasVariants ? `<p id="sm-focused-name" class="text-xs text-[#855d0a] dark:text-[#f3d489] font-bold mt-0.5 flex items-center space-x-1 truncate"><span>${escapeHtml(initialV ? initialV.color_name : '')}</span></p>` : ''}
         </div>
         <div class="text-right flex-shrink-0">
-          <div id="sm-price-usd" class="text-base font-extrabold text-white leading-none">${formatUSD(initPrice)}</div>
-          <div id="sm-price-khr" class="text-[11px] font-semibold text-[#e5c36a] mt-0.5">${formatKHR(initPrice)}</div>
+          <div id="sm-price-usd" class="text-base font-extrabold text-slate-900 dark:text-white leading-none">${formatUSD(initPrice)}</div>
+          <div id="sm-price-khr" class="text-[11px] font-bold text-[#855d0a] dark:text-[#e5c36a] mt-0.5">${formatKHR(initPrice)}</div>
         </div>
       </div>
 
       ${hasVariants ? `
-        <!-- Multi-select style tiles -->
+        <!-- Style selection reel -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Select Styles:</label>
-            <span id="sm-selection-count" class="text-[10px] text-[#f3d489] font-semibold"></span>
+            <label class="text-[11px] font-bold text-slate-900 dark:text-slate-300 uppercase tracking-wider">Style / Color:</label>
+            <span id="sm-selection-count" class="text-[10px] text-[#855d0a] dark:text-[#f3d489] font-bold"></span>
           </div>
           ${tilesHtml}
-          <p class="text-[10px] text-slate-500 mt-1.5 text-center">Swipe to explore styles · Tap to select</p>
+          <p class="text-[10px] text-slate-600 dark:text-slate-400 mt-1.5 text-center">Tap a style to preview & select</p>
         </div>
       ` : ''}
 
@@ -1377,39 +1400,21 @@
           <span class="sm-tile-name">${escapeHtml(v.color_name)}</span>
           <span class="sm-tile-price">${formatUSD(v.sell_price)}</span>
         </div>
-        <!-- Per-tile qty stepper (shown when selected) -->
-        <div class="sm-tile-qty" id="sm-tile-qty-${v.id}">
-          <button class="sm-tile-qty-btn" onclick="event.stopPropagation(); window.smTileQty('${v.id}', -1)">−</button>
-          <span id="sm-tile-qty-val-${v.id}" class="sm-tile-qty-val">1</span>
-          <button class="sm-tile-qty-btn" onclick="event.stopPropagation(); window.smTileQty('${v.id}', 1)">+</button>
-        </div>
       </div>
     `;
   }
 
   function renderStyleTiles() {
-    const { product, selectedVariants } = styleModalState;
+    const { product, selectedVariants, focusedVariantIndex } = styleModalState;
     if (!product || !product.variant_list) return;
-    product.variant_list.forEach((v) => {
+    product.variant_list.forEach((v, i) => {
       const tile = document.getElementById(`sm-tile-${v.id}`);
       if (!tile) return;
       const isSel = selectedVariants.has(v.id);
       tile.classList.toggle('sm-tile-selected', isSel);
+      tile.classList.toggle('sm-tile-focused', i === focusedVariantIndex);
       const checkEl = document.getElementById(`sm-check-${v.id}`);
       if (checkEl) checkEl.classList.toggle('sm-check-visible', isSel);
-      const qtyEl = document.getElementById(`sm-tile-qty-${v.id}`);
-      if (qtyEl) qtyEl.classList.toggle('sm-tile-qty-visible', isSel);
-      if (isSel) {
-        const qtyVal = document.getElementById(`sm-tile-qty-val-${v.id}`);
-        if (qtyVal) qtyVal.textContent = selectedVariants.get(v.id).qty;
-      }
-    });
-    // Highlight focused variant's tile with a subtle ring
-    const focusedV = product.variant_list[styleModalState.focusedVariantIndex];
-    product.variant_list.forEach((v, i) => {
-      const tile = document.getElementById(`sm-tile-${v.id}`);
-      if (!tile) return;
-      tile.classList.toggle('sm-tile-focused', i === styleModalState.focusedVariantIndex);
     });
   }
 
@@ -1422,16 +1427,17 @@
 
     if (hasVariants) {
       if (selectedVariants.size === 0) {
-        btn.disabled = false;
-        btn.className = 'btn-gold-outline w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2';
-        btn.innerHTML = '<span>Select a style above to add to bag</span>';
+        btn.disabled = true;
+        btn.className = 'w-full py-3 rounded-xl text-xs font-bold bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed';
+        btn.innerHTML = `<span>${t('soldOut')}</span>`;
       } else {
-        const totalQty = [...selectedVariants.values()].reduce((s, e) => s + e.qty, 0);
-        const totalPrice = [...selectedVariants.values()].reduce((s, e) => s + e.qty * Number(e.variant.sell_price), 0);
+        const entry = [...selectedVariants.values()][0];
+        const qty = entry.qty;
+        const unitPrice = Number(entry.variant.sell_price);
+        const totalPrice = qty * unitPrice;
         btn.disabled = false;
         btn.className = 'btn-gold w-full py-3 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center space-x-2';
-        const itemWord = totalQty === 1 ? 'item' : 'items';
-        btn.innerHTML = `<span>Add ${totalQty} ${itemWord} to Bag • ${formatUSD(totalPrice)}</span>`;
+        btn.innerHTML = `<span>${t('addToBag')} • ${formatUSD(totalPrice)}</span>`;
       }
     } else {
       // No-variant product: use sm-qty
@@ -1448,18 +1454,19 @@
       }
     }
 
-    // Update selection count label
+    // Update selection indicator
     const countEl = document.getElementById('sm-selection-count');
-    if (countEl) {
-      if (selectedVariants.size === 0) {
-        countEl.textContent = 'None selected';
+    if (countEl && hasVariants) {
+      if (selectedVariants.size > 0) {
+        const entry = [...selectedVariants.values()][0];
+        countEl.textContent = entry.variant.stock > 0 ? `${entry.variant.color_name} • ${t('inStock')}` : t('soldOut');
       } else {
-        countEl.textContent = `${selectedVariants.size} style${selectedVariants.size > 1 ? 's' : ''} selected`;
+        countEl.textContent = '';
       }
     }
   }
 
-  // ── Tile toggle (select/deselect) ─────────────────────────────────────────
+  // ── Tile toggle (single-select style with gallery focus) ─────────────────
   window.smToggleTile = function (variantId) {
     const { product, selectedVariants } = styleModalState;
     if (!product || !product.variant_list) return;
@@ -1470,53 +1477,50 @@
       return;
     }
 
-    // Also focus on this tile's image in the gallery
+    const qtyEl = document.getElementById('sm-qty');
+    let currentQty = qtyEl ? (parseInt(qtyEl.textContent, 10) || 1) : 1;
+    if (currentQty > v.stock) currentQty = v.stock;
+    if (qtyEl) qtyEl.textContent = currentQty;
+
+    // Single select: focus and select this variant
+    selectedVariants.clear();
+    selectedVariants.set(variantId, { variant: v, qty: currentQty });
+
+    // Focus on this tile's image in the gallery
     const idx = product.variant_list.indexOf(v);
     if (idx >= 0) galleryGoTo(idx);
 
-    if (selectedVariants.has(variantId)) {
-      selectedVariants.delete(variantId);
-    } else {
-      selectedVariants.set(variantId, { variant: v, qty: 1 });
-    }
     renderStyleTiles();
     renderModalAddBtn();
   };
 
-  // ── Per-tile qty stepper ───────────────────────────────────────────────────
-  window.smTileQty = function (variantId, delta) {
-    const { selectedVariants } = styleModalState;
-    if (!selectedVariants.has(variantId)) return;
-    const entry = selectedVariants.get(variantId);
-    const maxStock = entry.variant.stock;
-    const next = entry.qty + delta;
-    if (next < 1) {
-      // Deselect if qty goes to 0
-      selectedVariants.delete(variantId);
-    } else if (next > maxStock) {
-      showToast(t('stockLimit', { n: maxStock }), 'warning');
-      return;
-    } else {
-      entry.qty = next;
-    }
-    renderStyleTiles();
-    renderModalAddBtn();
-  };
-
-  // ── Single product qty stepper ─────────────────────────────────────────────
+  // ── Unified quantity stepper ──────────────────────────────────────────────
   window.smChangeQty = function (delta) {
-    const { product } = styleModalState;
+    const { product, selectedVariants } = styleModalState;
     if (!product) return;
+    const hasVariants = Array.isArray(product.variant_list) && product.variant_list.length > 0;
     const qtyEl = document.getElementById('sm-qty');
     if (!qtyEl) return;
     const curr = parseInt(qtyEl.textContent, 10) || 1;
     const next = curr + delta;
     if (next < 1) return;
-    if (next > product.stock) {
-      showToast(t('stockLimit', { n: product.stock }), 'warning');
+
+    let maxStock = product.stock;
+    if (hasVariants && selectedVariants.size > 0) {
+      const entry = [...selectedVariants.values()][0];
+      maxStock = entry.variant.stock;
+    }
+
+    if (next > maxStock) {
+      showToast(t('stockLimit', { n: maxStock }), 'warning');
       return;
     }
+
     qtyEl.textContent = next;
+    if (hasVariants && selectedVariants.size > 0) {
+      const entry = [...selectedVariants.values()][0];
+      entry.qty = next;
+    }
     renderModalAddBtn();
   };
 
